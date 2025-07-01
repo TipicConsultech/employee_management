@@ -1,0 +1,70 @@
+// If you want to override variables do it here
+@import "variables";
+
+// Import styles
+@import "@coreui/coreui/scss/coreui";
+@import "@coreui/chartjs/scss/coreui-chartjs";
+
+// Vendors
+@import "vendors/simplebar";
+
+// Custom styles for this theme
+@import "theme";
+
+// If you want to add custom CSS you can put it here
+@import "custom";
+
+.side-by-side {
+    display: flex;
+    flex-direction: row;
+}
+
+.p-2 {
+    padding: 2px;
+}
+
+.pr-5 {
+    padding-right: 5px;
+}
+
+.mr-20 {
+    margin-right: 5px;
+}
+
+@keyframes strobeRed {
+    0%, 100% {
+      background-color: #f95757;
+    }
+    50% {
+      background-color: hsl(0, 58%, 87%);
+    }
+  }
+  
+  .strobe-red {
+    animation: strobeRed 0.7s infinite;
+    color: white;
+  }
+
+  /* Scrollbar styling for sidebar */
+.sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background-color: white;
+  border-radius: 10px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background-color: #f0f0f0;
+}
+
+/* Firefox */
+.sidebar {
+  scrollbar-color: white transparent;
+  scrollbar-width: thin;
+}

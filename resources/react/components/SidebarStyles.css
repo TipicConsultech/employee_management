@@ -1,0 +1,23 @@
+/* Sidebar white scrollbar styles */
+.c-sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.c-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.c-sidebar::-webkit-scrollbar-thumb {
+  background-color: white;
+  border-radius: 10px;
+}
+
+.c-sidebar::-webkit-scrollbar-thumb:hover {
+  background-color: #e0e0e0;
+}
+
+/* Firefox support */
+.c-sidebar {
+  scrollbar-color: white transparent;
+  scrollbar-width: thin;
+}

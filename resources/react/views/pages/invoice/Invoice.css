@@ -1,0 +1,222 @@
+/* .suggestions-list {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    position: absolute;
+    background: white;
+    z-index: 1000;
+}
+.suggestions-list li {
+    padding: 8px;
+    cursor: pointer;
+}
+.suggestions-list li:hover {
+    background-color: #f0f0f0;
+}
+.bottom-border{
+    border-bottom: 1px solid #dee2e6;
+}
+   */
+
+
+
+
+   /* Delivery.css */
+/* .suggestions-list {
+    position: absolute;
+    z-index: 1000;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    list-style: none;
+    padding: 0;
+    margin-top: 5px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+
+  .suggestions-list li {
+    padding: 8px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .suggestions-list li:hover {
+    background-color: #f8f9fa;
+  }
+
+  .caret-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+  }
+
+  .form-section {
+    margin-bottom: 20px;
+  } */
+
+  /* Make form inputs more readable */
+  /* .form-control:disabled,
+  .form-control[readonly] {
+    background-color: #f8f9fa !important;
+    opacity: 1;
+  } */
+
+  /* Improve badge styling */
+  /* .badge[role="button"] {
+    cursor: pointer;
+    transition: all 0.2s ease;
+  } */
+
+  /* .badge[role="button"]:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  } */
+
+  /* Style the form section headers */
+  /* .section-heading {
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    font-weight: bold;
+    color: #495057;
+  } */
+
+
+  /* ----------------------------------------------------------- */
+  /* Delivery.css / Invoice.css combined styles */
+
+/* Suggestions list styling */
+.suggestions-list {
+  position: absolute;
+  z-index: 1000;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  list-style: none;
+  padding: 0;
+  margin-top: 5px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.suggestions-list li {
+  padding: 8px 15px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.suggestions-list li:hover {
+  background-color: #f8f9fa;
+}
+
+/* Navigation styling */
+.caret-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+/* Form section styling */
+.form-section {
+  margin-bottom: 20px;
+}
+
+/* Make form inputs more readable */
+.form-control:disabled,
+.form-control[readonly] {
+  background-color: #f8f9fa !important;
+  opacity: 1;
+}
+
+/* Improve badge styling */
+.badge[role="button"] {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.badge[role="button"]:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* Style the form section headers */
+.section-heading {
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+  font-weight: bold;
+  color: #495057;
+}
+
+.bottom-border {
+  border-bottom: 1px solid #dee2e6;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .suggestions-list {
+    position: relative;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 15px;
+  }
+
+  /* Adjust form spacing for mobile */
+  .mb-3 {
+    margin-bottom: 1rem !important;
+  }
+
+  /* Make form inputs larger on mobile for better touch targets */
+  .form-control, .form-select {
+    padding: 0.5rem;
+    font-size: 1rem;
+  }
+
+  /* Add some space between product items in mobile view */
+  .row + .row {
+    margin-top: 1rem;
+  }
+
+  /* Improve badge positioning on mobile */
+  .badge[role="button"] {
+    display: inline-block;
+    margin-top: 8px;
+  }
+
+  /* Better spacing for section headings on mobile */
+  .section-heading {
+    margin-top: 20px;
+  }
+}
+
+/* Add visual separation between product rows on mobile */
+@media (max-width: 576px) {
+  .card-body {
+    padding: 1rem;
+  }
+
+  /* Make buttons more touch-friendly */
+  .btn {
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .col-12 > hr {
+    margin: 0.75rem 0;
+    opacity: 0.5;
+  }
+
+  /* Improve spacing between form elements */
+  .form-label {
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+}

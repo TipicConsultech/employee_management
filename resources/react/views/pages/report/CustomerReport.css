@@ -1,0 +1,152 @@
+/* CustomerReport.css */
+
+/* Suggestions List Styling */
+.suggestions-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: white;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  z-index: 1000;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.suggestion-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover {
+  background-color: #f8f9fa;
+}
+
+/* Product List Styling */
+.product-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.product-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.product-name {
+  font-weight: 500;
+  flex: 1;
+}
+
+.product-quantities {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: right;
+}
+
+.delivered-qty, .collected-qty {
+  display: inline-block;
+  margin-left: 8px;
+}
+
+.unit-text {
+  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  font-weight: 500;
+  font-size: 0.85rem;
+  margin-left: 4px;
+  color: #555; /* soft grey */
+}
+
+
+/* Expanded Details Styling */
+.detail-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.expanded-row {
+  background-color: #f8f9fa;
+}
+
+.expanded-details {
+  background-color: #fdfdfd;
+}
+
+.transaction-products {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.product-transaction-item {
+  border-bottom: 1px dashed #eee;
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+}
+
+.product-transaction-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.product-transaction-name {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.quantities {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.9rem;
+}
+
+.price-text {
+  color: #6c757d;
+}
+
+/* Total Summary Styling */
+.total-products-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.total-product-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.borderless {
+  border: none;
+}
+
+.borderless td,
+.borderless th {
+  border: none;
+}
+
+/* Various Badge Enhancements */
+.badge {
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
