@@ -5,9 +5,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up()
     {
         Schema::create('company_receipts', function (Blueprint $table) {
@@ -19,7 +16,6 @@ return new class extends Migration
             $table->decimal('total_amount', 8, 2);
             $table->string('transaction_id')->nullable();
             $table->string('transaction_status')->nullable();
-    
             // Add foreign keys with cascade rules if necessary
             $table->foreign('company_id')
                   ->references('company_id')->on('company_info')
@@ -33,7 +29,6 @@ return new class extends Migration
             $table->timestamps();
         });
     }
-    
     /**
      * Reverse the migrations.
      */
