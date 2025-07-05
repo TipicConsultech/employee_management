@@ -462,9 +462,9 @@
 "reenter_new_password":"Re Enter New Password ",
 "update_password":"Update Password",
     "transaction_details": "Transaction Details",
-    
+
     "grand_total": "Grand Total",
-    
+
     "only_cash_collected": "Only Cash Collected",
     "total_expense":"Total Expense",
   "expense_category": "Expense Category",
@@ -528,30 +528,76 @@
   "no_records_found": "No records found",
   "current": "Current",
 
-   
+
       "edit_expense": "Edit Expense",
       "editing_mode": "Editing Mode",
-     
+
       "enter_expense_description": "Enter expense description",
-      
+
       "add_to_list": "Add to List",
       "update_in_list": "Update in List",
       "cancel_edit": "Cancel Edit",
-      
+
       "expenses_list": "Expenses List",
-     
+
       "editing": "Editing...",
       "remove": "Remove",
       "submit_all_expenses": "Submit All Expenses",
       "confirm_submission": "Confirm Submission",
-      
+
       "confirm_submit": "Confirm Submit",
      "singleProductUpdateSuccess":"Product created Successfully .",
 
      "avgDegree"	:"Average Degree",
      "avgFat"	:"Average Fat",
      "avgRate":"Average Rate",
-     "totalAmount":	"Total Amount"
+     "totalAmount":	"Total Amount",
+
+    "male": "Male",
+    "female": "Female",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "fullTime": "Full Time",
+    "contract": "Contract",
+    "createNewEmployee": "Create New Employee",
+    "addNewEmployeeDescription": "Fill in the details below to register a new employee",
+    "employeeName": "Employee Name",
+    "gender": "Gender",
+    "selectGender": "Select Gender",
+    "paymentType": "Payment Type",
+    "selectPaymentType": "Select Payment Type",
+    "workType": "Work Type",
+    "selectWorkType": "Select Work Type",
+    "priceZero": "0.00",
+    "wageHour": "Wage per Hour",
+    "wageOvertime": "Wage Overtime",
+    "debit": "Debit",
+    "adhaarNumber": "Adhaar Number",
+    "adhaarNumberPlaceholder": "Enter 12-digit Adhaar number",
+    "mobileNumberPlaceholder": "Enter 10-digit mobile number",
+    "referralBy": "Referral By",
+    "isLogin": "Enable Login Access",
+    "password": "Password",
+    "reEnterPassword": "Re-enter Password",
+    "creating": "Creating...",
+    "createEmployee": "Create Employee",
+    "confirmEmployeeCreation": "Confirm Employee Creation",
+    "loginAccess": "Login Access",
+    "employee_registration": "Employee Registration",
+
+    "loadingEmployees": "Loading employees...",
+    "retry": "Retry",
+    "creditScreen": "Credit Salary",
+    "selectEmployee": "Select Employee",
+    "noEmployeesAvailable": "No employees available",
+    "chooseEmployee": "Choose an employee",
+    "creditSalaryAmount": "Credit Salary Amount",
+    "enterAmount": "Enter amount",
+    "cash": "Cash",
+    "upi": "UPI",
+    "bankTransfer": "Bank Transfer",
+    "refresh": "Refresh",
+    "credit_screen": "Credit Salary Screen"
 
 
 
@@ -691,7 +737,7 @@
             "noRecordsFound": "No records found",
             "failedToLoadHistoryData": "Failed to load history data",
 
-             
+
       "select_expense_type_validation": "Please select an expense type",
       "expense_description_validation": "Please enter expense description",
       "select_date_validation": "Please select a valid date",
@@ -703,24 +749,67 @@
       "edit_cancelled": "Edit cancelled",
       "expense_removed_from_list": "Expense removed from list",
       "fill_required_fields": "Please fill all required fields",
-      
+
       "error_occured_please_try_again_later_msg": "Error occurred, please try again later",
       "add_atleast_one_expense": "Please add at least one expense to the list",
       "expenses_submitted_successfully": "{{count}} expenses submitted successfully",
       "partial_expenses_submitted": "{{success}} out of {{total}} expenses submitted successfully",
-    
+
       "confirm_submit_expenses": "Are you sure you want to submit all {{count}} expenses?",
       "complete_edit_before_submit": "Please complete or cancel the current edit before submitting all expenses",
 
       "quantityCannotBeZero": "Milk quantity cannot be zero",
-        "snfCannotBeZero": "SNF value cannot be zero", 
+        "snfCannotBeZero": "SNF value cannot be zero",
         "tsCannotBeZero": "TS value cannot be zero",
         "snfCannotBeNegative": "SNF value cannot be negative",
         "tsCannotBeNegative": "TS value cannot be negative",
 
         "avgdegreeBeZero" : "Avrage Degree will be set to zero",
         "avgfatBeZero":"Avrage Fat will be set to zero",
-        "avgrateBeZero":"Avrage Rate will be set to zero"
+        "avgrateBeZero":"Avrage Rate will be set to zero",
+
+        "nameRequired": "Employee name is required",
+        "genderRequired": "Gender is required",
+        "paymentTypeRequired": "Payment type is required",
+        "workTypeRequired": "Work type is required",
+        "priceRequired": "Price is required",
+        "wageHourRequired": "Wage per hour is required",
+        "wageOvertimeRequired": "Wage overtime is required",
+        "pricePositiveNumber": "Price must be a positive number",
+        "wageHourPositiveNumber": "Wage per hour must be a positive number",
+        "wageOvertimePositiveNumber": "Wage overtime must be a positive number",
+        "creditPositiveNumber": "Credit must be a positive number",
+        "debitPositiveNumber": "Debit must be a positive number",
+        "adhaarRequired": "Adhaar number is required",
+        "adhaarInvalid": "Adhaar number must be exactly 12 digits",
+        "mobileRequired": "Mobile number is required",
+        "mobileInvalid": "Mobile number must be exactly 10 digits",
+        "passwordRequired": "Password is required",
+        "passwordMinLength": "Password must be at least 6 characters long",
+        "reEnterPasswordRequired": "Please re-enter the password",
+        "passwordMismatch": "Passwords do not match",
+        "fixErrorsBeforeSubmit": "Please fix all errors before submitting",
+        "employeeRegisteredSuccess": "Employee registered successfully",
+        "employeeRegistrationFailed": "Employee registration failed",
+        "registrationError": "An error occurred during registration",
+        "confirmEmployeeCreationMessage": "Are you sure you want to create this employee with the following details?",
+
+        "noEmployeesFound": "No employees found",
+        "noActiveEmployeesFound": "No active employees found",
+        "pleaseSelectEmployee": "Please select an employee",
+        "pleaseEnterCreditAmount": "Please enter credit amount",
+        "pleaseEnterValidNumber": "Please enter a valid number",
+        "amountMustBeGreaterThanZero": "Amount must be greater than zero",
+        "selectedEmployeeNotFound": "Selected employee not found",
+        "salaryCreditedSuccess": "Salary credited successfully",
+        "failedToCreditSalary": "Failed to credit salary",
+        "invalidInputData": "Invalid input data",
+        "noEmployeesLoadRetry": "No employees loaded. Please refresh or contact support.",
+        "enterAmountGreaterThanZero": "Enter amount greater than zero",
+        "selectPaymentMethod": "Select the payment method for salary credit",
+        "noEmployeesAvailable": "No Employees Available",
+        "contactAdminToAddEmployees": "Please contact your administrator to add employees.",
+        "allTransactionsSecure": "All transactions are secure"
 
     }
    }

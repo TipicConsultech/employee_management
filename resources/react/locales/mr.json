@@ -522,23 +522,23 @@
   "no_matching_records": "कोणतेही जुळणारे रेकॉर्ड आढळले नाहीत",
   "no_records_found": "कोणतेही रेकॉर्ड आढळले नाहीत",
 
-  
+
       "edit_expense": "खर्च संपादित करा",
       "editing_mode": "संपादन मोड",
-      
+
       "enter_expense_description": "खर्चाचे वर्णन प्रविष्ट करा",
-      
+
       "add_to_list": "यादीत जोडा",
       "update_in_list": "यादीत अपडेट करा",
       "cancel_edit": "संपादन रद्द करा",
- 
+
       "expenses_list": "खर्चांची यादी",
-      
+
       "editing": "संपादित करत आहे...",
-     
+
       "submit_all_expenses": "सर्व खर्च सबमिट करा",
       "confirm_submission": "सबमिशन पुष्ट करा",
-     
+
       "confirm_submit": "सबमिट पुष्ट करा",
      "singleProductUpdateSuccess":"उत्पादन  यशस्वीरित्या बदल केला",
 
@@ -546,7 +546,53 @@
      "avgDegree"	:"सरासरी डिग्री",
      "avgFat"	:"सरासरी फॅट ",
      "avgRate":"सरासरी दर",
-     "totalAmount":	"एकूण रक्कम"
+     "totalAmount":	"एकूण रक्कम",
+
+    "male": "पुरुष",
+    "female": "महिला",
+    "weekly": "साप्ताहिक",
+    "monthly": "मासिक",
+    "fullTime": "पूर्ण वेळ",
+    "contract": "करार",
+    "createNewEmployee": "नवीन कर्मचारी तयार करा",
+    "addNewEmployeeDescription": "नवीन कर्मचारी नोंदणी करण्यासाठी खालील तपशील भरा",
+    "employeeName": "कर्मचाऱ्याचे नाव",
+    "gender": "लिंग",
+    "selectGender": "लिंग निवडा",
+    "paymentType": "पेमेंट प्रकार",
+    "selectPaymentType": "पेमेंट प्रकार निवडा",
+    "workType": "कामाचा प्रकार",
+    "selectWorkType": "कामाचा प्रकार निवडा",
+    "priceZero": "0.00",
+    "wageHour": "तासाचे वेतन",
+    "wageOvertime": "ओव्हरटाईम वेतन",
+    "debit": "नामे",
+    "adhaarNumber": "आधार क्रमांक",
+    "adhaarNumberPlaceholder": "12 अंकी आधार क्रमांक टाका",
+    "mobileNumberPlaceholder": "10 अंकी मोबाइल क्रमांक टाका",
+    "referralBy": "संदर्भ द्वारे",
+    "isLogin": "लॉगिन प्रवेश सक्षम करा",
+    "password": "पासवर्ड",
+    "reEnterPassword": "पासवर्ड पुन्हा टाका",
+    "creating": "तयार करत आहे...",
+    "createEmployee": "कर्मचारी तयार करा",
+    "confirmEmployeeCreation": "कर्मचारी निर्मितीची पुष्टी करा",
+    "loginAccess": "लॉगिन प्रवेश",
+    "employee_registration": "कर्मचारी नोंदणी",
+
+    "loadingEmployees": "कर्मचारी लोड करत आहे...",
+    "retry": "पुन्हा प्रयत्न करा",
+    "creditScreen": "पगार जमा करा",
+    "selectEmployee": "कर्मचारी निवडा",
+    "noEmployeesAvailable": "कर्मचारी उपलब्ध नाहीत",
+    "chooseEmployee": "कर्मचारी निवडा",
+    "creditSalaryAmount": "पगार जमा रक्कम",
+    "enterAmount": "रक्कम टाका",
+    "cash": "रोख",
+    "upi": "यूपीआय",
+    "bankTransfer": "बँक ट्रान्सफर",
+    "refresh": "रिफ्रेश करा",
+    "credit_screen": "पगार जमा स्क्रीन"
 
 
 
@@ -563,7 +609,7 @@
 
 
     "MSG": {
-  
+
       "productNotFound": "उत्पादन सापडले नाही",
         "order_is_delivered_msg": "ऑर्डर डिलिव्हर झाली",
         "error_occured_msg": "त्रुटी आली",
@@ -608,12 +654,12 @@
         "tsWillBeZero": "TS शून्य होईल",
         "thisActionCannotBeUndone": "ही क्रिया पूर्ववत केली जाऊ शकत नाही",
         "milkParamsUpdatedSuccess":"दूध मापदंड यशस्वीरीत्या सुरक्षित झाले!",
-        
+
         "failedToFetchMilkTanks": "दूध टँक डेटा प्राप्त करण्यात अयशस्वी",
         "errorConnectingToServer": "सर्व्हरशी कनेक्शन त्रुटी. कृपया आपले नेटवर्क तपासा",
         "userInfoMissing": "वापरकर्ता माहिती किंवा कंपनी आयडी आढळली नाही",
         "errorInitializingData": "अॅप्लिकेशन डेटा आरंभ करताना त्रुटी",
-        
+
         "failedToUpdateMilkParams": "दूध मापदंड बदल करण्यात अयशस्वी",
         "invalidInputQuantity": "अवैध इनपुट: मात्रा धनात्मक संख्या असणे आवश्यक आहे",
         "tankEmptiedSuccess": "टँक यशस्वीरित्या रिकामा केला",
@@ -693,7 +739,7 @@
         "noRecordsFound": "कोणत्याही नोंदी सापडल्या नाहीत",
         "failedToLoadHistoryData": "इतिहास डेटा लोड करण्यात अयशस्वी",
 
-            
+
       "select_expense_type_validation": "कृपया खर्च प्रकार निवडा",
       "expense_description_validation": "कृपया खर्चाचे वर्णन प्रविष्ट करा",
       "select_date_validation": "कृपया वैध तारीख निवडा",
@@ -705,11 +751,11 @@
       "edit_cancelled": "संपादन रद्द केले गेले",
       "expense_removed_from_list": "खर्च यादीतून काढला गेला",
       "fill_required_fields": "कृपया सर्व आवश्यक फील्ड भरा",
-    
+
       "add_atleast_one_expense": "कृपया यादीत किमान एक खर्च जोडा",
       "expenses_submitted_successfully": "{{count}} खर्च यशस्वीरित्या सबमिट केले गेले",
       "partial_expenses_submitted": "{{total}} पैकी {{success}} खर्च यशस्वीरित्या सबमिट केले गेले",
- 
+
       "confirm_submit_expenses": "तुम्हाला खात्री आहे की तुम्ही सर्व {{count}} खर्च सबमिट करू इच्छिता?",
       "complete_edit_before_submit": "सर्व खर्च सबमिट करण्यापूर्वी कृपया वर्तमान संपादन पूर्ण करा किंवा रद्द करा",
 
@@ -723,7 +769,51 @@
 
     "avgdegreeBeZero": "सरासरी डिग्री शून्य म्हणून सेट केली जाईल",
   "avgfatBeZero": "सरासरी फॅट  शून्य म्हणून सेट केली जाईल",
-  "avgrateBeZero": "सरासरी दर शून्य म्हणून सेट केला जाईल"
+  "avgrateBeZero": "सरासरी दर शून्य म्हणून सेट केला जाईल",
+
+
+  "nameRequired": "कर्मचाऱ्याचे नाव आवश्यक आहे",
+  "genderRequired": "लिंग आवश्यक आहे",
+  "paymentTypeRequired": "पेमेंट प्रकार आवश्यक आहे",
+  "workTypeRequired": "कामाचा प्रकार आवश्यक आहे",
+  "priceRequired": "किंमत आवश्यक आहे",
+  "wageHourRequired": "तासाचे वेतन आवश्यक आहे",
+  "wageOvertimeRequired": "ओव्हरटाईम वेतन आवश्यक आहे",
+  "pricePositiveNumber": "किंमत सकारात्मक संख्या असावी",
+  "wageHourPositiveNumber": "तासाचे वेतन सकारात्मक संख्या असावे",
+  "wageOvertimePositiveNumber": "ओव्हरटाईम वेतन सकारात्मक संख्या असावे",
+  "creditPositiveNumber": "जमा सकारात्मक संख्या असावी",
+  "debitPositiveNumber": "नामे सकारात्मक संख्या असावी",
+  "adhaarRequired": "आधार क्रमांक आवश्यक आहे",
+  "adhaarInvalid": "आधार क्रमांक अगदी 12 अंकी असावा",
+  "mobileRequired": "मोबाइल क्रमांक आवश्यक आहे",
+  "mobileInvalid": "मोबाइल क्रमांक अगदी 10 अंकी असावा",
+  "passwordRequired": "पासवर्ड आवश्यक आहे",
+  "passwordMinLength": "पासवर्ड किमान 6 वर्ण लांब असावा",
+  "reEnterPasswordRequired": "कृपया पासवर्ड पुन्हा टाका",
+  "passwordMismatch": "पासवर्ड जुळत नाहीत",
+  "fixErrorsBeforeSubmit": "कृपया सबमिट करण्यापूर्वी सर्व त्रुटी दुरुस्त करा",
+  "employeeRegisteredSuccess": "कर्मचारी यशस्वीरित्या नोंदणी झाली",
+  "employeeRegistrationFailed": "कर्मचारी नोंदणी अयशस्वी",
+  "registrationError": "नोंदणी दरम्यान त्रुटी आली",
+  "confirmEmployeeCreationMessage": "तुम्हाला खालील तपशीलांसह हा कर्मचारी तयार करायचा आहे का?",
+
+  "noEmployeesFound": "कर्मचारी सापडले नाहीत",
+  "noActiveEmployeesFound": "सक्रिय कर्मचारी सापडले नाहीत",
+  "pleaseSelectEmployee": "कृपया कर्मचारी निवडा",
+  "pleaseEnterCreditAmount": "कृपया जमा रक्कम टाका",
+  "pleaseEnterValidNumber": "कृपया वैध संख्या टाका",
+  "amountMustBeGreaterThanZero": "रक्कम शून्यापेक्षा जास्त असावी",
+  "selectedEmployeeNotFound": "निवडलेला कर्मचारी सापडला नाही",
+  "salaryCreditedSuccess": "पगार यशस्वीरित्या जमा झाला",
+  "failedToCreditSalary": "पगार जमा करण्यात अयशस्वी",
+  "invalidInputData": "चुकीचा इनपुट डेटा",
+  "noEmployeesLoadRetry": "कर्मचारी लोड झाले नाहीत. कृपया रिफ्रेश करा किंवा सपोर्टशी संपर्क साधा.",
+  "enterAmountGreaterThanZero": "शून्यापेक्षा जास्त रक्कम टाका",
+  "selectPaymentMethod": "पगार जमा करण्यासाठी पेमेंट पद्धत निवडा",
+  "noEmployeesAvailable": "कर्मचारी उपलब्ध नाहीत",
+  "contactAdminToAddEmployees": "कृपया कर्मचारी जोडण्यासाठी तुमच्या प्रशासकाशी संपर्क साधा.",
+  "allTransactionsSecure": "सर्व व्यवहार सुरक्षित आहेत"
 
 
 
