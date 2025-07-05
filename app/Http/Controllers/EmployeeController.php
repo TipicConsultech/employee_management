@@ -4,7 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Employee;
 use Illuminate\Http\JsonResponse;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+
 
 class EmployeeController extends Controller
 {
@@ -15,14 +19,52 @@ class EmployeeController extends Controller
     }
 
     /* POST /api/employees */
-    public function store(Request $request): JsonResponse
-    {
-        $data = $this->validatedData($request);
+    public function store(Request $request)
+{
+   
+    /** 1️⃣ Validate ---------------------------------------------------- */
+    $data = $this->validatedData($request);
 
-        $employee = Employee::create($data);
-
-        return response()->json($employee, 201);
+    /* extra rule: email must be unique if login requested */
+    if (($data['isLogin'] ?? false) && User::where('email', $data['email'])->exists()) {
+        return response()->json([
+            'message' => 'Email already taken',
+        ], 409);
     }
+
+    /** 2️⃣ Atomic create ---------------------------------------------- */
+    $result = DB::transaction(function () use ($data) {
+
+        $user = null;
+
+        if (!empty($data['isLogin'])) {
+            $user = User::create([
+                'name'       => $data['name'],
+                'email'      => $data['email'],
+                'mobile'     => $data['mobile'],
+                'type'       => 10,
+                'company_id' => auth()->user()->company_id,
+                'product_id' => auth()->user()->product_id,
+                'password'   => bcrypt($data['password']),
+            ]);
+        }
+
+        /* Remove fields not present in employee table */
+        $employeePayload = collect($data)->except(['isLogin', 'password'])->toArray();
+
+        $employee = Employee::create($employeePayload);
+
+        return [$employee, $user];
+    });
+
+    [$employee, $user] = $result;
+
+    return response()->json([
+        'employee' => $employee,
+        'user'     => $user,      // null if not requested
+    ], 201);
+}
+
 
     /* GET /api/employees/{employee} */
     public function show(Employee $employee): JsonResponse
@@ -51,12 +93,13 @@ class EmployeeController extends Controller
     /* ────────────────
        Central validator
     ─────────────────── */
-    protected function validatedData(Request $request, int|null $id = null): array
+    protected function validatedData(Request $request, int|null $id = null)
     {
         return $request->validate([
-            'product_id'    => ['required', 'exists:products,id'],
-            'company_id'    => ['required', 'integer', 'exists:company_info,company_id'],
+            'product_id'    => ['nullable', 'exists:products,id'],
+            'company_id'    => ['nullable', 'integer', 'exists:company_info,company_id'],
             'name'          => ['required','string','max:255'],
+            'email'          => ['required','email','max:255'],
             'gender'        => ['required','in:male,female,other'],
             'payment_type'  => ['required','in:weekly,monthly'],
             'work_type'     => ['required','in:fulltime,contract'],
@@ -69,6 +112,9 @@ class EmployeeController extends Controller
             'mobile'        => ['required','string','max:15'],
             'refferal_by'   => ['required','string','max:255'],
             'isActive'      => ['boolean'],  // true / false
+            'isLogin'       => ['nullable','boolean'],
+            'password'      => ['nullable','string','max:255'],
+
         ]);
     }
 }
