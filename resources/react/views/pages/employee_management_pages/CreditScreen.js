@@ -16,7 +16,7 @@ import {
   CCardFooter
 } from '@coreui/react';
 import { useTranslation } from 'react-i18next';
-import { getAPICall, post } from '../../../util/api'; // Added post import
+import { getAPICall, post } from '../../../util/api';
 
 const CreditSalaryScreen = () => {
   // Add translation hook
@@ -251,23 +251,6 @@ const CreditSalaryScreen = () => {
             )}
 
             <CCardBody className="p-4">
-              {/* Debug Info (Remove in production) */}
-              {process.env.NODE_ENV === 'development' && (
-                <div className="mb-3 p-2 bg-light rounded">
-                  <small>
-                    <strong>Debug:</strong> Found {employees.length} employees
-                    {employees.length > 0 && (
-                      <ul className="mb-0 mt-1">
-                        {employees.slice(0, 3).map(emp => (
-                          <li key={emp.id}>{emp.name} (ID: {emp.id})</li>
-                        ))}
-                        {employees.length > 3 && <li>... and {employees.length - 3} more</li>}
-                      </ul>
-                    )}
-                  </small>
-                </div>
-              )}
-
               <CForm>
                 {/* Employee Selection */}
                 <CRow className="mb-4">

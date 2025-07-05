@@ -58,6 +58,8 @@ const Plans           = React.lazy(() => import('./views/pages/plans/Plans'))
 
 /* ───── employee_management_pages ───── */
 const DocumentVerification = React.lazy(() => import('./views/pages/employee_management_pages/Document_Verification'))
+const EmployeeRegistration = React.lazy(() => import('./views/pages/employee_management_pages/Employee_Registration'))
+const CreditScreen = React.lazy(() => import('./views/pages/employee_management_pages/CreditScreen'))
 
 /* ====================================================================== */
 
@@ -154,6 +156,8 @@ export default function fetchRoutes () {
       { path: '/usermanagement/create-user', name: 'Create User',              element: NewUsers },
       { path: 'usermanagement/all-users',    name: 'All Users',                element: AllUser },
       { path: '/Document_verification',    name: 'All Users',                element: DocumentVerification },
+      { path: '/employee_registration',    name: 'All Users',                element: EmployeeRegistration },
+      { path: '/credit_screen',    name: 'All Users',                element: CreditScreen },
     ]
   }
 
