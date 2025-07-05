@@ -32,26 +32,30 @@ class EmployeeController extends Controller
         ], 409);
     }
 
+    $productId=auth()->user()->product_id;
+    $comapnyId=auth()->user()->company_id;
+
     /** 2️⃣ Atomic create ---------------------------------------------- */
     $result = DB::transaction(function () use ($data) {
 
         $user = null;
 
-        if (!empty($data['isLogin'])) {
+        if (!empty($data['is_login'])) {
             $user = User::create([
                 'name'       => $data['name'],
                 'email'      => $data['email'],
                 'mobile'     => $data['mobile'],
-                'type'       => 10,
-                'company_id' => auth()->user()->company_id,
-                'product_id' => auth()->user()->product_id,
+                'type'       => 10,//employee
+                'company_id' => $comapnyId,
+                'product_id' => $productId,
                 'password'   => bcrypt($data['password']),
             ]);
         }
 
         /* Remove fields not present in employee table */
         $employeePayload = collect($data)->except(['isLogin', 'password'])->toArray();
-
+        $employeePayload['product_id']=auth()->user()->product_id;
+        $employeePayload['company_id']=auth()->user()->company_id;
         $employee = Employee::create($employeePayload);
 
         return [$employee, $user];
@@ -112,7 +116,7 @@ class EmployeeController extends Controller
             'mobile'        => ['required','string','max:15'],
             'refferal_by'   => ['required','string','max:255'],
             'isActive'      => ['boolean'],  // true / false
-            'isLogin'       => ['nullable','boolean'],
+            'is_login'       => ['nullable','boolean'],
             'password'      => ['nullable','string','max:255'],
 
         ]);

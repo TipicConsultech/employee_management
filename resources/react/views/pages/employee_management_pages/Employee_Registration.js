@@ -46,7 +46,8 @@ const INITIAL_FORM_DATA = {
   refferal_by: '',
   is_login: false,
   password: '',
-  re_enter_password: ''
+  re_enter_password: '',
+  email:''
 };
 
 const INITIAL_NOTIFICATION = {
@@ -229,7 +230,7 @@ const EmployeeRegistrationForm = () => {
 
       console.log('Submitting employee data:', payload);
 
-      const response = await post('/api/employee-register', payload);
+      const response = await post('/api/employees', payload);
 
       if (response && (response.success || response.status === 200 || response.status === 201)) {
         showNotification('success', response.message || t('MSG.employeeRegisteredSuccess'));
@@ -539,7 +540,21 @@ const EmployeeRegistrationForm = () => {
 
                   {/* Referral By */}
                   <CRow className="mb-4">
-                    <CCol xs={12}>
+                    <CCol xs={6}>
+                      <CFormLabel className="fw-semibold text-dark mb-2">
+                        {t('LABELS.email')}
+                      </CFormLabel>
+                      <CFormInput
+                        type="text"
+                        placeholder={t('LABELS.email')}
+                        value={formData.email}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        disabled={submitting}
+                        className="mb-1"
+                      />
+                    </CCol>
+
+                       <CCol xs={6}>
                       <CFormLabel className="fw-semibold text-dark mb-2">
                         {t('LABELS.referralBy')}
                       </CFormLabel>
@@ -553,6 +568,7 @@ const EmployeeRegistrationForm = () => {
                       />
                     </CCol>
                   </CRow>
+
 
                   {/* Login Checkbox */}
                   <CRow className="mb-4">
