@@ -42,12 +42,13 @@ return new class extends Migration
              | Tracker fields
              * ----------------------------------------------------------------- */
             $table->boolean('check_in')->default(false);
-            $table->boolean('check_out')->default(false);
+            $table->boolean('check_out')->default(false)->nullable();
+            $table->boolean('check_out_time')->default(false); //date time//new coloumn
             $table->boolean('payment_status')->default(false);
 
             $table->string('check_in_gps')->nullable();
             $table->string('check_out_gps')->nullable();
-
+            $table->timestamps('check_out_time')->nullable();
             $table->timestamps();
         });
     }

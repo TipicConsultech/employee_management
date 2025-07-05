@@ -56,6 +56,9 @@ const Updatepassword  = React.lazy(() => import('./views/pages/Password/updatePa
 const JarMap          = React.lazy(() => import('./views/pages/map/Map'))   // (currently unused)
 const Plans           = React.lazy(() => import('./views/pages/plans/Plans'))
 
+/* ───── employee_management_pages ───── */
+const DocumentVerification = React.lazy(() => import('./views/pages/employee_management_pages/Document_Verification'))
+
 /* ====================================================================== */
 
 export default function fetchRoutes () {
@@ -150,6 +153,7 @@ export default function fetchRoutes () {
 
       { path: '/usermanagement/create-user', name: 'Create User',              element: NewUsers },
       { path: 'usermanagement/all-users',    name: 'All Users',                element: AllUser },
+      { path: '/Document_verification',    name: 'All Users',                element: DocumentVerification },
     ]
   }
 

@@ -15,7 +15,12 @@ use App\Http\Controllers\FileUpload;
 use App\Http\Controllers\MailController;
 use App\Http\Controllers\PlanController;
 use App\Http\Controllers\RazorpayController;
-use App\Http\Controllers\RoleController;
+use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\EmployeeTrackerController;
+use App\Http\Controllers\EmployeeTransactionController;
+use App\Http\Controllers\EmployeeDetailsController;
+use App\Http\Controllers\CommonController;
+
 // use App\Http\Controllers\PaymentTrackerController;   // include when you add routes
 
 /*
@@ -36,6 +41,11 @@ Route::post('/newPassword',         [MailController::class, 'resetPassword']);
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth:sanctum'])->group(function () {
+  /* ---------- EmployeeController APIs---------- */
+    Route::apiResource('employee-details', EmployeeDetailsController::class);
+    Route::apiResource('employee-transactions', EmployeeTransactionController::class);  
+    Route::apiResource('employee-tracker', EmployeeTrackerController::class);
+    Route::apiResource('employees', EmployeeController::class);
 
     /* ---------- AuthController ---------- */
     Route::post('/changePassword', [AuthController::class, 'changePassword']);
@@ -53,8 +63,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     /* ---------- CompanyInfoController ---------- */
     Route::resource('company', CompanyInfoController::class);
 
-    /* ---------- RoleController ---------- */
-    Route::resource('roles', RoleController::class);
 
     /* ---------- RazorpayController ---------- */
     Route::post('/create-order',  [RazorpayController::class, 'createOrder']);

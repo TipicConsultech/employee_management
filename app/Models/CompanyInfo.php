@@ -11,6 +11,7 @@ class CompanyInfo extends Model
     protected $table = 'company_info';
     protected $fillable=[
     'comapany_id',
+    'product_id',
     'land_mark' ,
     'Tal'  ,
     'Dist' ,
@@ -34,5 +35,5 @@ class CompanyInfo extends Model
         'created_at',
         'updated_at',
     ];
-    protected $primaryKey = 'company_id';
+ 
 }

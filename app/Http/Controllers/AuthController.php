@@ -19,7 +19,8 @@ class AuthController extends Controller
             'type' => 'required',
             'email' => 'nullable|string|unique:users,email',
             'password' => 'required|string|confirmed',
-            'company_id' => 'required'
+            'company_id' => 'required',
+            'product_id'=> 'required'
         ]);
 
         $user = User::create([
@@ -28,7 +29,8 @@ class AuthController extends Controller
             'mobile' => $fields['mobile'],
             'type' => $fields['type'],
             'company_id' => $fields['company_id'],
-            'password' => bcrypt($fields['password'])
+            'password' => bcrypt($fields['password']),
+            'product_id' => $fields['product_id'],
         ]);
 
         $token = $user->createToken('webapp')->plainTextToken;
@@ -49,6 +51,7 @@ class AuthController extends Controller
             'email' => 'required',
             'company_id' => 'required',
             'blocked' => 'required',
+            product_id
         ]);
         $user = User::where('id', $fields['id'])->first();
         $user->update([
@@ -57,7 +60,7 @@ class AuthController extends Controller
             'type' => $request->type,
             'company_id' => $request->company_id,
             'blocked' => $request->blocked,
-            //'updated_by' => $user->id,
+            'product_id' => $user->product_id,
         ]);
         $user->save();
         return response()->json([
@@ -67,49 +70,59 @@ class AuthController extends Controller
         ]);
     }
 
-    public function login(Request $request)
-    {
-        $fields = $request->validate([
-            'email' => 'required|string',
-            'password' => 'required|string'
+   public function login(Request $request)
+{
+    /* ───── 1. validate incoming data ───── */
+    $credentials = $request->validate([
+        'email'    => 'required|string|',
+        'password' => 'required|string',
+    ]);
+
+    /* ───── 2. fetch user + company in one trip ───── */
+    $user = User::with('companyInfo')
+                ->where('email', $credentials['email'])
+                ->first();
+
+    /* ───── 3. verify email & password ───── */
+    if (! $user || ! Hash::check($credentials['password'], $user->password)) {
+        throw ValidationException::withMessages([
+            'email' => ['The provided credentials are incorrect.'],
         ]);
-
-        // Check if email exists
-        $user = User::with(['CompanyInfo'])->where('email', $fields['email'])->first();
-
-        // Check password
-        if (!$user || !Hash::check($fields['password'], $user->password)) {
-            return response()->json([
-                'message' => 'Invalid credentials'
-            ], 401);
-        }
-
-        // Check if user is blocked
-        //|| $user['company_info']->block_status == 1
-        if ($user->blocked == 1) {
-            return response()->json([
-                'message' => 'User not allowed. Kindly contact admin.',
-                'blocked' => true,
-                '$user' => $user
-            ], 201);
-        }
-
-        if ($user->CompanyInfo->block_status == 1) {
-            return response()->json([
-                'message' => 'Company not allowed. Kindly contact admin.',
-                'blocked' => true
-            ], 201);
-        }
-
-
-        $token = $user->createToken('webapp', [$user])->plainTextToken;
-        $response = [
-            'user' => $user,
-            'token' => $token
-        ];
-        return response()->json($response, 201);
     }
 
+    /* ───── 4. block checks ───── */
+    if ($user->blocked) {
+        return response()->json([
+            'message' => 'User not allowed. Kindly contact admin.',
+            'blocked' => true,
+        ], 403);
+    }
+
+    if (! $user->companyInfo) {
+        // Defensive guard if a company row is missing
+        return response()->json([
+            'message' => 'User has no company assigned. Contact admin.',
+        ], 422);
+    }
+
+    if ($user->companyInfo->block_status == 1) {
+        return response()->json([
+            'message' => 'Company not allowed. Kindly contact admin.',
+            'blocked' => true,
+        ], 403);
+    }
+
+    /* ───── 5. Create Sanctum token ───── */
+    $token = $user
+        ->createToken('webapp')     // add scopes as 2nd arg if needed
+        ->plainTextToken;
+
+    /* ───── 6. send the payload ───── */
+    return response()->json([
+        'user'  => $user,
+        'token' => $token,
+    ], 200);
+}
     function mobileLogin(Request $request)
     {
         $fields = $request->validate([

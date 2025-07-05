@@ -25,6 +25,7 @@ class User extends Authenticatable
         'profilepic',
         'blocked',
         'password',
+        'product_id',
         'company_id'
     ];
 
@@ -55,4 +56,5 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    
 }
