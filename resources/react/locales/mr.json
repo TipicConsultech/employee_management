@@ -592,7 +592,18 @@
     "upi": "यूपीआय",
     "bankTransfer": "बँक ट्रान्सफर",
     "refresh": "रिफ्रेश करा",
-    "credit_screen": "पगार जमा स्क्रीन"
+    "credit_screen": "पगार जमा स्क्रीन",
+    "loadingData": "डेटा लोड होत आहे...",
+    "selectDocumentType": "दस्तऐवज प्रकार निवडा...",
+    "employeeDocumentUpload": "कर्मचारी दस्तऐवज अपलोड",
+    "documentUploads": "दस्तऐवज अपलोड",
+    "addDocument": "दस्तऐवज जोडा",
+    "uploadingDocuments": "अपलोड होत आहे...",
+    "submitDocuments": "दस्तऐवज अपलोड करा",
+    "documentPreview": "दस्तऐवज पूर्वावलोकन",
+    "noDocumentTypesAvailable": "दस्तऐवज प्रकार उपलब्ध नाहीत",
+    "docs_verification": "कागदपत्र तपासणी",
+    "creditSalaryDescription": "आपल्या कर्मचाऱ्यांना सुरक्षितपणे पगार जमा करा"
 
 
 
@@ -813,7 +824,32 @@
   "selectPaymentMethod": "पगार जमा करण्यासाठी पेमेंट पद्धत निवडा",
   "noEmployeesAvailable": "कर्मचारी उपलब्ध नाहीत",
   "contactAdminToAddEmployees": "कृपया कर्मचारी जोडण्यासाठी तुमच्या प्रशासकाशी संपर्क साधा.",
-  "allTransactionsSecure": "सर्व व्यवहार सुरक्षित आहेत"
+  "allTransactionsSecure": "सर्व व्यवहार सुरक्षित आहेत",
+  "invalidRequestData": "अवैध विनंती डेटा",
+  "unauthorizedAccess": "अनधिकृत प्रवेश",
+  "accessForbidden": "प्रवेश निषिद्ध",
+  "employeeNotFound": "कर्मचारी सापडला नाही",
+  "fileTooLarge": "फाइल खूप मोठी आहे",
+  "unsupportedFileType": "असमर्थित फाइल प्रकार",
+  "validationError": "वैधीकरण त्रुटी",
+  "serverError": "सर्व्हर त्रुटी",
+  "serviceUnavailable": "सेवा अनुपलब्ध",
+  "documentsUploadedSuccess": "दस्तऐवज यशस्वीपणे अपलोड केले!",
+  "errorLoadingDocumentTypes": "दस्तऐवज प्रकार लोड करताना त्रुटी",
+  "pleaseAddDocuments": "कृपया किमान एक दस्तऐवज जोडा",
+  "completeAllDocuments": "कृपया सर्व दस्तऐवज अपलोड पूर्ण करा",
+  "failedToUploadDocuments": "दस्तऐवज अपलोड करण्यात अपयश",
+  "noResponseReceived": "सर्व्हरकडून कोणताही प्रतिसाद मिळाला नाही",
+  "networkError": "नेटवर्क त्रुटी आली",
+  "noResponseFromServer": "सर्व्हरकडून कोणताही प्रतिसाद नाही. कृपया आपले इंटरनेट कनेक्शन तपासा.",
+  "unexpectedError": "अनपेक्षित त्रुटी आली",
+  "errorProcessingFile": "फाइल प्रक्रिया करताना त्रुटी",
+  "acceptedFormats": "स्वीकारलेले: JPEG, JPG, PNG, PDF (कमाल 10MB)",
+  "noDocumentsAdded": "अद्याप कोणतेही दस्तऐवज जोडले नाहीत",
+  "clickAddDocumentToStart": "सुरुवात करण्यासाठी \"दस्तऐवज जोडा\" वर क्लिक करा",
+  "contactAdminToAddDocumentTypes": "दस्तऐवज प्रकार जोडण्यासाठी कृपया आपल्या प्रशासकाशी संपर्क साधा.",
+  "uploadDocumentsSecurely": "आपल्या कर्मचाऱ्यांसाठी महत्त्वाचे दस्तऐवज सुरक्षितपणे अपलोड करा",
+  "errorLoadingData": "डेटा लोड करताना त्रुटी"
 
 
 

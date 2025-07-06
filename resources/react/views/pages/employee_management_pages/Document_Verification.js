@@ -614,30 +614,10 @@ const handleSubmitDocuments = useCallback(async () => {
 
   // Main render
   return (
-    <CContainer fluid className="min-h-screen bg-light py-3 py-md-4">
+    <CContainer fluid className="min-h-screen bg-light py-0 py-md-0">
       <CRow className="justify-content-center">
-        <CCol xs={12} className="px-2 px-md-3">
-          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-            {/* Header */}
-            <CCard className="mb-3 mb-md-4 shadow-sm border-0">
-              <CCardHeader className="bg-white border-bottom">
-                <CRow className="align-items-center">
-                  <CCol xs={12}>
-                    <div className="d-flex align-items-center flex-wrap">
-                      <CIcon icon={cilCloudUpload} className="me-2 me-md-3 text-primary" size="lg" />
-                      <div>
-                        <h1 className="h4 h3-md mb-1 text-dark fw-bold">
-                          {t('LABELS.employeeDocumentUpload') || 'Employee Document Upload'}
-                        </h1>
-                        <p className="text-muted mb-0 small">
-                          {t('MSG.uploadDocumentsSecurely') || 'Upload important documents for your employees securely'}
-                        </p>
-                      </div>
-                    </div>
-                  </CCol>
-                </CRow>
-              </CCardHeader>
-            </CCard>
+        <CCol xs={12} className="px-1">
+          <div style={{ maxWidth: '100%', margin: '0' }}>
 
             {/* Notifications */}
             {notification.show && (
@@ -656,8 +636,21 @@ const handleSubmitDocuments = useCallback(async () => {
             )}
 
             {/* Main Form */}
-            <CCard className="shadow-sm border-0">
-              <CCardBody className="p-3 p-md-4 p-lg-5">
+            <CCard className="shadow-lg border-0">
+              <CCardHeader className="bg-white border-bottom">
+                <div className="d-flex align-items-center">
+                  <CIcon icon={cilCloudUpload} className="me-2 me-md-3 text-primary" size="lg" />
+                  <div>
+                    <h2 className="h5 h4-md mb-1 text-dark fw-bold">
+                      {t('LABELS.employeeDocumentUpload') || 'Employee Document Upload'}
+                    </h2>
+                    <p className="text-muted mb-0 small">
+                      {t('MSG.uploadDocumentsSecurely') || 'Upload important documents for your employees securely'}
+                    </p>
+                  </div>
+                </div>
+              </CCardHeader>
+              <CCardBody className="p-2 p-md-3 p-lg-4">
                 <CForm>
                   {/* Employee Selection */}
                   <CRow className="mb-4 mb-md-5">
