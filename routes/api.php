@@ -40,6 +40,13 @@ Route::post('/newPassword',         [MailController::class, 'resetPassword']);
 | Authenticated routes
 |--------------------------------------------------------------------------
 */
+
+Route::middleware('auth:sanctum')->get('/employee-tracker/status', [EmployeeTrackerController::class, 'checkTodayStatus']);
+Route::middleware('auth:sanctum')->put('/employee-tracker/{id}', [EmployeeTrackerController::class, 'update']);
+Route::middleware('auth:sanctum')->post('/workSummary', [EmployeeTrackerController::class, 'workSummary']);
+
+
+
 Route::middleware(['auth:sanctum'])->group(function () {
   /* ---------- EmployeeController APIs---------- */
     Route::apiResource('employee-details', EmployeeDetailsController::class);
