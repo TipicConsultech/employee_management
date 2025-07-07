@@ -130,6 +130,7 @@ class AuthController extends Controller
             'password' => 'required|string'
         ]);
 
+        
         //Check if mobile no exists
         $user = User::where('mobile', $fields['mobile'])->first();
 

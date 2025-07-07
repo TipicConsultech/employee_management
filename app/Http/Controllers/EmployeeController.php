@@ -36,11 +36,12 @@ class EmployeeController extends Controller
     $comapnyId=auth()->user()->company_id;
 
     /** 2️⃣ Atomic create ---------------------------------------------- */
-    $result = DB::transaction(function () use ($data) {
+   $result = DB::transaction(function () use ($data, $productId, $comapnyId) {
 
         $user = null;
 
-        if (!empty($data['is_login'])) {
+        if ($data['is_login']==true) {
+           
             $user = User::create([
                 'name'       => $data['name'],
                 'email'      => $data['email'],
@@ -54,8 +55,8 @@ class EmployeeController extends Controller
 
         /* Remove fields not present in employee table */
         $employeePayload = collect($data)->except(['isLogin', 'password'])->toArray();
-        $employeePayload['product_id']=auth()->user()->product_id;
-        $employeePayload['company_id']=auth()->user()->company_id;
+        $employeePayload['product_id']=$productId;
+        $employeePayload['company_id']=$comapnyId;
         $employee = Employee::create($employeePayload);
 
         return [$employee, $user];
