@@ -596,8 +596,19 @@
     "cash": "Cash",
     "upi": "UPI",
     "bankTransfer": "Bank Transfer",
+    "credit_screen": "Credit Salary Screen",
+    "loadingData": "Loading data...",
+    "selectDocumentType": "Select document type...",
+    "employeeDocumentUpload": "Employee Document Upload",
+    "documentUploads": "Document Uploads",
+    "addDocument": "Add Document",
     "refresh": "Refresh",
-    "credit_screen": "Credit Salary Screen"
+    "uploadingDocuments": "Uploading...",
+    "submitDocuments": "Upload Documents",
+    "documentPreview": "Document Preview",
+    "noDocumentTypesAvailable": "No document types available",
+    "docs_verification": "Document Verification",
+    "creditSalaryDescription": "Credit salary payments to your employees securely"
 
 
 
@@ -809,7 +820,32 @@
         "selectPaymentMethod": "Select the payment method for salary credit",
         "noEmployeesAvailable": "No Employees Available",
         "contactAdminToAddEmployees": "Please contact your administrator to add employees.",
-        "allTransactionsSecure": "All transactions are secure"
+        "allTransactionsSecure": "All transactions are secure",
+        "invalidRequestData": "Invalid request data",
+        "unauthorizedAccess": "Unauthorized access",
+        "accessForbidden": "Access forbidden",
+        "employeeNotFound": "Employee not found",
+        "fileTooLarge": "File is too large",
+        "unsupportedFileType": "Unsupported file type",
+        "validationError": "Validation error",
+        "serverError": "Server error",
+        "serviceUnavailable": "Service unavailable",
+        "documentsUploadedSuccess": "Documents uploaded successfully!",
+        "errorLoadingDocumentTypes": "Error loading document types",
+        "pleaseAddDocuments": "Please add at least one document",
+        "completeAllDocuments": "Please complete all document uploads",
+        "failedToUploadDocuments": "Failed to upload documents",
+        "noResponseReceived": "No response received from server",
+        "networkError": "Network error occurred",
+        "noResponseFromServer": "No response from server. Please check your internet connection.",
+        "unexpectedError": "An unexpected error occurred",
+        "errorProcessingFile": "Error processing file",
+        "acceptedFormats": "Accepted: JPEG, JPG, PNG, PDF (Max 10MB)",
+        "noDocumentsAdded": "No documents added yet",
+        "clickAddDocumentToStart": "Click \"Add Document\" to get started",
+        "contactAdminToAddDocumentTypes": "Please contact your administrator to add document types.",
+        "uploadDocumentsSecurely": "Upload important documents for your employees securely",
+        "errorLoadingData": "Error Loading Data"
 
     }
    }
