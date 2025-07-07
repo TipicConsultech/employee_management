@@ -77,10 +77,16 @@ export default function fetchNavItems(t1) {
               to: '/credit_screen',
               icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
       },
-    {
+      {
               component: CNavItem,
               name: t("LABELS.employee_registration"),
               to: '/employee_registration',
+              icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
+      },
+      {
+              component: CNavItem,
+              name: t("LABELS.employee_tracker"),
+              to: '/employee_tracker',
               icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
       }
     ]
