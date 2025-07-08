@@ -88,6 +88,12 @@ export default function fetchNavItems(t1) {
               name: t("LABELS.employee_tracker"),
               to: '/employee_tracker',
               icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
+      },
+      {
+              component: CNavItem,
+              name: "Dashboard",
+              to: '/dashboard2',
+              icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
       }
     ]
   }
@@ -109,7 +115,13 @@ export default function fetchNavItems(t1) {
               name: t("LABELS.credit_screen"),
               to: '/credit_screen',
               icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
-            }
+            },
+            {
+              component: CNavItem,
+              name: "Dashboard",
+              to: '/dashboard2',
+              icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
+      }
     ]
   }
 
@@ -130,7 +142,12 @@ export default function fetchNavItems(t1) {
               name: t("LABELS.credit_screen"),
               to: '/credit_screen',
               icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
-            }
+            },{
+              component: CNavItem,
+              name: "Dashboard",
+              to: '/dashboard2',
+              icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
+      }
     ]
   }
 
@@ -151,7 +168,12 @@ export default function fetchNavItems(t1) {
               name: t("LABELS.credit_screen"),
               to: '/credit_screen',
               icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
-            }
+            },{
+              component: CNavItem,
+              name: "Dashboard",
+              to: '/dashboard2',
+              icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
+      }
     ]
   }
 
@@ -172,7 +194,12 @@ export default function fetchNavItems(t1) {
               name: t("LABELS.credit_screen"),
               to: '/credit_screen',
               icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
-            }
+            },{
+              component: CNavItem,
+              name: "Dashboard",
+              to: '/dashboard2',
+              icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
+      }
     ]         // all dairy pages were removed, so nothing to show here
   }
 

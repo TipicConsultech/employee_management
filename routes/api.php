@@ -44,6 +44,9 @@ Route::post('/newPassword',         [MailController::class, 'resetPassword']);
 Route::middleware('auth:sanctum')->get('/employee-tracker/status', [EmployeeTrackerController::class, 'checkTodayStatus']);
 Route::middleware('auth:sanctum')->put('/employee-tracker/{id}', [EmployeeTrackerController::class, 'update']);
 Route::middleware('auth:sanctum')->post('/workSummary', [EmployeeTrackerController::class, 'workSummary']);
+Route::middleware('auth:sanctum')->post('/payment', [EmployeeTransactionController::class, 'payment']);
+
+
 
 
 
@@ -53,6 +56,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('employee-transactions', EmployeeTransactionController::class);  
     Route::apiResource('employee-tracker', EmployeeTrackerController::class);
     Route::apiResource('employees', EmployeeController::class);
+    Route::get ('/employeeDtailsForDashboard',[EmployeeController::class, 'employeeDtailsForDashboard']);
+    Route::get('/employee/{id}', [EmployeeController::class, 'showEmployeesDetails']);
 
     /* ---------- AuthController ---------- */
     Route::post('/changePassword', [AuthController::class, 'changePassword']);

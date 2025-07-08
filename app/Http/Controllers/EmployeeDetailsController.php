@@ -63,6 +63,12 @@ public function store(Request $request)
     {
         return response()->json($employeeDetail);
     }
+    public function all_employee( $employeeDetail): JsonResponse
+    { 
+
+        // EmployeeDetails=EmployeeDetails::('employee_id',)
+        // return response()->json($employeeDetail);
+    }
 
     /* PUT / PATCH /api/employee-details/{details} */
     public function update(Request $request, EmployeeDetails $employeeDetail): JsonResponse

@@ -40,8 +40,13 @@ class Employee extends Model
         'credit'        => 'float',
         'debit'         => 'float',
     ];
-
+  
     /* ───── Relationships ───── */
+     public function trackers()
+{
+    return $this->hasMany(EmployeeTracker::class, 'employee_id');
+} 
+
     public function company()
     {
         // local key company_id -> foreign key company_id on company_info

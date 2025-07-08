@@ -68,6 +68,24 @@ class EmployeeController extends Controller
         'employee' => $employee,
         'user'     => $user,      // null if not requested
     ], 201);
+}   
+
+public function employeeDtailsForDashboard()
+{
+    $employees = Employee::with(['trackers' => function ($query) {
+        $query->latest('created_at')->limit(1); // latest check-in record
+    }])->get();
+ 
+    return response()->json($employees);
+}
+ 
+public function showEmployeesDetails($id)
+{
+    $employee = Employee::with('trackers')->find($id);
+    if (!$employee) {
+        return response()->json(['message' => 'Not Found'], 404);
+    }
+    return response()->json($employee);
 }
 
 

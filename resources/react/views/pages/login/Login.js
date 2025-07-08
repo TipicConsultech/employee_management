@@ -18,7 +18,7 @@ import { cilArrowThickFromTop, cilLockLocked, cilUser } from '@coreui/icons';
 import { login } from '../../../util/api';
 import { isLogIn, storeUserData } from '../../../util/session';
 
-import logo from './../../../assets/brand/factory_logo.png';
+import logo from './../../../assets/brand/EmployeeManagement.png';
 import { useToast } from '../../common/toast/ToastContext';
 
 const Login = () => {
