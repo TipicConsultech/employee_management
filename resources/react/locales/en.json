@@ -640,8 +640,9 @@
     "bulkCheckOut": "Bulk Check-Out",
     "employee": "Employee",
     "present": "Present",
-    "absent": "Absent"
-
+    "absent": "Absent",
+    "set_coordinates": "Set Coordinates",
+    "bulk_employee_tracker": "Bulk Employee Tracker"
 
 
     },

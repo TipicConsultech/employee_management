@@ -635,7 +635,9 @@
     "bulkCheckOut": "मोठ्या प्रमाणावर चेक-आउट",
     "employee": "कर्मचारी",
     "present": "उपस्थित",
-    "absent": "अनुपस्थित"
+    "absent": "अनुपस्थित",
+    "set_coordinates": "Set Coordinates",
+    "bulk_employee_tracker": "Bulk Employee Tracker"
 
 
 
