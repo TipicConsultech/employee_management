@@ -248,5 +248,14 @@ export default function fetchRoutes () {
     ]
   }
 
+  else if (user === 10) {
+    routes = [
+      { path: '/resetPassword',         name: 'Update Password', element: Resetpassword },
+      { path: '/updatepassword',        name: 'Reset Password',  element: Updatepassword },
+     
+      { path: '/employee_tracker',    name: 'All Users',                element: EmployeeTracker },
+    ]
+  }
+
   return routes
 }

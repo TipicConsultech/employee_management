@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\EmployeeDetails;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class EmployeeDetailsController extends Controller
 {
@@ -101,4 +102,14 @@ public function store(Request $request)
             'document_link'  => ['required', 'url', 'max:2048'],
         ]);
     }
+
+    public function documentView($employee_id)
+{
+    $documents = DB::table('employee_details')
+        ->where('employee_id', $employee_id)
+        ->select('employee_id', 'company_id', 'document_name', 'document_link')
+        ->get();
+ 
+    return response()->json($documents);
+}
 }

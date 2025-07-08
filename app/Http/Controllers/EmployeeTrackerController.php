@@ -9,7 +9,7 @@ use App\Models\Employee;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Models\EmployeeTransaction;
-
+use App\Models\CompanyCordinate;
 
 
 class EmployeeTrackerController extends Controller
@@ -83,6 +83,107 @@ public function payment(Request $request)
     });
 
     return response()->json(['message' => 'Payment recorded and trackers updated.'], 201);
+}
+
+
+public function bulkCheckIn(Request $request)
+{
+    /* 1. Validate ---------------------------------------------------------------- */
+    $data = $request->validate([
+        'employees' => ['required', 'array', 'min:1'],
+        'employees.*' => ['integer', 'distinct']   // each ID must be an int & unique
+    ]);
+
+    /* 2. Resolve product / company from the logged‑in user ------------------------ */
+    $productId = auth()->user()->product_id;   // <- property, not method
+    $companyId = auth()->user()->company_id;
+
+    /* 3. Fetch the single reference coordinate row ------------------------------- */
+    $coord = CompanyCordinate::where('product_id',  $productId)
+              ->where('company_id', $companyId)    // keep spelling synced with your DB
+              ->firstOrFail();                      // 404 if missing
+
+    // Combine lat/lng into a single string — adjust format if you need JSON, etc.
+    $checkInGps = $coord->required_lat . ',' . $coord->required_lng;
+
+    /* 4. Build rows and insert them atomically ----------------------------------- */
+    DB::transaction(function () use ($data, $productId, $companyId, $checkInGps) {
+
+        $rows = [];
+        $now  = now();    // same timestamp for all rows in this batch
+
+        foreach ($data['employees'] as $employeeId) {
+            $rows[] = [
+                'product_id'       => $productId,
+                'company_id'       => $companyId,
+                'employee_id'      => $employeeId,
+                'check_in'         => true,
+                'check_out'        => false,
+                'payment_status'   => false,
+                'check_in_gps'     => $checkInGps,
+                'check_out_gps'    => null,
+                'check_out_time'   => null,
+                'created_at'       => $now,
+                'updated_at'       => $now,
+            ];
+        }
+
+        EmployeeTracker::insert($rows);  // single bulk insert
+    });
+
+    /* 5. Return result ----------------------------------------------------------- */
+    return response()->json([
+        'message'  => 'Check‑in recorded for '.count($data['employees']).' employees.',
+        'count'    => count($data['employees']),
+        'product_id' => $productId,
+        'company_id' => $companyId,
+    ], 201);
+}
+
+
+public function bulkCheckOut(Request $request)
+{
+    /* 1. Validate the payload -------------------------------------------------- */
+    $data = $request->validate([
+        'employees'   => ['required', 'array', 'min:1'],
+        'employees.*' => ['integer', 'distinct'],
+    ]);
+
+    /* 2. Resolve product & company from the logged‑in user --------------------- */
+    $productId = auth()->user()->product_id;   // property, not method
+    $companyId = auth()->user()->company_id;
+
+    /* 3. Look up the reference GPS once ---------------------------------------- */
+    $coord = CompanyCordinate::where('product_id',  $productId)
+              ->where('company_id', $companyId)    // spelling matches migration
+              ->firstOrFail();                      // 404 if missing
+
+    $checkOutGps = $coord->required_lat . ',' . $coord->required_lng;
+    $now         = Carbon::now();
+
+    /* 4. Bulk update inside a transaction -------------------------------------- */
+    $updated = DB::transaction(function () use (
+        $data, $productId, $companyId, $checkOutGps, $now
+    ) {
+        return EmployeeTracker::where('product_id',  $productId)
+            ->where('company_id',  $companyId)
+            ->whereIn('employee_id', $data['employees'])
+            ->whereDate('created_at', $now->toDateString()) // “today’s” entry
+            ->update([
+                'check_out'      => true,
+                'check_out_gps'  => $checkOutGps,
+                'check_out_time' => $now,
+                'updated_at'     => $now,   // makes the bulk update explicit
+            ]);
+    });
+
+    /* 5. Respond ---------------------------------------------------------------- */
+    return response()->json([
+        'message'      => 'Check‑out processed.',
+        'rows_updated' => $updated,           // how many employees were matched
+        'product_id'   => $productId,
+        'company_id'   => $companyId,
+    ], 200);
 }
 
 

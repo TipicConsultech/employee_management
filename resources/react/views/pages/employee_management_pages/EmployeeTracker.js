@@ -28,10 +28,26 @@ function EmployeeCheckInOut() {
     const [notification, setNotification] = useState({ show: false, type: '', message: '' });
     const [trackerId, setTrackerId] = useState(null); // Store tracker ID for PUT request
 
-    // Required location coordinates
-    const REQUIRED_LAT = 18.534528;
-    const REQUIRED_LNG = 73.945648;
-    const LOCATION_TOLERANCE = 0.01; // ~1km tolerance (increased for testing)
+    let REQUIRED_LAT = null;
+    let REQUIRED_LNG = null;
+    let LOCATION_TOLERANCE = null;
+
+ 
+   const fetchCompanyCordinates =async () => {
+        try {
+            
+            const response = await getAPICall('/api/getCordinates');
+            if (response) {
+            REQUIRED_LAT        = parseFloat(response[0].required_lat);
+            REQUIRED_LNG        = parseFloat(response[0].required_lng);
+            LOCATION_TOLERANCE  = parseFloat(response[0].location_tolerance);
+            }
+        }
+        catch(e){
+            console.log(e);
+            
+        }
+    };
 
     // Memoized helper function for showing notifications
     const showNotification = useCallback((type, message) => {
@@ -76,6 +92,10 @@ function EmployeeCheckInOut() {
     useEffect(() => {
         fetchEmployeeStatus();
     }, [fetchEmployeeStatus]);
+
+    useEffect(() => {
+        fetchCompanyCordinates();
+    }, []);
 
     // Get current location
     const getCurrentLocation = useCallback(() => {
