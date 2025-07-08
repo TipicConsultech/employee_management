@@ -17,10 +17,11 @@ import {
     CTableBody,
     CTableDataCell,
     CFormCheck,
-    CButtonGroup
+    CButtonGroup,
+    CTooltip
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
-import { cilClock, cilLocationPin, cilCheckCircle, cilXCircle, cilPeople, cilCheck } from '@coreui/icons';
+import { cilClock, cilLocationPin, cilCheckCircle, cilXCircle, cilPeople, cilCheck, cilWarning } from '@coreui/icons';
 import { getAPICall, post } from '../../../util/api';
 import { useTranslation } from 'react-i18next';
 
@@ -46,32 +47,57 @@ function BulkEmployeeCheckInOut() {
         }
     }, []);
 
+    // Helper function to get check-in/check-out status from trackers
+    const getAttendanceStatus = useCallback((trackers) => {
+        if (!trackers || !Array.isArray(trackers) || trackers.length === 0) {
+            return { checkIn: false, checkOut: false, status: 'Absent' };
+        }
+
+        // Get the latest tracker entry (assuming the last one is the most recent)
+        const latestTracker = trackers[trackers.length - 1];
+
+        const checkIn = latestTracker.check_in || false;
+        const checkOut = latestTracker.check_out || false;
+
+        let status = 'Absent';
+        if (checkIn && checkOut) {
+            status = 'Present'; // Completed attendance
+        } else if (checkIn && !checkOut) {
+            status = 'Present'; // Checked in but not checked out
+        }
+
+        return { checkIn, checkOut, status };
+    }, []);
+
     // Fetch employees function
     const fetchEmployees = useCallback(async () => {
         try {
             setLoading(true);
-            const response = await getAPICall('/api/employees');
+            const response = await getAPICall('/api/employeeDtailsForDashboard');
             console.log('API Response:', response); // Debug log
+
             if (response && Array.isArray(response)) {
-                // Add status and selection state to each employee
-                const employeesWithStatus = response.map(employee => ({
-                    ...employee,
-                    checkIn: false, // Default status, you can fetch from tracker API if needed
-                    checkOut: false,
-                    status: 'Absent',
-                    selected: false
-                }));
+                // Process employees with tracker data
+                const employeesWithStatus = response.map(employee => {
+                    const attendanceStatus = getAttendanceStatus(employee.trackers);
+                    return {
+                        ...employee,
+                        ...attendanceStatus,
+                        selected: false
+                    };
+                });
                 console.log('Processed employees:', employeesWithStatus); // Debug log
                 setEmployees(employeesWithStatus);
             } else if (response && response.data && Array.isArray(response.data)) {
                 // Handle case where data is nested
-                const employeesWithStatus = response.data.map(employee => ({
-                    ...employee,
-                    checkIn: false,
-                    checkOut: false,
-                    status: 'Absent',
-                    selected: false
-                }));
+                const employeesWithStatus = response.data.map(employee => {
+                    const attendanceStatus = getAttendanceStatus(employee.trackers);
+                    return {
+                        ...employee,
+                        ...attendanceStatus,
+                        selected: false
+                    };
+                });
                 console.log('Processed employees (nested):', employeesWithStatus); // Debug log
                 setEmployees(employeesWithStatus);
             } else {
@@ -84,7 +110,7 @@ function BulkEmployeeCheckInOut() {
         } finally {
             setLoading(false);
         }
-    }, [showNotification, t]);
+    }, [showNotification, t, getAttendanceStatus]);
 
     // Fetch employees on component mount
     useEffect(() => {
@@ -123,6 +149,22 @@ function BulkEmployeeCheckInOut() {
         }
     }, [selectAll, employees]);
 
+    // Get selected employees who haven't checked in (for checkout validation)
+    const getSelectedEmployeesWithoutCheckIn = useCallback(() => {
+        return employees.filter(emp => {
+            const empId = emp.id || emp.employee_id || emp.emp_id;
+            return selectedEmployees.includes(empId) && !emp.checkIn;
+        });
+    }, [employees, selectedEmployees]);
+
+    // Get selected employees who have checked in (for checkout)
+    const getSelectedEmployeesWithCheckIn = useCallback(() => {
+        return employees.filter(emp => {
+            const empId = emp.id || emp.employee_id || emp.emp_id;
+            return selectedEmployees.includes(empId) && emp.checkIn;
+        });
+    }, [employees, selectedEmployees]);
+
     // Handle bulk check-in
     const handleBulkCheckIn = useCallback(async () => {
         if (selectedEmployees.length === 0) {
@@ -147,18 +189,19 @@ function BulkEmployeeCheckInOut() {
 
                 // Update local state to reflect check-in
                 setEmployees(prev =>
-                    prev.map(emp =>
-                        selectedEmployees.includes(emp.id || emp.employee_id || emp.emp_id)
+                    prev.map(emp => {
+                        const empId = emp.id || emp.employee_id || emp.emp_id;
+                        return selectedEmployees.includes(empId)
                             ? { ...emp, checkIn: true, status: 'Present', selected: false }
-                            : { ...emp, selected: false }
-                    )
+                            : { ...emp, selected: false };
+                    })
                 );
 
                 // Clear selections
                 setSelectedEmployees([]);
                 setSelectAll(false);
 
-                // Optionally refresh the employee list
+                // Optionally refresh the employee list to get updated tracker data
                 // await fetchEmployees();
             } else {
                 showNotification('warning', t('MSG.failedToProcessRequest') || 'Failed to process request');
@@ -171,10 +214,24 @@ function BulkEmployeeCheckInOut() {
         }
     }, [selectedEmployees, showNotification, t]);
 
-    // Handle bulk check-out
+    // Handle bulk check-out with validation
     const handleBulkCheckOut = useCallback(async () => {
         if (selectedEmployees.length === 0) {
             showNotification('warning', t('MSG.selectEmployeesFirst') || 'Please select employees first');
+            return;
+        }
+
+        // Validate that all selected employees have checked in
+        const employeesWithoutCheckIn = getSelectedEmployeesWithoutCheckIn();
+
+        if (employeesWithoutCheckIn.length > 0) {
+            const employeeNames = employeesWithoutCheckIn.map(emp =>
+                emp.name || emp.employee_name || emp.first_name || 'Unknown'
+            ).join(', ');
+
+            showNotification('warning',
+                `${t('MSG.checkInRequiredForCheckOut') || 'Check-in required for check-out'}: ${employeeNames}`
+            );
             return;
         }
 
@@ -182,8 +239,11 @@ function BulkEmployeeCheckInOut() {
             setNotification({ show: false, type: '', message: '' });
             setSubmitting(true);
 
+            // Only process employees who have checked in
+            const validEmployees = getSelectedEmployeesWithCheckIn().map(emp => emp.id || emp.employee_id || emp.emp_id);
+
             const payload = {
-                employees: selectedEmployees
+                employees: validEmployees
             };
 
             const response = await post('/api/bulkCheckOut', payload);
@@ -195,18 +255,19 @@ function BulkEmployeeCheckInOut() {
 
                 // Update local state to reflect check-out
                 setEmployees(prev =>
-                    prev.map(emp =>
-                        selectedEmployees.includes(emp.id || emp.employee_id || emp.emp_id)
+                    prev.map(emp => {
+                        const empId = emp.id || emp.employee_id || emp.emp_id;
+                        return validEmployees.includes(empId)
                             ? { ...emp, checkOut: true, status: 'Present', selected: false }
-                            : { ...emp, selected: false }
-                    )
+                            : { ...emp, selected: false };
+                    })
                 );
 
                 // Clear selections
                 setSelectedEmployees([]);
                 setSelectAll(false);
 
-                // Optionally refresh the employee list
+                // Optionally refresh the employee list to get updated tracker data
                 // await fetchEmployees();
             } else {
                 showNotification('warning', t('MSG.failedToProcessRequest') || 'Failed to process request');
@@ -217,7 +278,30 @@ function BulkEmployeeCheckInOut() {
         } finally {
             setSubmitting(false);
         }
-    }, [selectedEmployees, showNotification, t]);
+    }, [selectedEmployees, showNotification, t, getSelectedEmployeesWithoutCheckIn, getSelectedEmployeesWithCheckIn]);
+
+    // Check if checkout should be disabled
+    const isCheckOutDisabled = useCallback(() => {
+        if (selectedEmployees.length === 0 || submitting) return true;
+
+        // Check if any selected employee hasn't checked in
+        const employeesWithoutCheckIn = getSelectedEmployeesWithoutCheckIn();
+        return employeesWithoutCheckIn.length > 0;
+    }, [selectedEmployees.length, submitting, getSelectedEmployeesWithoutCheckIn]);
+
+    // Get tooltip message for checkout button
+    const getCheckOutTooltipMessage = useCallback(() => {
+        if (selectedEmployees.length === 0) {
+            return t('MSG.selectEmployeesFirst') || 'Please select employees first';
+        }
+
+        const employeesWithoutCheckIn = getSelectedEmployeesWithoutCheckIn();
+        if (employeesWithoutCheckIn.length > 0) {
+            return t('MSG.checkInRequiredForCheckOutTooltip') || 'All selected employees must check-in before check-out';
+        }
+
+        return t('MSG.clickToCheckOut') || 'Click to check-out selected employees';
+    }, [selectedEmployees.length, getSelectedEmployeesWithoutCheckIn, t]);
 
     // Loading state
     if (loading) {
@@ -298,28 +382,54 @@ function BulkEmployeeCheckInOut() {
                                             </>
                                         )}
                                     </CButton>
-                                    <CButton
-                                        color="success"
-                                        onClick={handleBulkCheckOut}
-                                        disabled={selectedEmployees.length === 0 || submitting}
-                                        className="py-2 py-md-3 flex-fill"
-                                        style={{ fontSize: '0.9rem', fontWeight: 'bold' }}
+
+                                    <CTooltip
+                                        content={getCheckOutTooltipMessage()}
+                                        placement="top"
                                     >
-                                        {submitting ? (
-                                            <>
-                                                <CSpinner size="sm" className="me-2" />
-                                                <span className="d-none d-sm-inline">{t('LABELS.processing') || 'Processing...'}</span>
-                                                <span className="d-sm-none">{t('LABELS.processing') || 'Processing...'}</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <CIcon icon={cilCheck} className="me-1 me-md-2" />
-                                                <span className="d-none d-sm-inline">{t('LABELS.bulkCheckOut') || 'Bulk Check-Out'}</span>
-                                                <span className="d-sm-none">{t('LABELS.checkOut') || 'Check-Out'}</span>
-                                            </>
-                                        )}
-                                    </CButton>
+                                        <CButton
+                                            color={isCheckOutDisabled() ? "secondary" : "success"}
+                                            onClick={handleBulkCheckOut}
+                                            disabled={isCheckOutDisabled()}
+                                            className="py-2 py-md-3 flex-fill"
+                                            style={{
+                                                fontSize: '0.9rem',
+                                                fontWeight: 'bold',
+                                                opacity: isCheckOutDisabled() ? 0.6 : 1,
+                                                cursor: isCheckOutDisabled() ? 'not-allowed' : 'pointer'
+                                            }}
+                                        >
+                                            {submitting ? (
+                                                <>
+                                                    <CSpinner size="sm" className="me-2" />
+                                                    <span className="d-none d-sm-inline">{t('LABELS.processing') || 'Processing...'}</span>
+                                                    <span className="d-sm-none">{t('LABELS.processing') || 'Processing...'}</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <CIcon
+                                                        icon={isCheckOutDisabled() ? cilWarning : cilCheck}
+                                                        className="me-1 me-md-2"
+                                                    />
+                                                    <span className="d-none d-sm-inline">{t('LABELS.bulkCheckOut') || 'Bulk Check-Out'}</span>
+                                                    <span className="d-sm-none">{t('LABELS.checkOut') || 'Check-Out'}</span>
+                                                </>
+                                            )}
+                                        </CButton>
+                                    </CTooltip>
                                 </div>
+
+                                {/* Validation Warning */}
+                                {selectedEmployees.length > 0 && getSelectedEmployeesWithoutCheckIn().length > 0 && (
+                                    <div className="mt-2 p-2 rounded bg-warning-subtle border border-warning">
+                                        <div className="d-flex align-items-center">
+                                            <CIcon icon={cilWarning} className="text-warning me-2" />
+                                            <small className="text-warning-emphasis">
+                                                {t('MSG.checkInRequiredWarning') || 'Check-out requires check-in first for selected employees'}
+                                            </small>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Employee Table - Full Width and Responsive */}
@@ -412,13 +522,15 @@ function BulkEmployeeCheckInOut() {
                                         {employees.length > 0 ? employees.map((employee, index) => {
                                             const empId = employee.id || employee.employee_id || employee.emp_id;
                                             const empName = employee.name || employee.employee_name || employee.first_name || `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || 'Unknown Employee';
+                                            const isSelected = employee.selected || false;
+                                            const canCheckOut = employee.checkIn; // Can only check out if checked in
 
                                             return (
                                                 <CTableRow
                                                     key={empId}
                                                     style={{
                                                         borderBottom: index === employees.length - 1 ? 'none' : '1px solid #dee2e6',
-                                                        backgroundColor: employee.selected ? '#f8f9fa' : 'transparent'
+                                                        backgroundColor: isSelected ? '#f8f9fa' : 'transparent'
                                                     }}
                                                 >
                                                     <CTableDataCell
@@ -426,7 +538,7 @@ function BulkEmployeeCheckInOut() {
                                                         style={{ borderRight: '1px solid #dee2e6' }}
                                                     >
                                                         <CFormCheck
-                                                            checked={employee.selected || false}
+                                                            checked={isSelected}
                                                             onChange={(e) => handleEmployeeSelection(empId, e.target.checked)}
                                                             id={`employee-${empId}`}
                                                         />
@@ -498,10 +610,19 @@ function BulkEmployeeCheckInOut() {
                                                                         {t('LABELS.checkOut') || 'Out'}:
                                                                         <CIcon
                                                                             icon={employee.checkOut ? cilCheckCircle : cilXCircle}
-                                                                            className={employee.checkOut ? 'text-success ms-1' : 'text-muted ms-1'}
+                                                                            className={employee.checkOut ? 'text-success ms-1' : (canCheckOut ? 'text-muted ms-1' : 'text-secondary ms-1')}
                                                                             size="sm"
                                                                         />
                                                                     </small>
+                                                                    {/* Mobile validation indicator */}
+                                                                    {isSelected && !canCheckOut && (
+                                                                        <div className="mt-1">
+                                                                            <small className="text-warning" style={{ fontSize: '0.7rem' }}>
+                                                                                <CIcon icon={cilWarning} size="sm" className="me-1" />
+                                                                                {t('MSG.checkInRequiredShort') || 'Check-in required'}
+                                                                            </small>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -520,11 +641,21 @@ function BulkEmployeeCheckInOut() {
                                                         className="text-center d-none d-md-table-cell"
                                                         style={{ borderRight: '1px solid #dee2e6' }}
                                                     >
-                                                        <CIcon
-                                                            icon={employee.checkOut ? cilCheckCircle : cilXCircle}
-                                                            className={employee.checkOut ? 'text-success' : 'text-muted'}
-                                                            size="lg"
-                                                        />
+                                                        <div className="d-flex align-items-center justify-content-center">
+                                                            <CIcon
+                                                                icon={employee.checkOut ? cilCheckCircle : cilXCircle}
+                                                                className={employee.checkOut ? 'text-success' : (canCheckOut ? 'text-muted' : 'text-secondary')}
+                                                                size="lg"
+                                                                style={{ opacity: canCheckOut ? 1 : 0.4 }}
+                                                            />
+                                                            {isSelected && !canCheckOut && (
+                                                                <CIcon
+                                                                    icon={cilWarning}
+                                                                    className="text-warning ms-2"
+                                                                    size="sm"
+                                                                />
+                                                            )}
+                                                        </div>
                                                     </CTableDataCell>
                                                     <CTableDataCell className="text-center">
                                                         <CBadge
@@ -550,16 +681,6 @@ function BulkEmployeeCheckInOut() {
                                     <p className="text-muted small">{t('MSG.checkBackLater') || 'Please check back later'}</p>
                                 </div>
                             )}
-
-                            {/* Security Notice */}
-                            {/* <div className="mt-3 mt-md-4 p-3 p-md-4 rounded-3 border-start border-success border-4 w-100" style={{ backgroundColor: '#e8f5e8' }}>
-                                <div className="d-flex align-items-center">
-                                    <div className="bg-success rounded-circle me-2 me-md-3" style={{ width: '12px', height: '12px' }}></div>
-                                    <h6 className="mb-0 text-success fs-6 fs-md-5">
-                                        {t('MSG.allTransactionsSecure') || 'All transactions are secure'}
-                                    </h6>
-                                </div>
-                            </div> */}
                         </CCardBody>
                     </CCard>
                 </div>
