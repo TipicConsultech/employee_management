@@ -76,6 +76,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     /* ---------- FileUpload ---------- */
     Route::post('/fileUpload', [FileUpload::class, 'fileUpload']);
+    Route::get('/documents/{employee_id}', [EmployeeDetailsController::class, 'documentView']);
+ 
 
     /* ---------- CompanyInfoController ---------- */
     Route::resource('company', CompanyInfoController::class);

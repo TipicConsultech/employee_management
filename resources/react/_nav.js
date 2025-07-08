@@ -56,14 +56,12 @@ export default function fetchNavItems(t1) {
   /* ─────────── ADMIN ─────────── */
   else if (user === 1) {
     _nav = [
+
       {
-        component: CNavGroup,
-        name: t('LABELS.user_management'),
-        icon: <CIcon icon={cilGroup} customClassName="nav-icon" />,
-        items: [
-          { component: CNavItem, name: t('LABELS.all_Users'),   to: 'usermanagement/all-users', className: 'ms-4' },
-          { component: CNavItem, name: t('LABELS.create_user'), to: 'usermanagement/create-user', className: 'ms-4' },
-        ],
+              component: CNavItem,
+              name: "Dashboard",
+              to: '/dashboard2',
+              icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
       },
       {
         component: CNavItem,
@@ -83,12 +81,12 @@ export default function fetchNavItems(t1) {
               to: '/employee_registration',
               icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
       },
-      {
-              component: CNavItem,
-              name: t("LABELS.employee_tracker"),
-              to: '/employee_tracker',
-              icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
-      },
+      // {
+      //         component: CNavItem,
+      //         name: t("LABELS.employee_tracker"),
+      //         to: '/employee_tracker',
+      //         icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
+      // },
       {
               component: CNavItem,
               name: t("LABELS.set_coordinates"),
@@ -98,109 +96,17 @@ export default function fetchNavItems(t1) {
     ]
   }
 
-  /* ─────────── MANAGER ─────────── */
-  else if (user === 2) {
-    _nav = [
-      {
-        component: CNavGroup,
-        name: t('LABELS.user_management'),
-        icon: <CIcon icon={cilGroup} customClassName="nav-icon" />,
-        items: [
-          { component: CNavItem, name: t('LABELS.all_Users'),   to: 'usermanagement/all-users', className: 'ms-4' },
-          { component: CNavItem, name: t('LABELS.create_user'), to: 'usermanagement/create-user', className: 'ms-4' },
-        ],
-      },
-      {
-              component: CNavItem,
-              name: t("LABELS.credit_screen"),
-              to: '/credit_screen',
-              icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
-            },
-            {
-              component: CNavItem,
-              name: "Dashboard",
-              to: '/dashboard2',
-              icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
-      }
-    ]
-  }
 
-  /* ─────────── PRODUCT ENGINEER ─────────── */
-  else if (user === 3) {
-    _nav = [
-      {
-        component: CNavGroup,
-        name: t('LABELS.user_management'),
-        icon: <CIcon icon={cilGroup} customClassName="nav-icon" />,
-        items: [
-          { component: CNavItem, name: t('LABELS.all_Users'),   to: 'usermanagement/all-users', className: 'ms-4' },
-          { component: CNavItem, name: t('LABELS.create_user'), to: 'usermanagement/create-user', className: 'ms-4' },
-        ],
-      },
-      {
-              component: CNavItem,
-              name: t("LABELS.credit_screen"),
-              to: '/credit_screen',
-              icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
-            },{
-              component: CNavItem,
-              name: "Dashboard",
-              to: '/dashboard2',
-              icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
-      }
-    ]
-  }
 
-  /* ─────────── DELIVERY TEAM ─────────── */
-  else if (user === 4) {
-    _nav = [
-    {
-        component: CNavGroup,
-        name: t('LABELS.user_management'),
-        icon: <CIcon icon={cilGroup} customClassName="nav-icon" />,
-        items: [
-          { component: CNavItem, name: t('LABELS.all_Users'),   to: 'usermanagement/all-users', className: 'ms-4' },
-          { component: CNavItem, name: t('LABELS.create_user'), to: 'usermanagement/create-user', className: 'ms-4' },
-        ],
-      },
-      {
-              component: CNavItem,
-              name: t("LABELS.credit_screen"),
-              to: '/credit_screen',
-              icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
-            },{
-              component: CNavItem,
-              name: "Dashboard",
-              to: '/dashboard2',
-              icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
-      }
-    ]
-  }
-
-  /* ─────────── LAB TECHNICIAN ─────────── */
-  else if (user === 5) {
+  else if (user === 10){
     _nav = [
        {
-        component: CNavGroup,
-        name: t('LABELS.user_management'),
-        icon: <CIcon icon={cilGroup} customClassName="nav-icon" />,
-        items: [
-          { component: CNavItem, name: t('LABELS.all_Users'),   to: 'usermanagement/all-users', className: 'ms-4' },
-          { component: CNavItem, name: t('LABELS.create_user'), to: 'usermanagement/create-user', className: 'ms-4' },
-        ],
-      },
-      {
               component: CNavItem,
-              name: t("LABELS.credit_screen"),
-              to: '/credit_screen',
-              icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
-            },{
-              component: CNavItem,
-              name: "Dashboard",
-              to: '/dashboard2',
+              name: t("LABELS.employee_tracker"),
+              to: '/employee_tracker',
               icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
       }
-    ]         // all dairy pages were removed, so nothing to show here
+    ]
   }
 
   return _nav

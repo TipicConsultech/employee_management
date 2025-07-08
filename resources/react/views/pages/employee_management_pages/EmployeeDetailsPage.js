@@ -5,9 +5,21 @@ import {
   CContainer, CCard, CCardBody, CCardHeader, CRow, CCol, CTable, CTableHead,
   CTableRow, CTableHeaderCell, CTableBody, CTableDataCell, CSpinner,
   CFormInput, CButton,
-  CFormSelect
+  CFormSelect,
+  CCollapse,
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CModalFooter
 } from '@coreui/react';
 import { getAPICall, post } from '../../../util/api';
+
+
+
+
+
+
 
 const EmployeeDetailsPage = () => {
   const { id } = useParams();
@@ -17,6 +29,22 @@ const EmployeeDetailsPage = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [workSummary, setWorkSummary] = useState(null);
+
+//   const[viewDocuments, setViewDocuments] = useState(false);
+const [viewDocuments, setViewDocuments] = useState(false);
+  const [documents, setDocuments] = useState([]);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+
+  useEffect(() => {
+    if (employee && workSummary) {
+      setWorkSummary((prev) => ({
+        ...prev,
+        custom_regular_wage: prev.custom_regular_wage ?? employee.wage_hour,
+        custom_overtime_wage: prev.custom_overtime_wage ?? employee.wage_overtime,
+      }));
+    }
+  }, [employee, workSummary]);
 
   useEffect(() => {
     getAPICall(`/api/employee/${id}`)
@@ -57,7 +85,11 @@ const EmployeeDetailsPage = () => {
   if (loading) return <CSpinner color="primary" />;
   if (!employee) return <p>Employee not found.</p>;
 
-  const handleSubmit = async () => {
+
+
+
+
+const handleSubmit = async () => {
   const regularWage = workSummary.custom_regular_wage ?? employee.wage_hour;
   const overtimeWage = workSummary.custom_overtime_wage ?? employee.wage_overtime;
 
@@ -76,19 +108,86 @@ const EmployeeDetailsPage = () => {
 
   try {
     const res = await post('/api/payment', payload);
-    const data = await res.json();
+    const data = await res
     console.log('Payment Submitted:', data);
     alert('Payment submitted successfully!');
+      setWorkSummary((prev) => ({
+      ...prev,
+      custom_regular_wage: '',
+      custom_overtime_wage: '',
+      payed_amount: '',
+      pending_payment: 0,
+      payment_type: '',
+    }));
   } catch (err) {
     console.error('Payment Error:', err);
     alert('Something went wrong while submitting payment.');
   }
 };
 
+ const HandleViewDocuments = async() =>{
+    console.log("xyz");
+    // setViewDocuments(true);
+    setViewDocuments(prev => !prev); 
+    
+ }
+
+//  _____________________________________________________________________________ 
+
+
+const fetchDocuments = async () => {
+  try {
+    const res = await getAPICall(`/api/documents/${id}`);
+    const data = await res; // ✅ make sure to parse JSON
+
+    return data.map((doc) => ({
+      name: doc.document_name,
+      url: `data:image/png;base64,${doc.document_link}`, // ✅ Image instead of PDF
+    }));
+  } catch (error) {
+    console.error('Error fetching documents:', error);
+    return [];
+  }
+};
+
+
+
+
+  const handleViewDocuments = async () => {
+    setViewDocuments(prev => !prev);
+
+    if (!viewDocuments) {
+      try {
+        const docs = await fetchDocuments();
+        setDocuments(docs);
+      } catch (err) {
+        console.error('Error fetching documents:', err);
+      }
+    }
+  };
+
+  const handleOpenDocument = (doc) => {
+    setSelectedDocument(doc);
+    setModalVisible(true);
+  };
+
+  const handleDownload = () => {
+    if (selectedDocument) {
+      const link = document.createElement('a');
+      link.href = selectedDocument.url;
+      link.download = selectedDocument.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+// _______________________________________________________________________________ 
+
 
   return (
     <CContainer>
-      <CCard className="mt-4 shadow">
+      <CCard className="mt-4  p-3">
         <CCardHeader>Employee History: {employee.name}</CCardHeader>
         <CCardBody>
           {/* Employee Info */}
@@ -106,6 +205,57 @@ const EmployeeDetailsPage = () => {
               <p><strong>Referral:</strong> {employee.refferal_by}</p>
             </CCol>
           </CRow>
+
+          <CRow>
+            <CCol>
+                <CButton className='border border-primary' onClick={handleViewDocuments}>
+                    {viewDocuments ? 'Hide Documents' : 'View Documents'}
+                    View Documents
+                </CButton>
+            </CCol>
+          </CRow>
+
+      {/* Collapsible Document List */}
+      <CCollapse visible={viewDocuments}>
+        <CCard className="mt-3">
+          <CCardBody>
+            {documents.length === 0 && <p>No documents available.</p>}
+            {documents.map((doc, index) => (
+              <div key={index} className="d-flex justify-content-between align-items-center mb-2">
+                <span>{doc.name}</span>
+                <CButton color="link" onClick={() => handleOpenDocument(doc)}>
+                  View
+                </CButton>
+              </div>
+            ))}
+          </CCardBody>
+        </CCard>
+      </CCollapse>
+
+      {/* Modal for Document Preview */}
+      <CModal visible={modalVisible} onClose={() => setModalVisible(false)} size="xl">
+        <CModalHeader>
+          <CModalTitle>{selectedDocument?.name}</CModalTitle>
+        </CModalHeader>
+        <CModalBody style={{ height: '80vh' }}>
+          {selectedDocument?.url ? (
+            <iframe
+              src={selectedDocument.url}
+              title={selectedDocument.name}
+              width="100%"
+              height="100%"
+              style={{ border: 'none' }}
+            />
+          ) : (
+            <p>Document preview not available.</p>
+          )}
+        </CModalBody>
+        <CModalFooter>
+          <CButton color="primary" onClick={handleDownload}>Download</CButton>
+          <CButton color="secondary" onClick={() => setModalVisible(false)}>Close</CButton>
+        </CModalFooter>
+      </CModal>
+
 
           {/* Filter Section */}
           <CRow className="align-items-end mt-4">
@@ -190,11 +340,10 @@ const EmployeeDetailsPage = () => {
             <p>No tracker data available.</p>
           )}
         </CCardBody>
-      </CCard>
 
       {/* Work Summary Form (Visible after Calculate) */}
 {workSummary && (
-  <CCard className="shadow-sm mt-4">
+  <CCard className="shadow-sm mt-2">
     <CCardBody>
       {/* Editable Hours */}
       <CRow className="mb-3">
@@ -239,6 +388,7 @@ const EmployeeDetailsPage = () => {
     />
   </CCol>
 </CRow>
+
 
       {/* Calculated Payments */}
      <CRow className="mb-4">
@@ -349,6 +499,10 @@ const EmployeeDetailsPage = () => {
   </CCard>
 )}
 
+
+      </CCard>
+
+ 
     </CContainer>
   );
 };
@@ -576,3 +730,38 @@ export default EmployeeDetailsPage;
   )}
 </CContainer> 
 */}
+
+
+// const fetchDocuments = async () => {
+//   try {
+//     const res = await getAPICall(`/api/documents/${id}`);
+//     if (!res.ok) {
+//       throw new Error('Failed to fetch documents');
+//     }
+
+//     const data = await res;
+
+//     // Map the response to match your frontend structure (name + url)
+//     return data.map((doc) => ({
+//       name: doc.document_name,
+//       url: doc.document_url, // this is already your base64 formatted URL
+//     }));
+//   } catch (error) {
+//     console.error('Error fetching documents:', error);
+//     return [];
+//   }
+// };
+// const fetchDocuments = async () => {
+//   try {
+//     const res = await getAPICall(`/api/documents/${id}`);
+//     const data = await res; // ⚠️ Ensure you call .json()
+
+//     return data.map((doc) => ({
+//       name: doc.document_name,
+//       url: `data:application/pdf;base64,${doc.document_link}`, // ✅ correct base64
+//     }));
+//   } catch (error) {
+//     console.error('Error fetching documents:', error);
+//     return [];
+//   }
+// };
