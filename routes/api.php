@@ -50,9 +50,7 @@ Route::middleware('auth:sanctum')->post('/storeCordinates', [CompanyCordinateCon
 Route::middleware('auth:sanctum')->get('/getCordinates', [CompanyCordinateController::class, 'getCordinates']);
 Route::middleware('auth:sanctum')->post('/bulkCheckIn', [EmployeeTrackerController::class, 'bulkCheckIn']);
 Route::middleware('auth:sanctum')->post('/bulkCheckOut', [EmployeeTrackerController::class, 'bulkCheckOut']);
-
-
-
+Route::middleware('auth:sanctum')->post('/employeeCredit', [CommonController::class, 'employeeCredit']);
 
 
 Route::middleware(['auth:sanctum'])->group(function () {
