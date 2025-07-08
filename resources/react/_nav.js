@@ -91,8 +91,8 @@ export default function fetchNavItems(t1) {
       },
       {
               component: CNavItem,
-              name: "Dashboard",
-              to: '/dashboard2',
+              name: t("LABELS.set_coordinates"),
+              to: '/set_coordinates',
               icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
       }
     ]

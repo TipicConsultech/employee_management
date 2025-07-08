@@ -613,7 +613,21 @@
     "pending": "प्रलंबित",
     "allSet": "सर्व तयार!",
     "ok": "ठीक आहे",
-    "employee_tracker": "कर्मचारी ट्रॅकर"
+    "employee_tracker": "कर्मचारी ट्रॅकर",
+     "selectTolerance": "सहनशीलता निवडा",
+    "customTolerance": "सानुकूल सहनशीलता",
+    "noLimit": "मर्यादा नाही",
+    "storeCoordinates": "निर्देशांक संग्रहित करा",
+    "useCurrentLocation": "वर्तमान स्थान वापरा",
+    "longitude": "रेखांश",
+    "latitude": "अक्षांश",
+    "tolerance": "सहनशीलता",
+    "customToleranceValue": "सानुकूल सहनशीलता (दशांश अंश)",
+    "customToleranceHelp": "टिप: 0.001° ≈ 100m, 0.0001° ≈ 10m",
+    "tolerancePreview": "सहनशीलता पूर्वावलोकन",
+    "noLimitDescription": "कोणत्याही भौगोलिक मर्यादा लागू केल्या जाणार नाहीत",
+    "decimalDegrees": "दशांश अंश",
+    "submitting": "सबमिट करत आहे..."
 
 
 
@@ -626,6 +640,11 @@
 "PRODUCTS": {
     "paneer": "पनीर",
     "dahi": "दही"
+  },
+
+"PLACEHOLDERS": {
+    "enterLongitude": "रेखांश प्रविष्ट करा (-180 ते 180)",
+    "enterLatitude": "अक्षांश प्रविष्ट करा (-90 ते 90)"
   },
 
 
@@ -870,7 +889,28 @@
   "checkOutSuccess": "चेक आउट यशस्वी!",
   "gettingLocation": "आपले स्थान मिळवत आहे...",
   "locationVerificationRequired": "चेक इन/आउटसाठी स्थान सत्यापन आवश्यक आहे",
-  "dailyCheckInOutCompleted": "आपले दैनंदिन चेक इन आणि चेक आउट यशस्वीरित्या पूर्ण झाले आहे."
+  "dailyCheckInOutCompleted": "आपले दैनंदिन चेक इन आणि चेक आउट यशस्वीरित्या पूर्ण झाले आहे.",
+  "longitudeRequired": "रेखांश आवश्यक आहे",
+    "longitudeInvalidFormat": "रेखांश वैध संख्या असावी",
+    "longitudeInvalid": "रेखांश -180 आणि 180 च्या दरम्यान असावा",
+    "latitudeRequired": "अक्षांश आवश्यक आहे",
+    "latitudeInvalidFormat": "अक्षांश वैध संख्या असावी",
+    "latitudeInvalid": "अक्षांश -90 आणि 90 च्या दरम्यान असावा",
+    "toleranceRequired": "सहनशीलता निवड आवश्यक आहे",
+    "customToleranceRequired": "सानुकूल सहनशीलता मूल्य आवश्यक आहे",
+    "customToleranceInvalidFormat": "सानुकूल सहनशीलता वैध संख्या असावी",
+    "customTolerancePositive": "सानुकूल सहनशीलता 0 पेक्षा जास्त असावी",
+    "customToleranceHigh": "सानुकूल सहनशीलता असामान्यपणे जास्त आहे. तुम्हाला खात्री आहे का?",
+    "pleaseCorrectErrors": "कृपया खालील त्रुटी दुरुस्त करा",
+    "invalidTolerance": "अवैध सहनशीलता कॉन्फिगरेशन",
+    "coordinatesStoredSuccess": "निर्देशांक यशस्वीरित्या संग्रहित केले",
+    "coordinatesStoredWithId": "निर्देशांक यशस्वीरित्या संग्रहित केले आयडी: {id}",
+    "failedToStoreCoordinates": "निर्देशांक संग्रहित करण्यात अयशस्वी",
+    "locationDetected": "वर्तमान स्थान शोधले",
+    "locationError": "वर्तमान स्थान मिळवण्यात अयशस्वी",
+    "locationPermissionDenied": "वापरकर्त्याने स्थान प्रवेश नाकारला",
+    "locationUnavailable": "स्थान माहिती अनुपलब्ध आहे",
+    "locationTimeout": "स्थान विनंतीचा कालावधी संपला"
 
 
 
