@@ -632,7 +632,14 @@
     "tolerancePreview": "Tolerance Preview",
     "noLimitDescription": "No geographical limits will be applied",
     "decimalDegrees": "decimal degrees",
-    "submitting": "Submitting..."
+    "submitting": "Submitting...",
+    "bulkEmployeeAttendance": "Bulk Employee Attendance",
+    "manageMultipleEmployees": "Manage multiple employees check-in/out",
+    "bulkCheckIn": "Bulk Check-In",
+    "bulkCheckOut": "Bulk Check-Out",
+    "employee": "Employee",
+    "present": "Present",
+    "absent": "Absent"
 
 
 
@@ -906,7 +913,11 @@
         "locationError": "Failed to get current location",
         "locationPermissionDenied": "Location access denied by user",
         "locationUnavailable": "Location information is unavailable",
-        "locationTimeout": "Location request timed out"
+        "locationTimeout": "Location request timed out",
+        "failedToFetchEmployees": "Failed to fetch employees",
+        "selectEmployeesFirst": "Please select employees first",
+        "employeesUpdated": "employees updated",
+        "checkBackLater": "Please check back later"
 
     }
    }

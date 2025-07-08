@@ -64,7 +64,7 @@ const EmployeeTracker = React.lazy(() => import('./views/pages/employee_manageme
 const Dashboard2 = React.lazy(() => import('./views/pages/employee_management_pages/Dashboard2'))
 const EmployeeDetails = React.lazy(() => import('./views/pages/employee_management_pages/EmployeeDetailsPage'))
 const SetCoordinates = React.lazy(() => import('./views/pages/employee_management_pages/SetCoordinates'))
-
+const BulkEmployeeTracker = React.lazy(() => import('./views/pages/employee_management_pages/BulkEmployeeTracker'))
 
 /* ====================================================================== */
 
@@ -167,6 +167,7 @@ export default function fetchRoutes () {
       { path: '/set_coordinates',    name: 'All Users',                element: SetCoordinates },
       { path: '/dashboard2',                name: 'Dashboard',                  element: Dashboard2 },
       { path: '/employees/:id',              name: 'Employee Details',           element: EmployeeDetails },
+      { path: '/bulk_employee_tracker',              name: 'Employee Details',           element: BulkEmployeeTracker },
     ]
   }
 
