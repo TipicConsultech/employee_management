@@ -59,7 +59,7 @@ export default function fetchNavItems(t1) {
 
       {
               component: CNavItem,
-              name: "Dashboard",
+              name: t("LABELS.dashboard"),
               to: '/dashboard2',
               icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
       },

@@ -636,10 +636,70 @@
     "employee": "कर्मचारी",
     "present": "उपस्थित",
     "absent": "अनुपस्थित",
-    "set_coordinates": "Set Coordinates",
-    "bulk_employee_tracker": "Bulk Employee Tracker"
+    "set_coordinates": "निर्देशांक सेट करा",
+    "bulk_employee_tracker": "मोठ्या प्रमाणात कर्मचारी ट्रॅकर",
 
-
+"totalEmployees": "एकूण कर्मचारी",
+      "presentToday": "आज उपस्थित",
+      "totalCredit": "एकूण जमा",
+      "totalDebit": "एकूण खर्च",
+      "employeeAttendance": "कर्मचारी उपस्थिती आणि तपशील",
+      "employees": "कर्मचारी",
+      "checkIn": "चेक इन",
+      "checkOut": "चेक आउट",
+      "status": "स्थिती",
+      "actions": "कृती",
+      "details": "तपशील",
+      "absent":"अनुपस्थित",
+ 
+ 
+     
+"viewDocuments": "कागदपत्रे पहा",
+"hideDocuments": "कागदपत्रे लपवा",
+"documentPreview": "कागदपत्र पूर्वदृश्य उपलब्ध नाही.",
+"download": "डाउनलोड",
+"close": "बंद करा",
+ 
+ 
+"employeeHistory": "कर्मचारी हिस्टोरी",
+"id": "ओळख क्रमांक",
+"mobile": "मोबाईल",
+"adhaar": "आधार",
+"wagePerHour": "तासिक वेतन",
+"wageOT": "ओटी वेतन",
+"credit": "जमा",
+"debit": "खर्च",
+"referral": "संदर्भ",
+ 
+ 
+"startDate": "सुरुवातीची तारीख",
+"endDate": "शेवटची तारीख",
+"workingHours": "कामाचे तास",
+"calculate": "क्याल्कुलेट करा ",
+ 
+ 
+"attendanceHistory": "उपस्थिती हिस्टोरी ",
+"date": "तारीख",
+"checkIn": "चेक इन",
+"checkOut": "चेक आउट",
+"checkInGPS": "चेक-इन जीपीएस",
+"checkOutGPS": "चेक-आउट जीपीएस",
+"totalPresentDays": "एकूण उपस्थित दिवस",
+"noTrackerData": "ट्रॅकर डेटा उपलब्ध नाही.",
+ 
+ 
+"regularHours": "नियमित तास",
+"overtimeHours": "अतिरिक्त तास",
+"totalWorkedHours": "एकूण काम केलेले तास",
+"regularWagePerHour": "नियमित तासिक वेतन",
+"overtimeWagePerHour": "अतिरिक्त तासिक वेतन",
+"regularPayment": "नियमित वेतन",
+"overtimePayment": "अतिरिक्त वेतन",
+"totalCalculatedPayment": "एकूण गणिती वेतन",
+"actualPayment": "खरे वेतन (कर्मचाऱ्याला दिलेले)",
+"pendingAmount": "थकबाकी रक्कम (मालकाकडून)",
+"paymentMethod": "देयक पद्धत",
+"submit": "सबमिट"
 
 
 

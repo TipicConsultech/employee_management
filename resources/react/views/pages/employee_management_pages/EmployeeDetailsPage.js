@@ -14,14 +14,11 @@ import {
   CModalFooter
 } from '@coreui/react';
 import { getAPICall, post } from '../../../util/api';
-
-
-
-
-
+import { useTranslation } from 'react-i18next';
 
 
 const EmployeeDetailsPage = () => {
+     const { t, i18n } = useTranslation("global");
   const { id } = useParams();
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -188,29 +185,37 @@ const fetchDocuments = async () => {
   return (
     <CContainer>
       <CCard className="mt-4  p-3">
-        <CCardHeader>Employee History: {employee.name}</CCardHeader>
+        <CCardHeader>{t('LABELS.employeeHistory')}: {employee.name}</CCardHeader>
         <CCardBody>
           {/* Employee Info */}
           <CRow>
             <CCol md={6}>
-              <p><strong>ID:</strong> {employee.id}</p>
+              {/* <p><strong>ID:</strong> {employee.id}</p>
               <p><strong>Mobile:</strong> {employee.mobile}</p>
               <p><strong>Adhaar:</strong> {employee.adhaar_number}</p>
-              <p><strong>Wage/Hour:</strong> ₹{employee.wage_hour}</p>
+              <p><strong>Wage/Hour:</strong> ₹{employee.wage_hour}</p> */}
+              <p><strong>{t('LABELS.id')}:</strong> {employee.id}</p>
+<p><strong>{t('LABELS.mobile')}:</strong> {employee.mobile}</p>
+<p><strong>{t('LABELS.adhaar')}:</strong> {employee.adhaar_number}</p>
+<p><strong>{t('LABELS.wagePerHour')}:</strong> ₹{employee.wage_hour}</p>
             </CCol>
             <CCol md={6}>
-              <p><strong>Wage OT:</strong> ₹{employee.wage_overtime}</p>
+              {/* <p><strong>Wage OT:</strong> ₹{employee.wage_overtime}</p>
               <p><strong>Credit:</strong> ₹{employee.credit}</p>
               <p><strong>Debit:</strong> ₹{employee.debit}</p>
-              <p><strong>Referral:</strong> {employee.refferal_by}</p>
+              <p><strong>Referral:</strong> {employee.refferal_by}</p> */}
+              <p><strong>{t('LABELS.wageOT')}:</strong> ₹{employee.wage_overtime}</p>
+<p><strong>{t('LABELS.credit')}:</strong> ₹{employee.credit}</p>
+<p><strong>{t('LABELS.debit')}:</strong> ₹{employee.debit}</p>
+<p><strong>{t('LABELS.referral')}:</strong> {employee.refferal_by}</p>
             </CCol>
           </CRow>
 
           <CRow>
             <CCol>
                 <CButton className='border border-primary' onClick={handleViewDocuments}>
-                    {viewDocuments ? 'Hide Documents' : 'View Documents'}
-                    View Documents
+                    {viewDocuments ? t('LABELS.hideDocuments') : t('LABELS.viewDocuments')}
+                    {/* View Documents */}
                 </CButton>
             </CCol>
           </CRow>
@@ -247,12 +252,13 @@ const fetchDocuments = async () => {
               style={{ border: 'none' }}
             />
           ) : (
-            <p>Document preview not available.</p>
+            <p>{t('LABELS.documentPreview')}</p>
           )}
         </CModalBody>
         <CModalFooter>
-          <CButton color="primary" onClick={handleDownload}>Download</CButton>
-          <CButton color="secondary" onClick={() => setModalVisible(false)}>Close</CButton>
+          <CButton color="primary" onClick={handleDownload}>{t('LABELS.download')}
+</CButton>
+          <CButton color="secondary" onClick={() => setModalVisible(false)}>{t('LABELS.close')}</CButton>
         </CModalFooter>
       </CModal>
 
@@ -260,7 +266,8 @@ const fetchDocuments = async () => {
           {/* Filter Section */}
           <CRow className="align-items-end mt-4">
             <CCol md={4}>
-              <label htmlFor="start-date" className="form-label fw-semibold">Start Date</label>
+              {/* <label htmlFor="start-date" className="form-label fw-semibold">Start Date</label> */}
+              <label className="form-label fw-semibold">{t('LABELS.startDate')}</label>
               <input
                 type="date"
                 id="start-date"
@@ -270,7 +277,8 @@ const fetchDocuments = async () => {
               />
             </CCol>
             <CCol md={4}>
-              <label htmlFor="end-date" className="form-label fw-semibold">End Date</label>
+              {/* <label htmlFor="end-date" className="form-label fw-semibold">End Date</label> */}
+              <label className="form-label fw-semibold">{t('LABELS.endDate')}</label>
               <input
                 type="date"
                 id="end-date"
@@ -280,7 +288,8 @@ const fetchDocuments = async () => {
               />
             </CCol>
             <CCol md={2}>
-              <label htmlFor="working-hours" className="form-label fw-semibold">Working Hours</label>
+              {/* <label htmlFor="working-hours" className="form-label fw-semibold">Working Hours</label> */}
+              <label className="form-label fw-semibold">{t('LABELS.workingHours')}</label>
               <select
                 id="working-hours"
                 className="form-select"
@@ -292,23 +301,28 @@ const fetchDocuments = async () => {
             </CCol>
             <CCol md={2}>
               <button className="btn btn-primary w-100" onClick={handleCalculate}>
-                Calculate
+                {/* Calculate */} {t('LABELS.calculate')}
               </button>
             </CCol>
           </CRow>
 
           {/* Attendance Table */}
-          <h5 className="mt-5">Attendance History</h5>
+          <h5 className="mt-5">{t('LABELS.attendanceHistory')}</h5>
           {employee.trackers?.length > 0 ? (
             <>
               <CTable bordered responsive>
                 <CTableHead>
                   <CTableRow>
-                    <CTableHeaderCell>Date</CTableHeaderCell>
+                    {/* <CTableHeaderCell>Date</CTableHeaderCell>
                     <CTableHeaderCell>Check In</CTableHeaderCell>
                     <CTableHeaderCell>Check Out</CTableHeaderCell>
                     <CTableHeaderCell>Check-In GPS</CTableHeaderCell>
-                    <CTableHeaderCell>Check-Out GPS</CTableHeaderCell>
+                    <CTableHeaderCell>Check-Out GPS</CTableHeaderCell> */}
+                    <CTableHeaderCell>{t('LABELS.date')}</CTableHeaderCell>
+<CTableHeaderCell>{t('LABELS.checkIn')}</CTableHeaderCell>
+<CTableHeaderCell>{t('LABELS.checkOut')}</CTableHeaderCell>
+<CTableHeaderCell>{t('LABELS.checkInGPS')}</CTableHeaderCell>
+<CTableHeaderCell>{t('LABELS.checkOutGPS')}</CTableHeaderCell>
                   </CTableRow>
                 </CTableHead>
                 <CTableBody>
@@ -332,12 +346,12 @@ const fetchDocuments = async () => {
                 </CTableBody>
               </CTable>
               <p className="mt-3">
-                <strong>Total Present Days:</strong>{' '}
+                <strong>{t('LABELS.totalPresentDays')}:</strong>{' '}
                 {employee.trackers.filter(t => t.check_in).length}
               </p>
             </>
           ) : (
-            <p>No tracker data available.</p>
+            <p>{t('LABELS.noTrackerData')}</p>
           )}
         </CCardBody>
 
@@ -348,17 +362,23 @@ const fetchDocuments = async () => {
       {/* Editable Hours */}
       <CRow className="mb-3">
         {/* ✅ Fixed Hour Summary as Text */}
-      <div className="mb-4 fw-semibold">
+      {/* <div className="mb-4 fw-semibold">
         Regular Hours: {workSummary.regular_hours} &nbsp;&nbsp;|&nbsp;&nbsp;
         Overtime Hours: {workSummary.overtime_hours} &nbsp;&nbsp;|&nbsp;&nbsp;
         Total Worked Hours: {(workSummary.regular_hours || 0) + (workSummary.overtime_hours || 0)}
-      </div>
+      </div> */}
+      <div className="mb-4 fw-semibold">
+  {t('LABELS.regularHours')}: {workSummary.regular_hours} &nbsp;|&nbsp;
+  {t('LABELS.overtimeHours')}: {workSummary.overtime_hours} &nbsp;|&nbsp;
+  {t('LABELS.totalWorkedHours')}: {(workSummary.regular_hours || 0) + (workSummary.overtime_hours || 0)}
+</div>
       </CRow>
 
       {/* Editable Wage Inputs */}
      <CRow className="mb-3">
   <CCol md={6}>
-    <label className="form-label">Regular Wage per Hour</label>
+    {/* <label className="form-label">Regular Wage per Hour</label> */}
+    <label className="form-label">{t('LABELS.regularWagePerHour')}</label>
     <CFormInput
       type="number"
       value={Math.max(0, workSummary.custom_regular_wage ?? 0)}
@@ -373,7 +393,8 @@ const fetchDocuments = async () => {
     />
   </CCol>
   <CCol md={6}>
-    <label className="form-label">Overtime Wage per Hour</label>
+    {/* <label className="form-label">Overtime Wage per Hour</label> */}
+    <label className="form-label">{t('LABELS.overtimeWagePerHour')}</label>
     <CFormInput
       type="number"
       value={Math.max(0, workSummary.custom_overtime_wage ?? 0)}
@@ -393,7 +414,8 @@ const fetchDocuments = async () => {
       {/* Calculated Payments */}
      <CRow className="mb-4">
   <CCol md={4}>
-    <label className="form-label">Regular Payment</label>
+    {/* <label className="form-label">Regular Payment</label> */}
+    <label className="form-label">{t('LABELS.regularPayment')}</label>
     <CFormInput
       type="number"
       value={
@@ -405,7 +427,8 @@ const fetchDocuments = async () => {
   </CCol>
 
   <CCol md={4}>
-    <label className="form-label">Overtime Payment</label>
+    {/* <label className="form-label">Overtime Payment</label> */}
+    <label className="form-label">{t('LABELS.overtimePayment')}</label>
     <CFormInput
       type="number"
       value={
@@ -417,7 +440,8 @@ const fetchDocuments = async () => {
   </CCol>
 
   <CCol md={4}>
-    <label className="form-label">Total Calculated Payment</label>
+    {/* <label className="form-label">Total Calculated Payment</label> */}
+    <label className="form-label">{t('LABELS.totalCalculatedPayment')}</label>
     <CFormInput
       type="number"
       value={
@@ -435,7 +459,8 @@ const fetchDocuments = async () => {
       {/* Actual Payment & Pending */}
       <CRow className="mb-4">
         <CCol md={6}>
-          <label className="form-label">Actual Payment (Given to Employee)</label>
+          {/* <label className="form-label">Actual Payment (Given to Employee)</label> */}
+          <label className="form-label">{t('LABELS.actualPayment')}</label>
           <CFormInput
             type="number"
             value={workSummary.payed_amount || ''}
@@ -457,7 +482,8 @@ const fetchDocuments = async () => {
           />
         </CCol>
         <CCol md={6}>
-          <label className="form-label">Pending Amount (From Owner)</label>
+          {/* <label className="form-label">Pending Amount (From Owner)</label> */}
+          <label className="form-label">{t('LABELS.pendingAmount')}</label>
           <CFormInput
             type="number"
             value={workSummary.pending_payment || 0}
@@ -469,7 +495,8 @@ const fetchDocuments = async () => {
       {/* Payment Method */}
     <CRow className="mb-3">
   <CCol md={6}>
-    <label className="form-label">Payment Method</label>
+    {/* <label className="form-label">Payment Method</label> */}
+    <label className="form-label">{t('LABELS.paymentMethod')}</label>
     <CFormSelect
       value={workSummary.payment_type || ''}
       onChange={(e) =>
@@ -491,7 +518,7 @@ const fetchDocuments = async () => {
       {/* Submit Button */}
       <div className="d-flex justify-content-end">
         <CButton color="success" onClick={handleSubmit}>
-  Submit
+  {/* Submit */} {t('LABELS.submit')}
 </CButton>
 
       </div>
