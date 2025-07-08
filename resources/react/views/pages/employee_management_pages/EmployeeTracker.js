@@ -8,7 +8,8 @@ import {
     CButton,
     CSpinner,
     CAlert,
-    CBadge
+    CBadge,
+    CContainer
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
 import { cilClock, cilLocationPin, cilCheckCircle, cilXCircle } from '@coreui/icons';
@@ -225,150 +226,177 @@ function EmployeeCheckInOut() {
     // Loading state
     if (loading) {
         return (
-            <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
-                <CSpinner color="primary" />
+            <div className="d-flex justify-content-center align-items-center vh-100">
+                <CSpinner color="primary" size="lg" />
             </div>
         );
     }
 
     return (
-        <>
-            <CRow>
-                <CCol xs={12} md={8} lg={6} className="mx-auto">
-                    {/* Notifications */}
-                    {notification.show && (
-                        <CAlert
-                            color={notification.type}
-                            dismissible
-                            onClose={() => setNotification({ show: false, type: '', message: '' })}
-                            className="mb-3"
-                        >
-                            {notification.message}
-                        </CAlert>
-                    )}
+        <div className="min-vh-100 d-flex flex-column" style={{ backgroundColor: '#f8f9fa' }}>
+            <CContainer fluid className="flex-grow-1 d-flex align-items-center justify-content-center py-4">
+                <CRow className="w-100 h-100">
+                    <CCol xs={12} md={10} lg={8} xl={6} className="mx-auto d-flex align-items-center">
+                        <div className="w-100">
+                            {/* Notifications */}
+                            {notification.show && (
+                                <CAlert
+                                    color={notification.type}
+                                    dismissible
+                                    onClose={() => setNotification({ show: false, type: '', message: '' })}
+                                    className="mb-3"
+                                >
+                                    {notification.message}
+                                </CAlert>
+                            )}
 
-                    {/* Main Card */}
-                    <CCard className="mb-4 shadow-sm">
-                        {/* Header */}
-                        <CCardHeader style={{ backgroundColor: "#E6E6FA" }}>
-                            <div className="d-flex align-items-center">
-                                <CIcon icon={cilClock} className="me-2" />
-                                <div>
-                                    <strong>{t('LABELS.employeeAttendance')}</strong>
-                                    <div className="text-muted small">{t('LABELS.checkInOutSecurely')}</div>
-                                </div>
-                            </div>
-                        </CCardHeader>
-
-                        <CCardBody>
-                            {/* Current Status Section */}
-                            <div className="mb-4">
-                                <h6 className="mb-3 text-muted">{t('LABELS.currentStatus')}</h6>
-                                <div className="border-start border-primary border-3 ps-3">
-                                    <CRow className="mb-3">
-                                        <CCol xs={6}>
-                                            <div className="d-flex align-items-center">
-                                                <CIcon
-                                                    icon={status.checkIn ? cilCheckCircle : cilXCircle}
-                                                    className={`me-2 ${status.checkIn ? 'text-success' : 'text-muted'}`}
-                                                />
-                                                <span className="text-muted">{t('LABELS.checkIn')}</span>
-                                            </div>
-                                        </CCol>
-                                        <CCol xs={6}>
-                                            <CBadge color={status.checkIn ? 'success' : 'secondary'}>
-                                                {status.checkIn ? t('LABELS.completed') : t('LABELS.pending')}
-                                            </CBadge>
-                                        </CCol>
-                                    </CRow>
-                                    <CRow>
-                                        <CCol xs={6}>
-                                            <div className="d-flex align-items-center">
-                                                <CIcon
-                                                    icon={status.checkOut ? cilCheckCircle : cilXCircle}
-                                                    className={`me-2 ${status.checkOut ? 'text-success' : 'text-muted'}`}
-                                                />
-                                                <span className="text-muted">{t('LABELS.checkOut')}</span>
-                                            </div>
-                                        </CCol>
-                                        <CCol xs={6}>
-                                            <CBadge color={status.checkOut ? 'success' : 'secondary'}>
-                                                {status.checkOut ? t('LABELS.completed') : t('LABELS.pending')}
-                                            </CBadge>
-                                        </CCol>
-                                    </CRow>
-                                </div>
-                            </div>
-
-                            {/* Divider */}
-                            <hr className="my-4" />
-
-                            {/* Actions Section */}
-                            <div>
-                                <h6 className="mb-3 text-muted">{t('LABELS.actions')}</h6>
-
-                                {/* Location Status */}
-                                <div className="mb-3 p-3 bg-light rounded border-start border-info border-3">
+                            {/* Main Card */}
+                            <CCard className="shadow-lg border-0" style={{ minHeight: '500px' }}>
+                                {/* Header */}
+                                <CCardHeader
+                                    className="py-4"
+                                    style={{
+                                        backgroundColor: "#E6E6FA",
+                                        borderBottom: '3px solid #6c757d'
+                                    }}
+                                >
                                     <div className="d-flex align-items-center">
-                                        <CIcon icon={cilLocationPin} className="me-2 text-primary" />
-                                        <span className="text-muted small">
-                                            {locationLoading ? t('MSG.gettingLocation') : t('MSG.locationVerificationRequired')}
-                                        </span>
+                                        <CIcon icon={cilClock} className="me-3" size="xl" />
+                                        <div>
+                                            <h4 className="mb-1 fw-bold">{t('LABELS.employeeAttendance')}</h4>
+                                            <p className="text-muted mb-0">{t('LABELS.checkInOutSecurely')}</p>
+                                        </div>
                                     </div>
-                                </div>
+                                </CCardHeader>
 
-                                {/* Action Buttons */}
-                                <CRow className="g-3 mb-3">
-                                    <CCol xs={6}>
-                                        <CButton
-                                            color="primary"
-                                            className="w-100"
-                                            onClick={handleCheckIn}
-                                            disabled={status.checkIn || submitting || locationLoading}
-                                        >
-                                            {submitting ? (
-                                                <>
-                                                    <CSpinner size="sm" className="me-2" />
-                                                    {t('LABELS.processing')}
-                                                </>
-                                            ) : (
-                                                t('LABELS.checkIn')
-                                            )}
-                                        </CButton>
-                                    </CCol>
-                                    <CCol xs={6}>
-                                        <CButton
-                                            color="success"
-                                            className="w-100"
-                                            onClick={handleCheckOut}
-                                            disabled={!status.checkIn || status.checkOut || submitting || locationLoading}
-                                        >
-                                            {submitting ? (
-                                                <>
-                                                    <CSpinner size="sm" className="me-2" />
-                                                    {t('LABELS.processing')}
-                                                </>
-                                            ) : (
-                                                t('LABELS.checkOut')
-                                            )}
-                                        </CButton>
-                                    </CCol>
-                                </CRow>
-
-                                {/* Security Notice */}
-                                <div className="p-3 bg-light rounded border-start border-success border-3">
-                                    <div className="d-flex align-items-center">
-                                        <div className="bg-success rounded-circle me-2" style={{ width: '8px', height: '8px' }}></div>
-                                        <span className="text-muted small">
-                                            {t('MSG.allTransactionsSecure')}
-                                        </span>
+                                <CCardBody className="p-4">
+                                    {/* Current Status Section */}
+                                    <div className="mb-5">
+                                        <h5 className="mb-4 text-muted fw-bold">{t('LABELS.currentStatus')}</h5>
+                                        <div className="border-start border-primary border-4 ps-4 py-3" style={{ backgroundColor: '#f8f9fa' }}>
+                                            <CRow className="mb-4">
+                                                <CCol xs={8}>
+                                                    <div className="d-flex align-items-center">
+                                                        <CIcon
+                                                            icon={status.checkIn ? cilCheckCircle : cilXCircle}
+                                                            className={`me-3 ${status.checkIn ? 'text-success' : 'text-muted'}`}
+                                                            size="lg"
+                                                        />
+                                                        <h6 className="mb-0">{t('LABELS.checkIn')}</h6>
+                                                    </div>
+                                                </CCol>
+                                                <CCol xs={4} className="text-end">
+                                                    <CBadge
+                                                        color={status.checkIn ? 'success' : 'secondary'}
+                                                        className="px-3 py-2"
+                                                        style={{ fontSize: '0.875rem' }}
+                                                    >
+                                                        {status.checkIn ? t('LABELS.completed') : t('LABELS.pending')}
+                                                    </CBadge>
+                                                </CCol>
+                                            </CRow>
+                                            <CRow>
+                                                <CCol xs={8}>
+                                                    <div className="d-flex align-items-center">
+                                                        <CIcon
+                                                            icon={status.checkOut ? cilCheckCircle : cilXCircle}
+                                                            className={`me-3 ${status.checkOut ? 'text-success' : 'text-muted'}`}
+                                                            size="lg"
+                                                        />
+                                                        <h6 className="mb-0">{t('LABELS.checkOut')}</h6>
+                                                    </div>
+                                                </CCol>
+                                                <CCol xs={4} className="text-end">
+                                                    <CBadge
+                                                        color={status.checkOut ? 'success' : 'secondary'}
+                                                        className="px-3 py-2"
+                                                        style={{ fontSize: '0.875rem' }}
+                                                    >
+                                                        {status.checkOut ? t('LABELS.completed') : t('LABELS.pending')}
+                                                    </CBadge>
+                                                </CCol>
+                                            </CRow>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                        </CCardBody>
-                    </CCard>
-                </CCol>
-            </CRow>
+
+                                    {/* Divider */}
+                                    <hr className="my-0" style={{ borderTop: '2px solid #dee2e6' }} />
+
+                                    {/* Actions Section */}
+                                    <div>
+                                        <h5 className="mb-4 text-muted fw-bold">{t('LABELS.actions')}</h5>
+
+                                        {/* Location Status */}
+                                        <div className="mb-4 p-4 rounded-3 border-start border-info border-4" style={{ backgroundColor: '#e7f3ff' }}>
+                                            <div className="d-flex align-items-center">
+                                                <CIcon icon={cilLocationPin} className="me-3 text-primary" size="lg" />
+                                                <div>
+                                                    <h6 className="mb-1">
+                                                        {locationLoading ? t('MSG.gettingLocation') : t('MSG.locationVerificationRequired')}
+                                                    </h6>
+                                                    {locationLoading && (
+                                                        <CSpinner size="sm" className="text-primary" />
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Action Buttons */}
+                                        <CRow className="g-4 mb-4">
+                                            <CCol xs={6}>
+                                                <CButton
+                                                    color="primary"
+                                                    className="w-100 py-3"
+                                                    onClick={handleCheckIn}
+                                                    disabled={status.checkIn || submitting || locationLoading}
+                                                    style={{ fontSize: '1.1rem', fontWeight: 'bold' }}
+                                                >
+                                                    {submitting ? (
+                                                        <>
+                                                            <CSpinner size="sm" className="me-2" />
+                                                            {t('LABELS.processing')}
+                                                        </>
+                                                    ) : (
+                                                        t('LABELS.checkIn')
+                                                    )}
+                                                </CButton>
+                                            </CCol>
+                                            <CCol xs={6}>
+                                                <CButton
+                                                    color="success"
+                                                    className="w-100 py-3"
+                                                    onClick={handleCheckOut}
+                                                    disabled={!status.checkIn || status.checkOut || submitting || locationLoading}
+                                                    style={{ fontSize: '1.1rem', fontWeight: 'bold' }}
+                                                >
+                                                    {submitting ? (
+                                                        <>
+                                                            <CSpinner size="sm" className="me-2" />
+                                                            {t('LABELS.processing')}
+                                                        </>
+                                                    ) : (
+                                                        t('LABELS.checkOut')
+                                                    )}
+                                                </CButton>
+                                            </CCol>
+                                        </CRow>
+
+                                        {/* Security Notice */}
+                                        <div className="p-4 rounded-3 border-start border-success border-4" style={{ backgroundColor: '#e8f5e8' }}>
+                                            <div className="d-flex align-items-center">
+                                                <div className="bg-success rounded-circle me-3" style={{ width: '12px', height: '12px' }}></div>
+                                                <h6 className="mb-0 text-success">
+                                                    {t('MSG.allTransactionsSecure')}
+                                                </h6>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CCardBody>
+                            </CCard>
+                        </div>
+                    </CCol>
+                </CRow>
+            </CContainer>
 
             {/* Completed Popup Modal */}
             {showCompletedPopup && (
@@ -379,20 +407,21 @@ function EmployeeCheckInOut() {
                 >
                     <div className="modal-dialog modal-dialog-centered">
                         <div className="modal-content">
-                            <div className="modal-body text-center p-4">
+                            <div className="modal-body text-center p-5">
                                 <CIcon
                                     icon={cilCheckCircle}
-                                    className="text-success mb-3"
-                                    style={{ fontSize: '3rem' }}
+                                    className="text-success mb-4"
+                                    style={{ fontSize: '4rem' }}
                                 />
-                                <h5 className="mb-3">{t('LABELS.allSet')}</h5>
-                                <p className="text-muted mb-4">
+                                <h4 className="mb-3 fw-bold">{t('LABELS.allSet')}</h4>
+                                <p className="text-muted mb-4 fs-5">
                                     {t('MSG.dailyCheckInOutCompleted')}
                                 </p>
                                 <CButton
                                     color="primary"
                                     onClick={closePopup}
-                                    className="w-100"
+                                    className="w-100 py-3"
+                                    style={{ fontSize: '1.1rem', fontWeight: 'bold' }}
                                 >
                                     {t('LABELS.ok')}
                                 </CButton>
@@ -401,7 +430,7 @@ function EmployeeCheckInOut() {
                     </div>
                 </div>
             )}
-        </>
+        </div>
     );
 }
 
