@@ -20,6 +20,7 @@ use App\Http\Controllers\EmployeeTrackerController;
 use App\Http\Controllers\EmployeeTransactionController;
 use App\Http\Controllers\EmployeeDetailsController;
 use App\Http\Controllers\CommonController;
+use App\Http\Controllers\CompanyCordinateController;
 
 // use App\Http\Controllers\PaymentTrackerController;   // include when you add routes
 
@@ -45,6 +46,8 @@ Route::middleware('auth:sanctum')->get('/employee-tracker/status', [EmployeeTrac
 Route::middleware('auth:sanctum')->put('/employee-tracker/{id}', [EmployeeTrackerController::class, 'update']);
 Route::middleware('auth:sanctum')->post('/workSummary', [EmployeeTrackerController::class, 'workSummary']);
 Route::middleware('auth:sanctum')->post('/payment', [EmployeeTransactionController::class, 'payment']);
+Route::middleware('auth:sanctum')->post('/storeCordinates', [CompanyCordinateController::class, 'storeCordinates']);
+Route::middleware('auth:sanctum')->get('/getCordinates', [CompanyCordinateController::class, 'getCordinates']);
 
 
 
