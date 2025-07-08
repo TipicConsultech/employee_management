@@ -608,7 +608,17 @@
     "documentPreview": "Document Preview",
     "noDocumentTypesAvailable": "No document types available",
     "docs_verification": "Document Verification",
-    "creditSalaryDescription": "Credit salary payments to your employees securely"
+    "creditSalaryDescription": "Credit salary payments to your employees securely",
+    "employeeAttendance": "Employee Attendance",
+    "checkInOutSecurely": "Check in and out securely",
+    "currentStatus": "Current Status",
+    "checkIn": "Check In",
+    "checkOut": "Check Out",
+    "completed": "Completed",
+    "pending": "Pending",
+    "allSet": "All Set!",
+    "ok": "OK",
+    "employee_tracker": "Employee Tracker"
 
 
 
@@ -845,7 +855,18 @@
         "clickAddDocumentToStart": "Click \"Add Document\" to get started",
         "contactAdminToAddDocumentTypes": "Please contact your administrator to add document types.",
         "uploadDocumentsSecurely": "Upload important documents for your employees securely",
-        "errorLoadingData": "Error Loading Data"
+        "errorLoadingData": "Error Loading Data",
+        "failedToFetchStatus": "Failed to fetch employee status",
+        "geolocationNotSupported": "Geolocation is not supported by this browser",
+        "unableToGetLocation": "Unable to get your current location",
+        "mustBeAtOfficeLocation": "You must be at the office location to check in/out",
+        "checkInSuccess": "Check-in successful!",
+        "failedToProcessRequest": "Failed to process request",
+        "noTrackerIdFound": "No tracker ID found. Please check in first.",
+        "checkOutSuccess": "Check-out successful!",
+        "gettingLocation": "Getting your location...",
+        "locationVerificationRequired": "Location verification required for check-in/out",
+        "dailyCheckInOutCompleted": "Your daily check-in and check-out have been completed successfully."
 
     }
    }
