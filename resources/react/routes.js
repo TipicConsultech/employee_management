@@ -61,7 +61,9 @@ const DocumentVerification = React.lazy(() => import('./views/pages/employee_man
 const EmployeeRegistration = React.lazy(() => import('./views/pages/employee_management_pages/Employee_Registration'))
 const CreditScreen = React.lazy(() => import('./views/pages/employee_management_pages/CreditScreen'))
 const EmployeeTracker = React.lazy(() => import('./views/pages/employee_management_pages/EmployeeTracker'))
-const BulkEmployeeTracker = React.lazy(() => import('./views/pages/employee_management_pages/BulkEmployeeTracker'))
+const Dashboard2 = React.lazy(() => import('./views/pages/employee_management_pages/Dashboard2'))
+const EmployeeDetails = React.lazy(() => import('./views/pages/employee_management_pages/EmployeeDetailsPage'))
+const SetCoordinates = React.lazy(() => import('./views/pages/employee_management_pages/SetCoordinates'))
 
 
 /* ====================================================================== */
@@ -162,7 +164,9 @@ export default function fetchRoutes () {
       { path: '/employee_registration',    name: 'All Users',                element: EmployeeRegistration },
       { path: '/credit_screen',    name: 'All Users',                element: CreditScreen },
       { path: '/employee_tracker',    name: 'All Users',                element: EmployeeTracker },
-      { path: '/bulk_employee_tracker',    name: 'All Users',                element: BulkEmployeeTracker }
+      { path: '/set_coordinates',    name: 'All Users',                element: SetCoordinates },
+      { path: '/dashboard2',                name: 'Dashboard',                  element: Dashboard2 },
+      { path: '/employees/:id',              name: 'Employee Details',           element: EmployeeDetails },
     ]
   }
 
@@ -201,6 +205,8 @@ export default function fetchRoutes () {
 
       { path: '/usermanagement/create-user', name: 'Create User',             element: NewUsers },
       { path: 'usermanagement/all-users',    name: 'All Users',               element: AllUser },
+      { path: '/dashboard2',                name: 'Dashboard',                  element: Dashboard2 },
+      { path: '/employees/:id',              name: 'Employee Details',           element: EmployeeDetails },
     ]
   }
 
@@ -213,6 +219,8 @@ export default function fetchRoutes () {
 
       { path: '/resetPassword',          name: 'Update Password',element: Resetpassword },
       { path: '/updatepassword',         name: 'Reset Password', element: Updatepassword },
+      { path: '/dashboard2',                name: 'Dashboard',                  element: Dashboard2 },
+      { path: '/employees/:id',              name: 'Employee Details',           element: EmployeeDetails },
     ]
   }
 
@@ -224,6 +232,8 @@ export default function fetchRoutes () {
       { path: '/updatepassword',        name: 'Reset Password',  element: Updatepassword },
 
       { path: '/Reports/crateReport',   name: 'Credit Report',   element: CreditReport },
+      { path: '/dashboard2',                name: 'Dashboard',                  element: Dashboard2 },
+      { path: '/employees/:id',              name: 'Employee Details',           element: EmployeeDetails },
     ]
   }
 
@@ -232,6 +242,8 @@ export default function fetchRoutes () {
     routes = [
       { path: '/resetPassword',         name: 'Update Password', element: Resetpassword },
       { path: '/updatepassword',        name: 'Reset Password',  element: Updatepassword },
+      { path: '/dashboard2',                name: 'Dashboard',                  element: Dashboard2 },
+      { path: '/employees/:id',              name: 'Employee Details',           element: EmployeeDetails },
     ]
   }
 

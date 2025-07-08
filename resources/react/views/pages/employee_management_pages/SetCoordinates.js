@@ -135,7 +135,7 @@ function StoreCoordinates() {
         if (autoHide && type === 'success') {
             setTimeout(() => {
                 setNotification(prev => ({ ...prev, show: false }));
-            }, 4000);
+            }, 5000);
         }
     }, []);
 
@@ -217,7 +217,7 @@ function StoreCoordinates() {
         }
     }, [errors]);
 
-    // Enhanced form submission with better error handling
+    // Enhanced form submission with better error handling and response messages
     const handleSubmit = useCallback(async (e) => {
         e.preventDefault();
 
@@ -243,8 +243,31 @@ function StoreCoordinates() {
 
             const response = await post('/api/storeCordinates', payload);
 
-            if (response.success) {
-                showNotification('success', t('MSG.coordinatesStoredSuccess') || 'Coordinates stored successfully');
+            console.log('API Response:', response); // Debug log to see actual response structure
+
+            // Handle successful response - check multiple possible success indicators
+            const isSuccess = response.success === true ||
+                             response.status === 'success' ||
+                             response.success === 'true' ||
+                             (!response.error && !response.errors && response.id) ||
+                             (response.message && !response.error && !response.errors);
+
+            if (isSuccess) {
+                let successMessage = t('MSG.coordinatesStoredSuccess') || 'Coordinates stored successfully';
+
+                // Check if ID is created and include it in success message
+                if (response.id) {
+                    successMessage = t('MSG.coordinatesStoredWithId') ||
+                        `Coordinates stored successfully with ID: ${response.id}`;
+                }
+
+                // Include any additional success details from response
+                if (response.message && !response.message.toLowerCase().includes('error') && !response.message.toLowerCase().includes('fail')) {
+                    successMessage += `. ${response.message}`;
+                }
+
+                showNotification('success', successMessage, true);
+
                 // Reset form on success
                 setFormData({
                     longitude: '',
@@ -255,17 +278,52 @@ function StoreCoordinates() {
                 });
                 setErrors({});
             } else {
-                showNotification('danger',
-                    response.message || t('MSG.failedToStoreCoordinates') || 'Failed to store coordinates',
-                    false
-                );
+                // Handle failure response
+                let errorMessage = t('MSG.failedToStoreCoordinates') || 'Failed to store coordinates';
+
+                // Use specific error message from response if available
+                if (response.message) {
+                    errorMessage = response.message;
+                } else if (response.error) {
+                    errorMessage = response.error;
+                } else if (response.msg) {
+                    errorMessage = response.msg;
+                }
+
+                // Handle validation errors from server
+                if (response.errors && Array.isArray(response.errors)) {
+                    errorMessage += ': ' + response.errors.join(', ');
+                } else if (response.errors && typeof response.errors === 'object') {
+                    const serverErrors = Object.values(response.errors).flat().join(', ');
+                    errorMessage += ': ' + serverErrors;
+                }
+
+                showNotification('danger', errorMessage, false);
             }
         } catch (error) {
             console.error('Error storing coordinates:', error);
-            showNotification('danger',
-                `${t('MSG.error') || 'Error'}: ${error.message || 'An unexpected error occurred'}`,
-                false
-            );
+
+            // Handle different types of errors
+            let errorMessage = t('MSG.error') || 'Error';
+
+            if (error.response) {
+                // Server responded with error status
+                if (error.response.data && error.response.data.message) {
+                    errorMessage = error.response.data.message;
+                } else if (error.response.data && error.response.data.error) {
+                    errorMessage = error.response.data.error;
+                } else {
+                    errorMessage = `${errorMessage}: ${error.response.status} - ${error.response.statusText}`;
+                }
+            } else if (error.request) {
+                // Network error
+                errorMessage = t('MSG.networkError') || 'Network error: Please check your connection';
+            } else {
+                // Other error
+                errorMessage = `${errorMessage}: ${error.message || 'An unexpected error occurred'}`;
+            }
+
+            showNotification('danger', errorMessage, false);
         } finally {
             setLoading(false);
         }
@@ -336,7 +394,7 @@ function StoreCoordinates() {
                             onClose={() => setNotification(prev => ({ ...prev, show: false }))}
                             className="mb-0"
                         >
-                            {notification.message}
+                            <div dangerouslySetInnerHTML={{ __html: notification.message }} />
                         </CAlert>
                     )}
 

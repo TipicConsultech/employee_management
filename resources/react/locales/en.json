@@ -618,7 +618,21 @@
     "pending": "Pending",
     "allSet": "All Set!",
     "ok": "OK",
-    "employee_tracker": "Employee Tracker"
+    "employee_tracker": "Employee Tracker",
+    "selectTolerance": "Select Tolerance",
+    "customTolerance": "Custom Tolerance",
+    "noLimit": "No Limit",
+    "storeCoordinates": "Store Coordinates",
+    "useCurrentLocation": "Use Current Location",
+    "longitude": "Longitude",
+    "latitude": "Latitude",
+    "tolerance": "Tolerance",
+    "customToleranceValue": "Custom Tolerance (decimal degrees)",
+    "customToleranceHelp": "Tip: 0.001° ≈ 100m, 0.0001° ≈ 10m",
+    "tolerancePreview": "Tolerance Preview",
+    "noLimitDescription": "No geographical limits will be applied",
+    "decimalDegrees": "decimal degrees",
+    "submitting": "Submitting..."
 
 
 
@@ -629,6 +643,11 @@
     "paneer": "Paneer",
     "dahi": "Dahi"
 },
+
+"PLACEHOLDERS": {
+    "enterLongitude": "Enter longitude (-180 to 180)",
+    "enterLatitude": "Enter latitude (-90 to 90)"
+  },
 
 
 
@@ -866,7 +885,28 @@
         "checkOutSuccess": "Check-out successful!",
         "gettingLocation": "Getting your location...",
         "locationVerificationRequired": "Location verification required for check-in/out",
-        "dailyCheckInOutCompleted": "Your daily check-in and check-out have been completed successfully."
+        "dailyCheckInOutCompleted": "Your daily check-in and check-out have been completed successfully.",
+        "longitudeRequired": "Longitude is required",
+        "longitudeInvalidFormat": "Longitude must be a valid number",
+        "longitudeInvalid": "Longitude must be between -180 and 180",
+        "latitudeRequired": "Latitude is required",
+        "latitudeInvalidFormat": "Latitude must be a valid number",
+        "latitudeInvalid": "Latitude must be between -90 and 90",
+        "toleranceRequired": "Tolerance selection is required",
+        "customToleranceRequired": "Custom tolerance value is required",
+        "customToleranceInvalidFormat": "Custom tolerance must be a valid number",
+        "customTolerancePositive": "Custom tolerance must be greater than 0",
+        "customToleranceHigh": "Custom tolerance seems unusually high. Are you sure?",
+        "pleaseCorrectErrors": "Please correct the errors below",
+        "invalidTolerance": "Invalid tolerance configuration",
+        "coordinatesStoredSuccess": "Coordinates stored successfully",
+        "coordinatesStoredWithId": "Coordinates stored successfully with ID: {id}",
+        "failedToStoreCoordinates": "Failed to store coordinates",
+        "locationDetected": "Current location detected",
+        "locationError": "Failed to get current location",
+        "locationPermissionDenied": "Location access denied by user",
+        "locationUnavailable": "Location information is unavailable",
+        "locationTimeout": "Location request timed out"
 
     }
    }

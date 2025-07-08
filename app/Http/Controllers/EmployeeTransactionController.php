@@ -5,6 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\EmployeeTransaction;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Models\Employee;
+use Illuminate\Support\Facades\DB;
+use App\Models\EmployeeTracker;
+
 
 class EmployeeTransactionController extends Controller
 {
@@ -13,6 +17,54 @@ class EmployeeTransactionController extends Controller
     {
         return response()->json(EmployeeTransaction::latest()->paginate(15));
     }
+
+
+    public function payment(Request $request)
+{
+    /* 1. Validate input --------------------------------------------------- */
+    $validated = $request->validate([
+        'start_date'   => ['required', 'date_format:Y-m-d'],   // enforce real dates
+        'end_date'     => ['required', 'date_format:Y-m-d'],
+        'employee_id'  => ['required', 'integer', 'exists:employee,id'],
+        'payed_amount' => ['required','integer'],
+        'salary_amount'=> ['required', 'integer'],
+        'payment_type' => ['required', 'in:cash,upi,bank_transfer'],
+    ]);
+
+    if ($validated['payed_amount'] > $validated['salary_amount']) {
+        return response()->json(['message' => 'Please enter a correct amount.'], 422);
+    }
+
+    // Wrap everything in a single DB transaction --------------------------
+    DB::transaction(function () use (&$validated) {
+
+        $employee = Employee::lockForUpdate()->find($validated['employee_id']);
+
+        // 2. Handle debit logic --------------------------------------------
+        if ($validated['payed_amount'] < $validated['salary_amount']) {
+            $debit = $validated['salary_amount'] - $validated['payed_amount'];
+            $employee->debit += $debit;
+            $employee->save();                // remember: save(), not update()
+        }
+
+        // 3. Create the employee transaction -------------------------------
+        $validated += [
+            'product_id'       => auth()->user()->product_id,
+            'company_id'       => auth()->user()->company_id,
+            'transaction_type' => 'payment',
+        ];
+        EmployeeTransaction::create($validated);
+
+        // 4. Mark tracker rows as paid -------------------------------------
+        EmployeeTracker::where('employee_id', $employee->id)
+            ->whereDate('created_at', '>=', $validated['start_date'])
+            ->whereDate('created_at', '<=', $validated['end_date'])
+            ->where('payment_status', 0)      // only unpaid rows
+            ->update(['payment_status' => 1]);
+    });
+
+    return response()->json(['message' => 'Payment recorded and trackers updated.'], 201);
+}
 
     /* POST /api/employee-transactions */
    public function store(Request $request)

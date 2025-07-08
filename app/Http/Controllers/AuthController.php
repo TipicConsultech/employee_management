@@ -20,7 +20,7 @@ class AuthController extends Controller
             'email' => 'nullable|string|unique:users,email',
             'password' => 'required|string|confirmed',
             'company_id' => 'required',
-            'product_id'=> 'required'
+            'product_id' => 'required'
         ]);
 
         $user = User::create([
@@ -51,7 +51,7 @@ class AuthController extends Controller
             'email' => 'required',
             'company_id' => 'required',
             'blocked' => 'required',
-            product_id
+
         ]);
         $user = User::where('id', $fields['id'])->first();
         $user->update([
@@ -70,59 +70,59 @@ class AuthController extends Controller
         ]);
     }
 
-   public function login(Request $request)
-{
-    /* ───── 1. validate incoming data ───── */
-    $credentials = $request->validate([
-        'email'    => 'required|string|',
-        'password' => 'required|string',
-    ]);
-
-    /* ───── 2. fetch user + company in one trip ───── */
-    $user = User::with('companyInfo')
-                ->where('email', $credentials['email'])
-                ->first();
-
-    /* ───── 3. verify email & password ───── */
-    if (! $user || ! Hash::check($credentials['password'], $user->password)) {
-        throw ValidationException::withMessages([
-            'email' => ['The provided credentials are incorrect.'],
+    public function login(Request $request)
+    {
+        /* ───── 1. validate incoming data ───── */
+        $credentials = $request->validate([
+            'email' => 'required|string|',
+            'password' => 'required|string',
         ]);
-    }
 
-    /* ───── 4. block checks ───── */
-    if ($user->blocked) {
+        /* ───── 2. fetch user + company in one trip ───── */
+        $user = User::with('companyInfo')
+            ->where('email', $credentials['email'])
+            ->first();
+
+        /* ───── 3. verify email & password ───── */
+        if (!$user || !Hash::check($credentials['password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['The provided credentials are incorrect.'],
+            ]);
+        }
+
+        /* ───── 4. block checks ───── */
+        if ($user->blocked) {
+            return response()->json([
+                'message' => 'User not allowed. Kindly contact admin.',
+                'blocked' => true,
+            ], 403);
+        }
+
+        if (!$user->companyInfo) {
+            // Defensive guard if a company row is missing
+            return response()->json([
+                'message' => 'User has no company assigned. Contact admin.',
+            ], 422);
+        }
+
+        if ($user->companyInfo->block_status == 1) {
+            return response()->json([
+                'message' => 'Company not allowed. Kindly contact admin.',
+                'blocked' => true,
+            ], 403);
+        }
+
+        /* ───── 5. Create Sanctum token ───── */
+        $token = $user
+            ->createToken('webapp')     // add scopes as 2nd arg if needed
+            ->plainTextToken;
+
+        /* ───── 6. send the payload ───── */
         return response()->json([
-            'message' => 'User not allowed. Kindly contact admin.',
-            'blocked' => true,
-        ], 403);
+            'user' => $user,
+            'token' => $token,
+        ], 200);
     }
-
-    if (! $user->companyInfo) {
-        // Defensive guard if a company row is missing
-        return response()->json([
-            'message' => 'User has no company assigned. Contact admin.',
-        ], 422);
-    }
-
-    if ($user->companyInfo->block_status == 1) {
-        return response()->json([
-            'message' => 'Company not allowed. Kindly contact admin.',
-            'blocked' => true,
-        ], 403);
-    }
-
-    /* ───── 5. Create Sanctum token ───── */
-    $token = $user
-        ->createToken('webapp')     // add scopes as 2nd arg if needed
-        ->plainTextToken;
-
-    /* ───── 6. send the payload ───── */
-    return response()->json([
-        'user'  => $user,
-        'token' => $token,
-    ], 200);
-}
     function mobileLogin(Request $request)
     {
         $fields = $request->validate([
@@ -130,7 +130,7 @@ class AuthController extends Controller
             'password' => 'required|string'
         ]);
 
-        
+
         //Check if mobile no exists
         $user = User::where('mobile', $fields['mobile'])->first();
 
