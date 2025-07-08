@@ -87,58 +87,93 @@ public function payment(Request $request)
 
 
 public function bulkCheckIn(Request $request)
-{
-    /* 1. Validate ---------------------------------------------------------------- */
-    $data = $request->validate([
-        'employees' => ['required', 'array', 'min:1'],
-        'employees.*' => ['integer', 'distinct']   // each ID must be an int & unique
-    ]);
+    {
+        /* --------------------------------------------------------------------
+         * 1. Validate input
+         * ------------------------------------------------------------------ */
+        $data = $request->validate([
+            'employees'   => ['required', 'array', 'min:1'],
+            'employees.*' => ['integer', 'distinct'],
+        ]);
 
-    /* 2. Resolve product / company from the logged‑in user ------------------------ */
-    $productId = auth()->user()->product_id;   // <- property, not method
-    $companyId = auth()->user()->company_id;
+        /* --------------------------------------------------------------------
+         * 2. Resolve product / company from the logged‑in user
+         * ------------------------------------------------------------------ */
+        $productId = auth()->user()->product_id;   // property, not method
+        $companyId = auth()->user()->company_id;
 
-    /* 3. Fetch the single reference coordinate row ------------------------------- */
-    $coord = CompanyCordinate::where('product_id',  $productId)
-              ->where('company_id', $companyId)    // keep spelling synced with your DB
-              ->firstOrFail();                      // 404 if missing
+        /* --------------------------------------------------------------------
+         * 3. Fetch the single reference‑coordinate row for this company
+         * ------------------------------------------------------------------ */
+        $coord = CompanyCordinate::where('product_id',  $productId)
+                  ->where('company_id', $companyId)
+                  ->firstOrFail();                       // 404 if missing
 
-    // Combine lat/lng into a single string — adjust format if you need JSON, etc.
-    $checkInGps = $coord->required_lat . ',' . $coord->required_lng;
+        $checkInGps = $coord->required_lat . ',' . $coord->required_lng;
+        $today      = now()->toDateString();            // “YYYY‑MM‑DD” (Asia/Kolkata)
 
-    /* 4. Build rows and insert them atomically ----------------------------------- */
-    DB::transaction(function () use ($data, $productId, $companyId, $checkInGps) {
+        /* --------------------------------------------------------------------
+         * 4. Insert rows inside one transaction
+         * ------------------------------------------------------------------ */
+        $inserted = $skipped = 0;
 
-        $rows = [];
-        $now  = now();    // same timestamp for all rows in this batch
+        DB::transaction(function () use (
+            $data, $productId, $companyId, $checkInGps, $today,
+            &$inserted, &$skipped
+        ) {
+            // 4‑A. Pull IDs already checked‑in today
+            $already = EmployeeTracker::where('company_id', $companyId)
+                       ->whereDate('created_at', $today)
+                       ->whereIn('employee_id', $data['employees'])
+                       ->pluck('employee_id')
+                       ->all();
 
-        foreach ($data['employees'] as $employeeId) {
-            $rows[] = [
-                'product_id'       => $productId,
-                'company_id'       => $companyId,
-                'employee_id'      => $employeeId,
-                'check_in'         => true,
-                'check_out'        => false,
-                'payment_status'   => false,
-                'check_in_gps'     => $checkInGps,
-                'check_out_gps'    => null,
-                'check_out_time'   => null,
-                'created_at'       => $now,
-                'updated_at'       => $now,
-            ];
-        }
+            $newIds = array_diff($data['employees'], $already);
+            $skipped  = count($already);
 
-        EmployeeTracker::insert($rows);  // single bulk insert
-    });
+            if (empty($newIds)) {
+                // nothing to insert – leave early, transaction is cheap
+                return;
+            }
 
-    /* 5. Return result ----------------------------------------------------------- */
-    return response()->json([
-        'message'  => 'Check‑in recorded for '.count($data['employees']).' employees.',
-        'count'    => count($data['employees']),
-        'product_id' => $productId,
-        'company_id' => $companyId,
-    ], 201);
-}
+            // 4‑B. Build the bulk‑insert array
+            $now  = now();
+            $rows = [];
+
+            foreach ($newIds as $employeeId) {
+                $rows[] = [
+                    'product_id'     => $productId,
+                    'company_id'     => $companyId,
+                    'employee_id'    => $employeeId,
+                    'check_in'       => true,
+                    'check_out'      => false,
+                    'payment_status' => false,
+                    'check_in_gps'   => $checkInGps,
+                    'check_out_gps'  => null,
+                    'check_out_time' => null,
+                    // 'work_date'      => $today,   // <‑‑ new column with unique index
+                    'created_at'     => $now,
+                    'updated_at'     => $now,
+                ];
+            }
+
+            EmployeeTracker::insert($rows);  // one round‑trip to DB
+            $inserted = count($rows);
+        });
+
+        /* --------------------------------------------------------------------
+         * 5. Return JSON response
+         * ------------------------------------------------------------------ */
+        return response()->json([
+            'message'     => 'Bulk check‑in completed.',
+            'attempted'   => count($data['employees']),
+            'inserted'    => $inserted,
+            'skipped'     => $skipped,
+            'product_id'  => $productId,
+            'company_id'  => $companyId,
+            'work_date'   => $today,
+        ], 201);
+    }
 
 
 public function bulkCheckOut(Request $request)
