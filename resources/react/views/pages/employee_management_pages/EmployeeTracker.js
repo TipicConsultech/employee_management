@@ -28,8 +28,8 @@ function EmployeeCheckInOut() {
     const [trackerId, setTrackerId] = useState(null); // Store tracker ID for PUT request
 
     // Required location coordinates
-    const REQUIRED_LAT = 18.51392;
-    const REQUIRED_LNG = 73.8492416;
+    const REQUIRED_LAT = 18.534528;
+    const REQUIRED_LNG = 73.945648;
     const LOCATION_TOLERANCE = 0.01; // ~1km tolerance (increased for testing)
 
     // Memoized helper function for showing notifications
