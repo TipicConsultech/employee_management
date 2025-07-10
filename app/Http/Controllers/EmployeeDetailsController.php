@@ -14,7 +14,7 @@ class EmployeeDetailsController extends Controller
     {
         return response()->json(EmployeeDetails::latest()->paginate(15));
     }
-    
+
     /* POST /api/employee-details */
   
 
@@ -39,8 +39,8 @@ public function store(Request $request)
     $inserted = [];
 
     // 3️⃣ Loop over every uploaded file (adhaar, pan, etc.)
-    foreach ($request->allFiles() as $docName => $file) {
-
+    foreach ($request->allFiles() as $docId => $file) {
+      
         // Read raw bytes and base‑64 encode (avoids UTF‑8 JSON errors)
         $base64 = base64_encode($file->get());
 
@@ -48,7 +48,7 @@ public function store(Request $request)
             'product_id'    => $productId,
             'employee_id'   => $employeeId,
             'company_id'    => $companyId,
-            'document_id' => $docName,   // "adhaar" | "pan" | ...
+            'document_id' => $docId,  
             'document_link' => $base64,    // <‑‑ MUST be present
         ]);
         $detail['status']=201;
@@ -56,7 +56,7 @@ public function store(Request $request)
         $inserted[] = $detail;
     }
 
-    // 4️⃣ Return the rows (document_link is hidden)
+    // 4️⃣ Return the rows (document_link is hidden)s
     return response()->json($inserted, 201);
 }
     /* GET /api/employee-details/{details} */
