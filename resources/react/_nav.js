@@ -11,6 +11,7 @@ import {
   cilGroup,
   cibElasticStack,
   cibPostgresql,
+  cilCamera,
 } from '@coreui/icons'
 import { CNavGroup, CNavItem } from '@coreui/react'
 import { getUserData } from './util/session'
@@ -98,6 +99,12 @@ export default function fetchNavItems(t1) {
               name: t("LABELS.bulk_employee_tracker"),
               to: '/bulk_employee_tracker',
               icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
+      },
+      {
+              component: CNavItem,
+              name: t("LABELS.checkInWithSelfie"),
+              to: '/checkInWithSelfie',
+              icon: <CIcon icon={cilCamera} customClassName="nav-icon" />,
       }
     ]
   }
