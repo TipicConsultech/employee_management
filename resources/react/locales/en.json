@@ -655,16 +655,16 @@
       "status": "Status",
       "actions": "Actions",
       "details": "Details",
- 
- 
-   
+
+
+
 "viewDocuments": "View Documents",
 "hideDocuments": "Hide Documents",
 "documentPreview": "Document Preview ",
 "download": "Download",
 "close": "Close",
- 
- 
+
+
 "employeeHistory": "Employee History",
 "id": "ID",
 "mobile": "Mobile",
@@ -674,14 +674,14 @@
 "credit": "Credit",
 "debit": "Debit",
 "referral": "Referral",
- 
- 
+
+
 "startDate": "Start Date",
 "endDate": "End Date",
 "workingHours": "Working Hours",
 "calculate": "Calculate",
- 
- 
+
+
 "attendanceHistory": "Attendance History",
 "date": "Date",
 "checkIn": "Check In",
@@ -690,8 +690,8 @@
 "checkOutGPS": "Check-Out GPS",
 "totalPresentDays": "Total Present Days",
 "noTrackerData": "No tracker data available.",
- 
- 
+
+
 "regularHours": "Regular Hours",
 "overtimeHours": "Overtime Hours",
 "totalWorkedHours": "Total Worked Hours",
@@ -703,7 +703,8 @@
 "actualPayment": "Actual Payment (Given to Employee)",
 "pendingAmount": "Pending Amount (From Owner)",
 "paymentMethod": "Payment Method",
-"submit": "Submit"
+"submit": "Submit",
+"quickActions": "Quick Actions"
 
     },
 

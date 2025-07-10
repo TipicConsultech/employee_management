@@ -291,6 +291,50 @@ function EmployeeCheckInOut() {
         setShowCompletedPopup(false);
     };
 
+    // Component for Action Buttons (to avoid duplication)
+    const ActionButtons = () => (
+        <div className="row g-2 g-sm-3 g-md-4 mb-3 mb-sm-4">
+            <div className="col-12 col-sm-6">
+                <CButton
+                    color="primary"
+                    className="w-100 py-3 py-sm-3"
+                    onClick={handleCheckIn}
+                    disabled={status.checkIn || submitting || locationLoading || !coordinatesLoaded}
+                    style={{ fontSize: '1rem', fontWeight: 'bold' }}
+                >
+                    {submitting ? (
+                        <>
+                            <CSpinner size="sm" className="me-2" />
+                            <span className="d-none d-sm-inline">{t('LABELS.processing')}</span>
+                            <span className="d-inline d-sm-none">...</span>
+                        </>
+                    ) : (
+                        t('LABELS.checkIn')
+                    )}
+                </CButton>
+            </div>
+            <div className="col-12 col-sm-6">
+                <CButton
+                    color="success"
+                    className="w-100 py-3 py-sm-3"
+                    onClick={handleCheckOut}
+                    disabled={!status.checkIn || status.checkOut || submitting || locationLoading || !coordinatesLoaded}
+                    style={{ fontSize: '1rem', fontWeight: 'bold' }}
+                >
+                    {submitting ? (
+                        <>
+                            <CSpinner size="sm" className="me-2" />
+                            <span className="d-none d-sm-inline">{t('LABELS.processing')}</span>
+                            <span className="d-inline d-sm-none">...</span>
+                        </>
+                    ) : (
+                        t('LABELS.checkOut')
+                    )}
+                </CButton>
+            </div>
+        </div>
+    );
+
     if (loading) {
         return (
             <div className="d-flex justify-content-center align-items-center vh-100">
@@ -305,7 +349,6 @@ function EmployeeCheckInOut() {
                 <CRow className="w-100 h-100">
                     <CCol xs={12} sm={11} md={10} lg={8} xl={6} xxl={5} className="mx-auto d-flex align-items-center">
                         <div className="w-100">
-
 
                             {/* Notifications */}
                             {notification.show && (
@@ -342,52 +385,136 @@ function EmployeeCheckInOut() {
                                 </CCardHeader>
 
                                 <CCardBody className="p-3 p-sm-4">
-                                    {/* Current Status Section */}
-                                    <div className="mb-4 mb-sm-5">
-                                        <h5 className="mb-3 mb-sm-4 text-muted fw-bold fs-6">{t('LABELS.currentStatus')}</h5>
-                                        <div className="border-start border-primary border-4 ps-3 ps-sm-4 py-3" style={{ backgroundColor: '#f8f9fa' }}>
-                                            <div className="d-flex align-items-center justify-content-between mb-3 mb-sm-4">
-                                                <div className="d-flex align-items-center flex-grow-1">
-                                                    <CIcon
-                                                        icon={status.checkIn ? cilCheckCircle : cilXCircle}
-                                                        className={`me-2 me-sm-3 ${status.checkIn ? 'text-success' : 'text-muted'}`}
-                                                        size="lg"
-                                                    />
-                                                    <h6 className="mb-0 fs-6">{t('LABELS.checkIn')}</h6>
+                                    {/* Layout for Large Screens (md and up) */}
+                                    <div className="d-none d-md-block">
+                                        {/* 1. Current Status Section - First */}
+                                        <div className="mb-4 mb-sm-5">
+                                            <h5 className="mb-3 mb-sm-4 text-muted fw-bold fs-6">{t('LABELS.currentStatus')}</h5>
+                                            <div className="border-start border-primary border-4 ps-3 ps-sm-4 py-3" style={{ backgroundColor: '#f8f9fa' }}>
+                                                <div className="d-flex align-items-center justify-content-between mb-3 mb-sm-4">
+                                                    <div className="d-flex align-items-center flex-grow-1">
+                                                        <CIcon
+                                                            icon={status.checkIn ? cilCheckCircle : cilXCircle}
+                                                            className={`me-2 me-sm-3 ${status.checkIn ? 'text-success' : 'text-muted'}`}
+                                                            size="lg"
+                                                        />
+                                                        <h6 className="mb-0 fs-6">{t('LABELS.checkIn')}</h6>
+                                                    </div>
+                                                    <CBadge
+                                                        color={status.checkIn ? 'success' : 'secondary'}
+                                                        className="px-2 px-sm-3 py-1 py-sm-2"
+                                                        style={{ fontSize: '0.75rem' }}
+                                                    >
+                                                        {status.checkIn ? t('LABELS.completed') : t('LABELS.pending')}
+                                                    </CBadge>
                                                 </div>
-                                                <CBadge
-                                                    color={status.checkIn ? 'success' : 'secondary'}
-                                                    className="px-2 px-sm-3 py-1 py-sm-2"
-                                                    style={{ fontSize: '0.75rem' }}
-                                                >
-                                                    {status.checkIn ? t('LABELS.completed') : t('LABELS.pending')}
-                                                </CBadge>
+
+                                                <div className="d-flex align-items-center justify-content-between">
+                                                    <div className="d-flex align-items-center flex-grow-1">
+                                                        <CIcon
+                                                            icon={status.checkOut ? cilCheckCircle : cilXCircle}
+                                                            className={`me-2 me-sm-3 ${status.checkOut ? 'text-success' : 'text-muted'}`}
+                                                            size="lg"
+                                                        />
+                                                        <h6 className="mb-0 fs-6">{t('LABELS.checkOut')}</h6>
+                                                    </div>
+                                                    <CBadge
+                                                        color={status.checkOut ? 'success' : 'secondary'}
+                                                        className="px-2 px-sm-3 py-1 py-sm-2"
+                                                        style={{ fontSize: '0.75rem' }}
+                                                    >
+                                                        {status.checkOut ? t('LABELS.completed') : t('LABELS.pending')}
+                                                    </CBadge>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* 2. Action Buttons - Second */}
+                                        <div className="mb-4 mb-sm-5">
+                                            <h5 className="mb-3 mb-sm-4 text-muted fw-bold fs-6">{t('LABELS.quickActions')}</h5>
+                                            <ActionButtons />
+                                        </div>
+
+                                        {/* 3. Actions Section - Third */}
+                                        <div className="mb-4 mb-sm-5">
+                                            <h5 className="mb-3 mb-sm-4 text-muted fw-bold fs-6">{t('LABELS.actions')}</h5>
+
+                                            {/* Location Status */}
+                                            <div className="mb-3 mb-sm-4 p-3 p-sm-4 rounded-3 border-start border-info border-4" style={{ backgroundColor: '#e7f3ff' }}>
+                                                <div className="d-flex align-items-center">
+                                                    <CIcon icon={cilLocationPin} className="me-2 me-sm-3 text-primary" size="lg" />
+                                                    <div className="flex-grow-1">
+                                                        <h6 className="mb-1 fs-6">
+                                                            {locationLoading ? t('MSG.gettingLocation') : t('MSG.locationVerificationRequired')}
+                                                        </h6>
+                                                        {locationLoading && (
+                                                            <div className="d-flex align-items-center">
+                                                                <CSpinner size="sm" className="text-primary me-2" />
+                                                                <small className="text-muted">Please wait...</small>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
 
-                                            <div className="d-flex align-items-center justify-content-between">
-                                                <div className="d-flex align-items-center flex-grow-1">
-                                                    <CIcon
-                                                        icon={status.checkOut ? cilCheckCircle : cilXCircle}
-                                                        className={`me-2 me-sm-3 ${status.checkOut ? 'text-success' : 'text-muted'}`}
-                                                        size="lg"
-                                                    />
-                                                    <h6 className="mb-0 fs-6">{t('LABELS.checkOut')}</h6>
+                                            {/* Security Notice */}
+                                            {/* <div className="p-3 p-sm-4 rounded-3 border-start border-success border-4" style={{ backgroundColor: '#e8f5e8' }}>
+                                                <div className="d-flex align-items-center">
+                                                    <div className="bg-success rounded-circle me-2 me-sm-3 flex-shrink-0" style={{ width: '12px', height: '12px' }}></div>
+                                                    <h6 className="mb-0 text-success fs-6">
+                                                        {t('MSG.allTransactionsSecure')}
+                                                    </h6>
                                                 </div>
-                                                <CBadge
-                                                    color={status.checkOut ? 'success' : 'secondary'}
-                                                    className="px-2 px-sm-3 py-1 py-sm-2"
-                                                    style={{ fontSize: '0.75rem' }}
-                                                >
-                                                    {status.checkOut ? t('LABELS.completed') : t('LABELS.pending')}
-                                                </CBadge>
-                                            </div>
+                                            </div> */}
                                         </div>
                                     </div>
 
-                                    <hr className="my-3 my-sm-4" style={{ borderTop: '2px solid #dee2e6' }} />
+                                    {/* Layout for Mobile and Small Screens (sm and below) */}
+                                    <div className="d-block d-md-none">
+                                        {/* Current Status Section */}
+                                        <div className="mb-4 mb-sm-5">
+                                            <h5 className="mb-3 mb-sm-4 text-muted fw-bold fs-6">{t('LABELS.currentStatus')}</h5>
+                                            <div className="border-start border-primary border-4 ps-3 ps-sm-4 py-3" style={{ backgroundColor: '#f8f9fa' }}>
+                                                <div className="d-flex align-items-center justify-content-between mb-3 mb-sm-4">
+                                                    <div className="d-flex align-items-center flex-grow-1">
+                                                        <CIcon
+                                                            icon={status.checkIn ? cilCheckCircle : cilXCircle}
+                                                            className={`me-2 me-sm-3 ${status.checkIn ? 'text-success' : 'text-muted'}`}
+                                                            size="lg"
+                                                        />
+                                                        <h6 className="mb-0 fs-6">{t('LABELS.checkIn')}</h6>
+                                                    </div>
+                                                    <CBadge
+                                                        color={status.checkIn ? 'success' : 'secondary'}
+                                                        className="px-2 px-sm-3 py-1 py-sm-2"
+                                                        style={{ fontSize: '0.75rem' }}
+                                                    >
+                                                        {status.checkIn ? t('LABELS.completed') : t('LABELS.pending')}
+                                                    </CBadge>
+                                                </div>
 
-                                    {/* Actions Section */}
-                                    <div>
+                                                <div className="d-flex align-items-center justify-content-between">
+                                                    <div className="d-flex align-items-center flex-grow-1">
+                                                        <CIcon
+                                                            icon={status.checkOut ? cilCheckCircle : cilXCircle}
+                                                            className={`me-2 me-sm-3 ${status.checkOut ? 'text-success' : 'text-muted'}`}
+                                                            size="lg"
+                                                        />
+                                                        <h6 className="mb-0 fs-6">{t('LABELS.checkOut')}</h6>
+                                                    </div>
+                                                    <CBadge
+                                                        color={status.checkOut ? 'success' : 'secondary'}
+                                                        className="px-2 px-sm-3 py-1 py-sm-2"
+                                                        style={{ fontSize: '0.75rem' }}
+                                                    >
+                                                        {status.checkOut ? t('LABELS.completed') : t('LABELS.pending')}
+                                                    </CBadge>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <hr className="my-3 my-sm-4" style={{ borderTop: '2px solid #dee2e6' }} />
+
                                         <h5 className="mb-3 mb-sm-4 text-muted fw-bold fs-6">{t('LABELS.actions')}</h5>
 
                                         {/* Location Status */}
@@ -408,57 +535,18 @@ function EmployeeCheckInOut() {
                                             </div>
                                         </div>
 
-                                        {/* Action Buttons */}
-                                        <div className="row g-2 g-sm-3 g-md-4 mb-3 mb-sm-4">
-                                            <div className="col-12 col-sm-6">
-                                                <CButton
-                                                    color="primary"
-                                                    className="w-100 py-3 py-sm-3"
-                                                    onClick={handleCheckIn}
-                                                    disabled={status.checkIn || submitting || locationLoading || !coordinatesLoaded}
-                                                    style={{ fontSize: '1rem', fontWeight: 'bold' }}
-                                                >
-                                                    {submitting ? (
-                                                        <>
-                                                            <CSpinner size="sm" className="me-2" />
-                                                            <span className="d-none d-sm-inline">{t('LABELS.processing')}</span>
-                                                            <span className="d-inline d-sm-none">...</span>
-                                                        </>
-                                                    ) : (
-                                                        t('LABELS.checkIn')
-                                                    )}
-                                                </CButton>
-                                            </div>
-                                            <div className="col-12 col-sm-6">
-                                                <CButton
-                                                    color="success"
-                                                    className="w-100 py-3 py-sm-3"
-                                                    onClick={handleCheckOut}
-                                                    disabled={!status.checkIn || status.checkOut || submitting || locationLoading || !coordinatesLoaded}
-                                                    style={{ fontSize: '1rem', fontWeight: 'bold' }}
-                                                >
-                                                    {submitting ? (
-                                                        <>
-                                                            <CSpinner size="sm" className="me-2" />
-                                                            <span className="d-none d-sm-inline">{t('LABELS.processing')}</span>
-                                                            <span className="d-inline d-sm-none">...</span>
-                                                        </>
-                                                    ) : (
-                                                        t('LABELS.checkOut')
-                                                    )}
-                                                </CButton>
-                                            </div>
-                                        </div>
+                                        {/* Action Buttons for Mobile */}
+                                        <ActionButtons />
 
                                         {/* Security Notice */}
-                                        <div className="p-3 p-sm-4 rounded-3 border-start border-success border-4" style={{ backgroundColor: '#e8f5e8' }}>
+                                        {/* <div className="p-3 p-sm-4 rounded-3 border-start border-success border-4" style={{ backgroundColor: '#e8f5e8' }}>
                                             <div className="d-flex align-items-center">
                                                 <div className="bg-success rounded-circle me-2 me-sm-3 flex-shrink-0" style={{ width: '12px', height: '12px' }}></div>
                                                 <h6 className="mb-0 text-success fs-6">
                                                     {t('MSG.allTransactionsSecure')}
                                                 </h6>
                                             </div>
-                                        </div>
+                                        </div> */}
                                     </div>
                                 </CCardBody>
                             </CCard>
