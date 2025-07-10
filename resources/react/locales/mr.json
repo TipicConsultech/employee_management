@@ -651,16 +651,16 @@
       "actions": "कृती",
       "details": "तपशील",
       "absent":"अनुपस्थित",
- 
- 
-     
+
+
+
 "viewDocuments": "कागदपत्रे पहा",
 "hideDocuments": "कागदपत्रे लपवा",
 "documentPreview": "कागदपत्र पूर्वदृश्य उपलब्ध नाही.",
 "download": "डाउनलोड",
 "close": "बंद करा",
- 
- 
+
+
 "employeeHistory": "कर्मचारी हिस्टोरी",
 "id": "ओळख क्रमांक",
 "mobile": "मोबाईल",
@@ -670,14 +670,14 @@
 "credit": "जमा",
 "debit": "खर्च",
 "referral": "संदर्भ",
- 
- 
+
+
 "startDate": "सुरुवातीची तारीख",
 "endDate": "शेवटची तारीख",
 "workingHours": "कामाचे तास",
 "calculate": "क्याल्कुलेट करा ",
- 
- 
+
+
 "attendanceHistory": "उपस्थिती हिस्टोरी ",
 "date": "तारीख",
 "checkIn": "चेक इन",
@@ -686,8 +686,8 @@
 "checkOutGPS": "चेक-आउट जीपीएस",
 "totalPresentDays": "एकूण उपस्थित दिवस",
 "noTrackerData": "ट्रॅकर डेटा उपलब्ध नाही.",
- 
- 
+
+
 "regularHours": "नियमित तास",
 "overtimeHours": "अतिरिक्त तास",
 "totalWorkedHours": "एकूण काम केलेले तास",
@@ -699,7 +699,8 @@
 "actualPayment": "खरे वेतन (कर्मचाऱ्याला दिलेले)",
 "pendingAmount": "थकबाकी रक्कम (मालकाकडून)",
 "paymentMethod": "देयक पद्धत",
-"submit": "सबमिट"
+"submit": "सबमिट",
+"quickActions": "त्वरित कृती"
 
 
 

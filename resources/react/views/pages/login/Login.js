@@ -71,9 +71,63 @@ const Login = () => {
       case 1:
          return '/dashboard';
       case 10:
-        return '/employee_tracker';  
+        return '/employee_tracker';
       default:
         return '/employee_tracker';
+    }
+  };
+
+  // Mobile number validation function
+  const validateMobileNumber = (mobile) => {
+    // Remove all non-numeric characters
+    const cleaned = mobile.replace(/\D/g, '');
+
+    // Check if it's a valid mobile number (10 digits, starting with 6, 7, 8, or 9)
+    const mobileRegex = /^[6-9]\d{9}$/;
+    return mobileRegex.test(cleaned);
+  };
+
+  // Handle numeric input only for mobile number
+  const handleMobileInputChange = (e) => {
+    const value = e.target.value;
+    // Only allow numeric characters
+    const numericValue = value.replace(/[^0-9]/g, '');
+
+    // Limit to 10 digits
+    if (numericValue.length <= 10) {
+      e.target.value = numericValue;
+    } else {
+      e.target.value = numericValue.substring(0, 10);
+    }
+  };
+
+  // Prevent non-numeric key presses for mobile input
+  const handleMobileKeyPress = (e) => {
+    // Allow: backspace, delete, tab, escape, enter
+    if ([8, 9, 27, 13, 46].indexOf(e.keyCode) !== -1 ||
+        // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+        (e.keyCode === 65 && e.ctrlKey === true) ||
+        (e.keyCode === 67 && e.ctrlKey === true) ||
+        (e.keyCode === 86 && e.ctrlKey === true) ||
+        (e.keyCode === 88 && e.ctrlKey === true)) {
+      return;
+    }
+    // Ensure that it is a number and stop the keypress
+    if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+      e.preventDefault();
+    }
+  };
+
+  // Handle paste event for mobile input
+  const handleMobilePaste = (e) => {
+    e.preventDefault();
+    const paste = (e.clipboardData || window.clipboardData).getData('text');
+    const numericPaste = paste.replace(/[^0-9]/g, '');
+
+    if (numericPaste.length <= 10) {
+      e.target.value = numericPaste;
+    } else {
+      e.target.value = numericPaste.substring(0, 10);
     }
   };
 
@@ -107,6 +161,13 @@ const Login = () => {
         ? 'Please provide valid phone number and password'
         : 'Please provide valid email and password';
       showToast('danger', errorMessage);
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Mobile number validation for Employee login
+    if (loginType === 'Employee' && !validateMobileNumber(credential)) {
+      showToast('danger', 'Please provide a valid 10-digit mobile number');
       setIsSubmitting(false);
       return;
     }
@@ -332,10 +393,18 @@ const Login = () => {
                         name="username"
                         placeholder={loginType === 'Employee' ? 'Enter your phone number' : 'Enter your email'}
                         autoComplete="off"
-                        feedbackInvalid={`Please provide ${loginType === 'Employee' ? 'phone number' : 'email'}.`}
+                        feedbackInvalid={`Please provide ${loginType === 'Employee' ? 'valid 10-digit mobile number' : 'email'}.`}
                         required
                         type={loginType === 'Employee' ? 'tel' : 'email'}
                         disabled={isSubmitting}
+                        pattern={loginType === 'Employee' ? '[6-9][0-9]{9}' : undefined}
+                        title={loginType === 'Employee' ? 'Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9' : undefined}
+                        maxLength={loginType === 'Employee' ? '10' : undefined}
+                        minLength={loginType === 'Employee' ? '10' : undefined}
+                        inputMode={loginType === 'Employee' ? 'numeric' : 'email'}
+                        onInput={loginType === 'Employee' ? handleMobileInputChange : undefined}
+                        onKeyDown={loginType === 'Employee' ? handleMobileKeyPress : undefined}
+                        onPaste={loginType === 'Employee' ? handleMobilePaste : undefined}
                       />
                     </CInputGroup>
 
