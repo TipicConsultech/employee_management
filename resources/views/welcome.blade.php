@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Milk Factory Application</title>
+    <title>Emppulse</title>
 
     <!-- For IOS START -->
     <link rel="apple-touch-icon" href="apple-icon-180.png">
