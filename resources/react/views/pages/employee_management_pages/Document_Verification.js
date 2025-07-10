@@ -18,7 +18,7 @@ import {
     CAlert,
     CFormInput
 } from '@coreui/react';
-import { getAPICall, post } from '../../../util/api';
+import { getAPICall, post, postFormData } from '../../../util/api';
 import { useTranslation } from 'react-i18next';
 import CIcon from '@coreui/icons-react';
 import { cilZoom, cilCloudUpload } from '@coreui/icons';
@@ -71,14 +71,14 @@ function EmployeeDocumentUpload() {
     const fetchDocumentTypes = useCallback(async () => {
         try {
             setDocumentTypesLoading(true);
-            const response = await getAPICall('/api/documentTypes');
-            if (response.data) {
-                setDocumentTypes(response.data);
+            const response = await getAPICall('/api/document-type');
+            if (response) {
+                setDocumentTypes(response);
                 // Auto-generate document upload rows for each document type
-                const documentRows = response.data.map(type => ({
+                const documentRows = response.map(type => ({
                     id: type.id,
                     documentType: type.id,
-                    documentTypeName: type.name,
+                    documentTypeName: type.document_name,
                     file: null,
                     fileName: '',
                     previewUrl: null
@@ -180,7 +180,7 @@ function EmployeeDocumentUpload() {
                 formData.append(`documents[${index}][file]`, doc.file);
             });
 
-            const response = await post('/api/employee-documents', formData);
+            const response = await postFormData('/api/employee-details', formData);
 
             if (response.success) {
                 showNotification('success', 'Documents uploaded successfully');
