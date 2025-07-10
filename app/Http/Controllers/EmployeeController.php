@@ -72,14 +72,37 @@ class EmployeeController extends Controller
 
 public function employeeDtailsForDashboard()
 {
-    $employees = Employee::where('product_id',auth()->user()->product_id)
-    ->where('company_id',auth()->user()->company_id)
-    ->with(['trackers' => function ($query) {
-        $query->latest('created_at')->limit(1); // latest check-in record
-    }])->get();
- 
+    $productId = auth()->user()->product_id;
+    $companyId = auth()->user()->company_id;
+    $today = now()->toDateString(); // Gets today's date in 'Y-m-d' format
+
+    $employees = Employee::where('product_id', $productId)
+        ->where('company_id', $companyId)
+        ->with(['trackers' => function ($query) use ($today) {
+            $query->whereDate('created_at', $today)
+                  ->latest('created_at')
+                  ->limit(1);
+        }])->get()
+        ->map(function ($employee) use ($productId, $companyId) {
+            // If no tracker found for today, add default structure
+            if ($employee->trackers->isEmpty()) {
+                $employee->trackers = collect([
+                    (object)[
+                        'id' => null, // or any placeholder
+                        'product_id' => $productId,
+                        'employee_id' => $employee->id,
+                        'company_id' => $companyId,
+                        'check_in' => false,
+                        'check_out' => false,
+                    ]
+                ]);
+            }
+            return $employee;
+        });
+
     return response()->json($employees);
 }
+
  
 public function showEmployeesDetails($id)
 {

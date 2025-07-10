@@ -222,72 +222,160 @@ public function bulkCheckOut(Request $request)
 }
 
 
- public function workSummary(Request $request)
-    {
-        /* 1. Validate input --------------------------------------------------- */
-        $validated = $request->validate([
-            'employee_id'    => ['required', 'integer', 'exists:employee,id'],
-            'start_date'     => ['required', 'date'],
-            'end_date'       => ['required', 'date', 'after_or_equal:start_date'],
-            'working_hours'  => ['sometimes', 'numeric', 'min:1'],
-        ]);
+//  public function workSummary(Request $request)
+//     {
+//         /* 1. Validate input --------------------------------------------------- */
+//         $validated = $request->validate([
+//             'employee_id'    => ['required', 'integer', 'exists:employee,id'],
+//             'start_date'     => ['required', 'date'],
+//             'end_date'       => ['required', 'date', 'after_or_equal:start_date'],
+//             'working_hours'  => ['sometimes', 'numeric', 'min:1'],
+//         ]);
 
-        $employeeId = (int) $validated['employee_id'];
-        $standard   = (int) ($validated['working_hours'] ?? 9);
+//         $employeeId = (int) $validated['employee_id'];
+//         $standard   = (int) ($validated['working_hours'] ?? 9);
 
-        $start = Carbon::parse($validated['start_date'], 'Asia/Kolkata')->startOfDay();
-        $end   = Carbon::parse($validated['end_date'],   'Asia/Kolkata')->endOfDay();
+//         $start = Carbon::parse($validated['start_date'], 'Asia/Kolkata')->startOfDay();
+//         $end   = Carbon::parse($validated['end_date'],   'Asia/Kolkata')->endOfDay();
 
-        /* 2. Aggregate per day (one SQL query) ------------------------------- */
-      $daily = EmployeeTracker::query()
-    ->selectRaw(
-        'DATE(created_at) AS work_date,
-         SUM(TIMESTAMPDIFF(MINUTE, created_at, check_out_time))                 AS worked_minutes,
-         SUM(GREATEST(TIMESTAMPDIFF(MINUTE, created_at, check_out_time) - ?, 0)) AS overtime_minutes',
-        [$standard * 60]
-    )
-    ->where('employee_id', $employeeId)
-    ->where('payment_status', 0)          // ← only rows that are still unpaid
-    ->whereBetween('created_at', [$start, $end])
-    ->whereNotNull('check_out_time')
-    ->groupBy(DB::raw('DATE(created_at)'))
-    ->orderBy('work_date')
-    ->get();
+//         /* 2. Aggregate per day (one SQL query) ------------------------------- */
+//       $daily = EmployeeTracker::query()
+//     ->selectRaw(
+//         'DATE(created_at) AS work_date,
+//          SUM(TIMESTAMPDIFF(MINUTE, created_at, check_out_time))                 AS worked_minutes,
+//          SUM(GREATEST(TIMESTAMPDIFF(MINUTE, created_at, check_out_time) - ?, 0)) AS overtime_minutes',
+//         [$standard * 60]
+//     )
+//     ->where('employee_id', $employeeId)
+//     ->where('payment_status', 0)          // ← only rows that are still unpaid
+//     ->whereBetween('created_at', [$start, $end])
+//     ->whereNotNull('check_out_time')
+//     ->groupBy(DB::raw('DATE(created_at)'))
+//     ->orderBy('work_date')
+//     ->get();
 
 
-        /* 3. Build per‑day payload ------------------------------------------- */
-        $payload = $daily->map(fn ($d) => [
-            'date'           => $d->work_date,
-            'worked_hours'   => round($d->worked_minutes   / 60, 2),
-            'overtime_hours' => round($d->overtime_minutes / 60, 2),
-        ]);
+//         /* 3. Build per‑day payload ------------------------------------------- */
+//         $payload = $daily->map(fn ($d) => [
+//             'date'           => $d->work_date,
+//             'worked_hours'   => round($d->worked_minutes   / 60, 2),
+//             'overtime_hours' => round($d->overtime_minutes / 60, 2),
+//         ]);
 
-        /* 4. Grand totals (minutes) ------------------------------------------ */
-        $totalWorkedMinutes   = $daily->sum('worked_minutes');
-        $totalOvertimeMinutes = $daily->sum('overtime_minutes');
+//         /* 4. Grand totals (minutes) ------------------------------------------ */
+//         $totalWorkedMinutes   = $daily->sum('worked_minutes');
+//         $totalOvertimeMinutes = $daily->sum('overtime_minutes');
 
-        /* 5. Apply 30‑minute rounding on totals ------------------------------ */
-        $roundHours = static fn (int $minutes) => intdiv($minutes, 60)
-                                            + (($minutes % 60) > 30 ? 1 : 0);
+//         /* 5. Apply 30‑minute rounding on totals ------------------------------ */
+//         $roundHours = static fn (int $minutes) => intdiv($minutes, 60)
+//                                             + (($minutes % 60) > 30 ? 1 : 0);
 
-        $totalWorkedHours   = $roundHours($totalWorkedMinutes);
-        $overtimeHours      = $roundHours($totalOvertimeMinutes);
+//         $totalWorkedHours   = $roundHours($totalWorkedMinutes);
+//         $overtimeHours      = $roundHours($totalOvertimeMinutes);
 
-        /* 6. NEW: regular hours (worked – overtime) -------------------------- */
-        $regularHours = max($totalWorkedHours - $overtimeHours, 0);
+//         /* 6. NEW: regular hours (worked – overtime) -------------------------- */
+//         $regularHours = max($totalWorkedHours - $overtimeHours, 0);
 
-        /* 7. Respond ---------------------------------------------------------- */
-        return response()->json([
-            'employee_id'         => $employeeId,
-            'start_date'          => $validated['start_date'],
-            'end_date'            => $validated['end_date'],
-            'standard_day_hours'  => $standard,
-            'payload'             => $payload,
-            'total_worked_hours'  => $totalWorkedHours,
-            'overtime_hours'      => $overtimeHours,
-            'regular_hours'       => $regularHours,   // ← third output you asked for
-        ]);
-    }
+//         /* 7. Respond ---------------------------------------------------------- */
+//         return response()->json([
+//             'employee_id'         => $employeeId,
+//             'start_date'          => $validated['start_date'],
+//             'end_date'            => $validated['end_date'],
+//             'standard_day_hours'  => $standard,
+//             'payload'             => $payload,
+//             'total_worked_hours'  => $totalWorkedHours,
+//             'overtime_hours'      => $overtimeHours,
+//             'regular_hours'       => $regularHours,   // ← third output you asked for
+//         ]);
+//     }
+
+public function workSummary(Request $request)
+{
+    /* 1. Validate input --------------------------------------------------- */
+    $validated = $request->validate([
+        'employee_id'    => ['required', 'integer', 'exists:employee,id'],
+        'start_date'     => ['required', 'date'],
+        'end_date'       => ['required', 'date', 'after_or_equal:start_date'],
+        'working_hours'  => ['sometimes', 'numeric', 'min:1'],
+    ]);
+ 
+    $employee = Employee::find($validated['employee_id']);
+    $employeeId = (int) $validated['employee_id'];
+    $standard   = (int) ($validated['working_hours'] ?? 9);
+ 
+    $start = Carbon::parse($validated['start_date'], 'Asia/Kolkata')->startOfDay();
+    $end   = Carbon::parse($validated['end_date'], 'Asia/Kolkata')->endOfDay();
+ 
+    /* 2. Aggregate per day (work summary) ---------------------------------- */
+    $daily = EmployeeTracker::query()
+        ->selectRaw(
+            'DATE(created_at) AS work_date,
+             SUM(TIMESTAMPDIFF(MINUTE, created_at, check_out_time))                 AS worked_minutes,
+             SUM(GREATEST(TIMESTAMPDIFF(MINUTE, created_at, check_out_time) - ?, 0)) AS overtime_minutes',
+            [$standard * 60]
+        )
+        ->where('employee_id', $employeeId)
+        ->where('payment_status', 0)
+        ->whereBetween('created_at', [$start, $end])
+        ->whereNotNull('check_out_time')
+        ->groupBy(DB::raw('DATE(created_at)'))
+        ->orderBy('work_date')
+        ->get();
+ 
+    /* 3. Build per‑day payload --------------------------------------------- */
+    $payload = $daily->map(fn ($d) => [
+        'date'           => $d->work_date,
+        'worked_hours'   => round($d->worked_minutes   / 60, 2),
+        'overtime_hours' => round($d->overtime_minutes / 60, 2),
+    ]);
+ 
+    /* 4. Grand totals (minutes) -------------------------------------------- */
+    $totalWorkedMinutes   = $daily->sum('worked_minutes');
+    $totalOvertimeMinutes = $daily->sum('overtime_minutes');
+ 
+    /* 5. Apply 30‑minute rounding on totals -------------------------------- */
+    $roundHours = static fn (int $minutes) => intdiv($minutes, 60)
+                                        + (($minutes % 60) > 30 ? 1 : 0);
+ 
+    $totalWorkedHours   = $roundHours($totalWorkedMinutes);
+    $overtimeHours      = $roundHours($totalOvertimeMinutes);
+ 
+    /* 6. Regular hours ------------------------------------------------------ */
+    $regularHours = max($totalWorkedHours - $overtimeHours, 0);
+ 
+    /* 7. Attendance list ---------------------------------------------------- */
+    $Attendance = EmployeeTracker::query()
+        ->selectRaw('DATE(created_at) as date')
+        ->selectRaw('payment_status')
+        ->selectRaw('ROUND(SUM(TIMESTAMPDIFF(MINUTE, created_at, check_out_time)) / 60, 2) AS total_hours')
+        ->where('employee_id', $employeeId)
+        ->whereBetween('created_at', [$start, $end])
+        ->whereNotNull('check_out_time')
+        ->groupBy(DB::raw('DATE(created_at)'), 'payment_status')
+        ->orderBy('date')
+        ->get();
+ 
+     $attendance = $Attendance->map(fn ($d) => [
+        'date'           => $d->date,
+        'total_hours'   => round($d->total_hours),
+        'payment_status' => $d->payment_status
+    ]);
+ 
+    /* 8. Respond with everything -------------------------------------------- */
+    return response()->json([
+        'employee_id'         => $employeeId,
+        'start_date'          => $validated['start_date'],
+        'end_date'            => $validated['end_date'],
+        'standard_day_hours'  => $standard,
+        'payload'             => $payload,
+        'total_worked_hours'  => $totalWorkedHours,
+        'overtime_hours'      => $overtimeHours,
+        'regular_hours'       => $regularHours,
+        'wage_hour'           => $employee->wage_hour,
+        'wage_overtime'       => $employee->wage_overtime,
+        'attendance'          => $attendance,  // ✅ New added response
+    ]);
+}
 
 public function checkTodayStatus(Request $request): JsonResponse
 {

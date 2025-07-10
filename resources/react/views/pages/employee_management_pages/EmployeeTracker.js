@@ -232,7 +232,6 @@ function EmployeeCheckInOut() {
                 showNotification('warning', 'Office location not loaded. Please refresh the page.');
                 return;
             }
-
             // Enhanced tracker ID validation
             if (!trackerId) {
                 console.error('No tracker ID available for check-out');

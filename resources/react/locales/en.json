@@ -645,7 +645,7 @@
     "bulk_employee_tracker": "Bulk Employee Tracker",
 
       "totalEmployees": "Total Employees",
-      "presentToday": "Present Today",
+      "presentToday": "Present",
       "totalCredit": "Total Credit",
       "totalDebit": "Total Debit",
       "employeeAttendance": "Employee Attendance & Details",
