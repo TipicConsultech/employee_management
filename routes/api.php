@@ -21,6 +21,7 @@ use App\Http\Controllers\EmployeeTransactionController;
 use App\Http\Controllers\EmployeeDetailsController;
 use App\Http\Controllers\CommonController;
 use App\Http\Controllers\CompanyCordinateController;
+use App\Http\Controllers\DocumentTypeController;
 
 // use App\Http\Controllers\PaymentTrackerController;   // include when you add routes
 
@@ -55,6 +56,7 @@ Route::middleware('auth:sanctum')->post('/employeeCredit', [CommonController::cl
 
 Route::middleware(['auth:sanctum'])->group(function () {
   /* ---------- EmployeeController APIs---------- */
+    Route::apiResource('document-type', DocumentTypeController::class);
     Route::apiResource('employee-details', EmployeeDetailsController::class);
     Route::apiResource('employee-transactions', EmployeeTransactionController::class);  
     Route::apiResource('employee-tracker', EmployeeTrackerController::class);

@@ -258,7 +258,7 @@ function StoreCoordinates() {
                 // Check if ID is created and include it in success message
                 if (response.id) {
                     successMessage = t('MSG.coordinatesStoredWithId') ||
-                        `Coordinates stored successfully with ID: ${response.id}`;
+                        `Coordinates stored successfully `;
                 }
 
                 // Include any additional success details from response

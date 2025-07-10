@@ -14,7 +14,7 @@ class EmployeeDetailsController extends Controller
     {
         return response()->json(EmployeeDetails::latest()->paginate(15));
     }
-
+    
     /* POST /api/employee-details */
   
 
@@ -48,7 +48,7 @@ public function store(Request $request)
             'product_id'    => $productId,
             'employee_id'   => $employeeId,
             'company_id'    => $companyId,
-            'document_name' => $docName,   // "adhaar" | "pan" | ...
+            'document_id' => $docName,   // "adhaar" | "pan" | ...
             'document_link' => $base64,    // <‑‑ MUST be present
         ]);
         $detail['status']=201;
@@ -98,7 +98,7 @@ public function store(Request $request)
             'product_id'    => ['required', 'exists:products,id'],
             'employee_id'    => ['required', 'exists:employee,id'],
             'company_id'     => ['required', 'integer', 'exists:company_info,company_id'],
-            'document_name'  => ['required', 'string', 'max:255'],
+            'document_id'  => ['required', 'integer', 'max:255'],
             'document_link'  => ['required', 'url', 'max:2048'],
         ]);
     }
@@ -107,7 +107,7 @@ public function store(Request $request)
 {
     $documents = DB::table('employee_details')
         ->where('employee_id', $employee_id)
-        ->select('employee_id', 'company_id', 'document_name', 'document_link')
+        ->select('employee_id', 'company_id', 'document_id', 'document_link')
         ->get();
  
     return response()->json($documents);

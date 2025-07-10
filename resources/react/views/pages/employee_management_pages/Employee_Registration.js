@@ -184,7 +184,7 @@ const EmployeeRegistrationForm = () => {
     }
   }, [handleInputChange]);
 
-  const handleDigitOnlyInput = useCallback((field, value, maxLength) => {
+const handleDigitOnlyInput = useCallback((field, value, maxLength) => {
     // Allow only digits up to maxLength
     if (value === '' || (/^\d*$/.test(value) && value.length <= maxLength)) {
       handleInputChange(field, value);
@@ -232,15 +232,11 @@ const EmployeeRegistrationForm = () => {
         delete payload.password;
         delete payload.re_enter_password;
       }
-
       // Remove re_enter_password from payload as it's only for validation
       delete payload.re_enter_password;
-
       console.log('Submitting employee data:', payload);
-
       const response = await post('/api/employees', payload);
-
-      if (response && (response.success || response.status === 200 || response.status === 201)) {
+      if (response && response.employee.id){
         showNotification('success', response.message || t('MSG.employeeRegisteredSuccess'));
         resetForm();
       } else {

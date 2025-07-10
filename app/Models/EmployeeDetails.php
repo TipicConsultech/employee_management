@@ -17,7 +17,7 @@ class EmployeeDetails extends Model
         'product_id',
         'employee_id',
         'company_id',
-        'document_name',
+        'document_id',
         'document_link', 
     ];
    protected $hidden = ['document_link'];

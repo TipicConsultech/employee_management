@@ -69,16 +69,11 @@ const Login = () => {
       case 0:
         return '/company/new';
       case 1:
-      case 2:
-        return '/dashboard';
-      case 3:
-        return '/CreateFactoryProduct';
-      case 4:
-        return '/delivery';
-      case 5:
-        return '/LaboratoryUser';
+         return '/dashboard';
+      case 10:
+        return '/employee_tracker';  
       default:
-        return '/dashboard';
+        return '/employee_tracker';
     }
   };
 

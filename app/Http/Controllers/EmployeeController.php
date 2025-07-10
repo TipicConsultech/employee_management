@@ -72,7 +72,9 @@ class EmployeeController extends Controller
 
 public function employeeDtailsForDashboard()
 {
-    $employees = Employee::with(['trackers' => function ($query) {
+    $employees = Employee::where('product_id',auth()->user()->product_id)
+    ->where('company_id',auth()->user()->company_id)
+    ->with(['trackers' => function ($query) {
         $query->latest('created_at')->limit(1); // latest check-in record
     }])->get();
  

@@ -123,8 +123,6 @@ export default function fetchRoutes () {
   else if (user === 1) {
     routes = [
       { path: '/', exact: true, name: 'Home' },
-      { path: '/dashboard',                name: 'Dashboard',                  element: Dashboard },
-
       { path: '/delivery',                 name: 'Delivery',                   element: Delivery },
       { path: '/invoice',                  name: 'Invoice',                    element: Invoice },
       { path: '/factory-invoice',          name: 'Factory Invoice',            element: FactoryInvoice },
@@ -165,7 +163,7 @@ export default function fetchRoutes () {
       { path: '/credit_screen',    name: 'All Users',                element: CreditScreen },
       { path: '/employee_tracker',    name: 'All Users',                element: EmployeeTracker },
       { path: '/set_coordinates',    name: 'All Users',                element: SetCoordinates },
-      { path: '/dashboard2',                name: 'Dashboard',                  element: Dashboard2 },
+      { path: '/dashboard',                name: 'Dashboard',                  element: Dashboard2 },
       { path: '/employees/:id',              name: 'Employee Details',           element: EmployeeDetails },
       { path: '/bulk_employee_tracker',              name: 'Employee Details',           element: BulkEmployeeTracker },
     ]
@@ -175,7 +173,7 @@ export default function fetchRoutes () {
   else if (user === 2) {
     routes = [
       { path: '/', exact: true, name: 'Home' },
-      { path: '/dashboard',               name: 'Dashboard',                  element: Dashboard },
+
 
       { path: '/delivery',                name: 'Delivery',                   element: Delivery },
       { path: '/invoice',                 name: 'Invoice',                    element: Invoice },
@@ -206,7 +204,7 @@ export default function fetchRoutes () {
 
       { path: '/usermanagement/create-user', name: 'Create User',             element: NewUsers },
       { path: 'usermanagement/all-users',    name: 'All Users',               element: AllUser },
-      { path: '/dashboard2',                name: 'Dashboard',                  element: Dashboard2 },
+      { path: '/dashboard',                name: 'Dashboard',                  element: Dashboard2 },
       { path: '/employees/:id',              name: 'Employee Details',           element: EmployeeDetails },
     ]
   }
@@ -220,7 +218,7 @@ export default function fetchRoutes () {
 
       { path: '/resetPassword',          name: 'Update Password',element: Resetpassword },
       { path: '/updatepassword',         name: 'Reset Password', element: Updatepassword },
-      { path: '/dashboard2',                name: 'Dashboard',                  element: Dashboard2 },
+      { path: '/dashboard',                name: 'Dashboard',                  element: Dashboard2 },
       { path: '/employees/:id',              name: 'Employee Details',           element: EmployeeDetails },
     ]
   }
@@ -233,7 +231,7 @@ export default function fetchRoutes () {
       { path: '/updatepassword',        name: 'Reset Password',  element: Updatepassword },
 
       { path: '/Reports/crateReport',   name: 'Credit Report',   element: CreditReport },
-      { path: '/dashboard2',                name: 'Dashboard',                  element: Dashboard2 },
+      { path: '/dashboard',                name: 'Dashboard',                  element: Dashboard2 },
       { path: '/employees/:id',              name: 'Employee Details',           element: EmployeeDetails },
     ]
   }
@@ -243,7 +241,7 @@ export default function fetchRoutes () {
     routes = [
       { path: '/resetPassword',         name: 'Update Password', element: Resetpassword },
       { path: '/updatepassword',        name: 'Reset Password',  element: Updatepassword },
-      { path: '/dashboard2',                name: 'Dashboard',                  element: Dashboard2 },
+      { path: '/dashboard',                name: 'Dashboard',                  element: Dashboard2 },
       { path: '/employees/:id',              name: 'Employee Details',           element: EmployeeDetails },
     ]
   }
