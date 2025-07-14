@@ -727,4 +727,99 @@ public function contractSummary(Request $request): JsonResponse
     ]);
 }
 
+public function weeklyPresenty(Request $request)
+    {
+        $validated = $request->validate([
+            'date' => 'required|date',
+            'week_start_day' => 'required|string|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday'
+            
+        ]);
+
+        $date = Carbon::parse($validated['date']);
+        $weekStartDay = $validated['week_start_day'];
+
+        // Map week start day to Carbon constants
+        $dayMap = [
+            'monday' => Carbon::MONDAY,
+            'tuesday' => Carbon::TUESDAY,
+            'wednesday' => Carbon::WEDNESDAY,
+            'thursday' => Carbon::THURSDAY,
+            'friday' => Carbon::FRIDAY,
+            'saturday' => Carbon::SATURDAY,
+            'sunday' => Carbon::SUNDAY
+        ];
+
+        $carbonDay = $dayMap[$weekStartDay];
+
+        // Calculate week range based on selected start day
+        $startOfWeek = $date->copy()->startOfWeek($carbonDay);
+        $endOfWeek = $date->copy()->endOfWeek($carbonDay);
+
+        $employees = Employee::with([
+            'trackers' => function ($query) use ($startOfWeek, $endOfWeek) {
+                $query->whereBetween('created_at', [$startOfWeek->startOfDay(), $endOfWeek->endOfDay()]);
+            }
+        ])->get();
+
+        $result = [];
+
+        foreach ($employees as $employee) {
+            $attendance = [];
+
+            for ($day = $startOfWeek->copy(); $day <= $endOfWeek; $day->addDay()) {
+                $dayKey = $day->format('Y-m-d');
+                $isSunday = $day->isSunday();
+
+                $tracker = $employee->trackers->first(function ($t) use ($dayKey) {
+                    return Carbon::parse($t->created_at)->format('Y-m-d') === $dayKey;
+                });
+
+                $entry = [
+                    'status' => 'A',
+                ];
+
+                if ($tracker && $tracker->check_in && $tracker->check_out && $tracker->check_out_time) {
+                    $checkInTime = Carbon::parse($tracker->created_at);
+                    $checkOutTime = Carbon::parse($tracker->check_out_time);
+                    $workedMinutes = $checkInTime->diffInMinutes($checkOutTime);
+                    $standardMinutes = 8 * 60;
+                    $overtimeMinutes = max($workedMinutes - $standardMinutes, 0);
+
+                    $entry['status'] = 'P';
+
+                    if ($isSunday) {
+                        $entry['holiday_overtime_hour'] = round($workedMinutes / 60, 2);
+                    } else {
+                        $entry['overtime_hours'] = round($overtimeMinutes / 60, 2);
+                    }
+                } else {
+                    if ($isSunday) {
+                        $entry['status'] = 'H';
+                        $entry['holiday_overtime_hour'] = 0;
+                    } else {
+                        $entry['overtime_hours'] = 0;
+                    }
+                }
+
+                $attendance[$dayKey] = $entry;
+            }
+
+            $result[] = [
+                'employee_id' => $employee->id,
+                'employee_name' => $employee->name,
+                'wage_hour' => $employee->wage_hour,
+                'wage_overtime' => $employee->wage_overtime,
+                'half_day_rate' => $employee->half_day_rate ?? 9,
+                'holiday_day_rate' => $employee->holiday_rate ?? 8,
+                'attendance' => $attendance,
+            ];
+        }
+
+        return response()->json([
+            'week_start' => $startOfWeek->format('Y-m-d'),
+            'week_end' => $endOfWeek->format('Y-m-d'),
+            'data' => $result
+        ]);
+    }
+
 }

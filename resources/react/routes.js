@@ -66,7 +66,7 @@ const EmployeeDetails = React.lazy(() => import('./views/pages/employee_manageme
 const SetCoordinates = React.lazy(() => import('./views/pages/employee_management_pages/SetCoordinates'))
 const BulkEmployeeTracker = React.lazy(() => import('./views/pages/employee_management_pages/BulkEmployeeTracker'))
 const checkInWithSelfie = React.lazy(() => import('./views/pages/employee_management_pages/CheckInWithSelfie'))
-
+const PayrollAndAttendanceReport = React.lazy(() => import('./views/pages/employee_management_pages/WeeklyPayrollandAttendanceReport'))
 /* ====================================================================== */
 
 export default function fetchRoutes () {
@@ -168,6 +168,7 @@ export default function fetchRoutes () {
       { path: '/employees/:id',              name: 'Employee Details',           element: EmployeeDetails },
       { path: '/bulk_employee_tracker',              name: 'Employee Details',           element: BulkEmployeeTracker },
       { path: '/checkInWithSelfie',              name: 'Checking In With Selfie',           element: checkInWithSelfie },
+      { path: '/payrollAndAttendanceReport',              name: 'Payroll And Attendace Report',           element: PayrollAndAttendanceReport},
     ]
   }
 

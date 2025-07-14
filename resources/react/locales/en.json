@@ -996,6 +996,8 @@
         "unableToGetLocation": "Unable to get your current location",
         "mustBeAtOfficeLocation": "You must be at the office location to check in/out",
         "checkInSuccess": "Check-in successful!",
+        "bulkCheckInSuccess":"All Selected Employee Check-in successful!",
+        "bulkCheckOutSuccess":"All Selected Employee Check-out successful!",
         "failedToProcessRequest": "Failed to process request",
         "noTrackerIdFound": "No tracker ID found. Please check in first.",
         "checkOutSuccess": "Check-out successful!",

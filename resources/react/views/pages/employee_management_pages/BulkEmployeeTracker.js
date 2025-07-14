@@ -474,7 +474,7 @@ function BulkEmployeeCheckInOut() {
 
             if (response && (response.message || response.rows_updated)) {
                 showNotification('success',
-                    `${t('MSG.checkInSuccess') || 'Check-in successful'}: ${response.rows_updated} ${t('MSG.employeesUpdated') || 'employees updated'}`
+                    `${t('MSG.bulkCheckInSuccess') }`
                 );
 
                 // Update local state to reflect check-in
@@ -540,7 +540,7 @@ function BulkEmployeeCheckInOut() {
 
             if (response && (response.message || response.rows_updated)) {
                 showNotification('success',
-                    `${t('MSG.checkOutSuccess') || 'Check-out successful'}: ${response.rows_updated} ${t('MSG.employeesUpdated') || 'employees updated'}`
+                    `${t('MSG.bulkCheckOutSuccess') }`
                 );
 
                 // Update local state to reflect check-out

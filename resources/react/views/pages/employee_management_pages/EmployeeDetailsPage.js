@@ -1,328 +1,3 @@
-
-// import React, { useEffect, useState } from 'react';
-// import { useParams } from 'react-router-dom';
-// import {
-//   CContainer, CCard, CCardBody, CCardHeader, CRow, CCol, CTable, CTableHead,
-//   CTableRow, CTableHeaderCell, CTableBody, CTableDataCell, CSpinner,
-//   CFormInput, CButton,
-//   CFormSelect,
-//   CCollapse,
-//   CModal,
-//   CModalHeader,
-//   CModalTitle,
-//   CModalBody,
-//   CModalFooter,
-//   CTab, CTabContent, CTabList, CTabPanel, CTabs
-// } from '@coreui/react';
-// import { getAPICall, post } from '../../../util/api';
-// import { useTranslation } from 'react-i18next';
-// import Calendar from 'react-calendar';
-// import 'react-calendar/dist/Calendar.css';
-// import Monthly from './ShowingDataPage/monthly';
-// import Weekly from './ShowingDataPage/weekly';
-// import Customly from './ShowingDataPage/customly';
-
-// const EmployeeDetailsPage = () => {
-// const { t, i18n } = useTranslation("global");
-//   const { id } = useParams();
-//   const [employee, setEmployee] = useState(null);
-//   const [loading, setLoading] = useState(true);
-
-//   const [startDate, setStartDate] = useState('');
-//   const [endDate, setEndDate] = useState('');
-//   const [workSummary, setWorkSummary] = useState(null);
-
-//   const [viewDocuments, setViewDocuments] = useState(false);
-//   const [documents, setDocuments] = useState([]);
-//   const [selectedDocument, setSelectedDocument] = useState(null);
-//   const [modalVisible, setModalVisible] = useState(false);
-
-//    const [activeTab, setActiveTab] = useState('month')
-  
-
-
-//   useEffect(() => {
-//     if (employee && workSummary) {
-//       setWorkSummary((prev) => ({
-//         ...prev,
-//         custom_regular_wage: prev.custom_regular_wage ?? employee.wage_hour,
-//         custom_overtime_wage: prev.custom_overtime_wage ?? employee.wage_overtime,
-//       }));
-//     }
-//   }, [employee, workSummary]);
-
-//   useEffect(() => {
-//     getAPICall(`/api/employee/${id}`)
-//       .then(data => {
-//         setEmployee(data);
-//         setLoading(false);
-//       })
-//       .catch(error => {
-//         console.error('Error loading employee:', error);
-//         setLoading(false);
-//       });
-//   }, [id]);
-
-//   const handleCalculate = async () => {
-//     if (!startDate || !endDate) {
-//       alert('Please select both start and end dates.');
-//       return;
-      
-//     }
-
-//     const requestData = {
-//       employee_id: parseInt(id),
-//       start_date: startDate,
-//       end_date: endDate,
-//       working_hours: 8
-//     };
-
-//     try {
-//       const response = await post('/api/workSummary', requestData);
-//       const data =  response;
-//       setWorkSummary(data);
-
-//     } catch (error) {
-//       console.error('Error fetching work summary:', error);
-//     }
-//   };
-
-  
-
-//   // if (loading) return <CSpinner color="primary" />;
-//   // if (!employee) return <p>Employee not found.</p>;
-
-
-
-
-
-// const handleSubmit = async () => {
-//   const regularWage = workSummary.custom_regular_wage ?? employee.wage_hour;
-//   const overtimeWage = workSummary.custom_overtime_wage ?? employee.wage_overtime;
-
-//   const salary_amount =
-//     (workSummary.regular_hours * regularWage) +
-//     (workSummary.overtime_hours * overtimeWage);
-
-//   const payload = {
-//     start_date: startDate,
-//     end_date: endDate,
-//     employee_id: parseInt(id),
-//     payed_amount: workSummary.payed_amount,
-//     salary_amount,
-//     payment_type: workSummary.payment_type,
-//   };
-
-//   try {
-//     const res = await post('/api/payment', payload);
-//     const data = await res
-//     console.log('Payment Submitted:', data);
-//     alert('Payment submitted successfully!');
-//       setWorkSummary((prev) => ({
-//       ...prev,
-//       custom_regular_wage: '',
-//       custom_overtime_wage: '',
-//       payed_amount: '',
-//       pending_payment: 0,
-//       payment_type: '',
-//     }));
-//   } catch (err) {
-//     console.error('Payment Error:', err);
-//     alert('Something went wrong while submitting payment.');
-//   }
-// };
-
-//  const HandleViewDocuments = async() =>{
-//     console.log("xyz");
-//     // setViewDocuments(true);
-//     setViewDocuments(prev => !prev); 
-    
-//  }
-
-// //  _____________________________________________________________________________ 
-
-
-// const fetchDocuments = async () => {
-//   try {
-//     const res = await getAPICall(`/api/documents/${id}`);
-//     const data = await res; // ✅ make sure to parse JSON
-
-//     return data.map((doc) => ({
-//       name: doc.document_name,
-//       url: `data:image/png;base64,${doc.document_link}`, // ✅ Image instead of PDF
-//     }));
-//   } catch (error) {
-//     console.error('Error fetching documents:', error);
-//     return [];
-//   }
-// };
-
-
-
-
-//   const handleViewDocuments = async () => {
-//     setViewDocuments(prev => !prev);
-
-//     if (!viewDocuments) {
-//       try {
-//         const docs = await fetchDocuments();
-//         setDocuments(docs);
-//       } catch (err) {
-//         console.error('Error fetching documents:', err);
-//       }
-//     }
-//   };
-
-//   const handleOpenDocument = (doc) => {
-//     setSelectedDocument(doc);
-//     setModalVisible(true);
-//   };
-
-//   const handleDownload = () => {
-//     if (selectedDocument) {
-//       const link = document.createElement('a');
-//       link.href = selectedDocument.url;
-//       link.download = selectedDocument.name;
-//       document.body.appendChild(link);
-//       link.click();
-//       document.body.removeChild(link);
-//     }
-//   };
-
-// // _______________________________________________________________________________ 
-
-
-//   return (
-//     <CContainer>
-//       <CCard className="mt-4  p-0">
-//         <CCardHeader>{t('LABELS.employeeHistory')}: {employee?.name}</CCardHeader>
-//         <CCardBody>
-//           {/* Employee Info */}
-//           <CRow>
-//             <CCol md={6}>
-//              <CRow className="">
-//   <CCol md={2}>
-//     <p><strong>{t('LABELS.id')}:</strong> {employee?.id}</p>
-//   </CCol>
-//   <CCol md={3}>
-//     <p><strong>{t('LABELS.mobile')}:</strong> {employee?.mobile}</p>
-//   </CCol>
-//   <CCol md={3}>
-//     <p><strong>{t('LABELS.adhaar')}:</strong> {employee?.adhaar_number}</p>
-//   </CCol>
-//   <CCol md={3}>
-//     <p><strong>{t('LABELS.wagePerHour')}:</strong> ₹{employee?.wage_hour}</p>
-//   </CCol>
-// </CRow>
-//              </CCol>
-
-
-
-
-            
-//             <CCol md={6}>
-//   <CRow className="">
-//   <CCol md={2}>
-//     <p><strong>{t('LABELS.wageOT')}:</strong> ₹{employee?.wage_overtime}</p>
-//   </CCol>
-//   <CCol md={2}>
-//     <p><strong>{t('LABELS.credit')}:</strong>₹{employee?.credit}</p>
-//   </CCol>
-//   <CCol md={2}>
-//     <p><strong>{t('LABELS.debit')}:</strong> ₹{employee?.debit}</p>
-//   </CCol>
-//   <CCol md={2}>
-//     <p><strong>{t('LABELS.referral')}:</strong> {employee?.refferal_by}</p>
-//   </CCol>
-//   <CCol md={4}>
-//     {/* <CButton className='border border-primary' onClick={handleViewDocuments}>
-//                     {viewDocuments ? t('LABELS.hideDocuments') : t('LABELS.viewDocuments')}
-                  
-//                 </CButton> */}
-//   </CCol>
-// </CRow>
-
-//             </CCol>
-//           </CRow>
-
-        
-//       {/* Collapsible Document List */}
-//       <CCollapse visible={viewDocuments}>
-//         <CCard className="mt-3">
-//           <CCardBody>
-//             {documents.length === 0 && <p>No documents available.</p>}
-//             {documents.map((doc, index) => (
-//               <div key={index} className="d-flex justify-content-between align-items-center mb-2">
-//                 <span>{doc.name}</span>
-//                 <CButton color="link" onClick={() => handleOpenDocument(doc)}>
-//                   View
-//                 </CButton>
-//               </div>
-//             ))}
-//           </CCardBody>
-//         </CCard>
-//       </CCollapse>
-
-//       {/* Modal for Document Preview */}
-//       <CModal visible={modalVisible} onClose={() => setModalVisible(false)} size="xl">
-//         <CModalHeader>
-//           <CModalTitle>{selectedDocument?.name}</CModalTitle>
-//         </CModalHeader>
-//         <CModalBody style={{ height: '80vh' }}>
-//           {selectedDocument?.url ? (
-//             <iframe
-//               src={selectedDocument.url}
-//               title={selectedDocument.name}
-//               width="100%"
-//               height="100%"
-//               style={{ border: 'none' }}
-//             />
-//           ) : (
-//             <p>{t('LABELS.documentPreview')}</p>
-//           )}
-//         </CModalBody>
-//         <CModalFooter>
-//           <CButton color="primary" onClick={handleDownload}>{t('LABELS.download')}
-// </CButton>
-//           <CButton color="secondary" onClick={() => setModalVisible(false)}>{t('LABELS.close')}</CButton>
-//         </CModalFooter>
-//       </CModal>
-
-
-// {/* Section Monthly weekly custom */}
-//       <CTabs activeItemKey={activeTab} onActiveItemChange={setActiveTab} defaultActiveItemKey="month">
-//       <CTabList variant="tabs">
-//         <CTab itemKey="month">Month</CTab>
-//         <CTab itemKey="Week">Week</CTab>
-//         <CTab itemKey="Custom">Custom</CTab>
-       
-//       </CTabList>
-//       <CTabContent>
-//         <CTabPanel className="p-3" itemKey="month">
-//           <Monthly id={id} employee={employee}/>
-//         </CTabPanel>
-//         <CTabPanel className="p-3" itemKey="Week">
-//          <Weekly id={id} employee={employee}/>
-//         </CTabPanel>
-//         <CTabPanel className="p-3" itemKey="Custom">
-//           <Customly id={id} employee={employee}/>
-//         </CTabPanel>
-        
-//       </CTabContent>
-//     </CTabs>
-
-//           {/* Filter Section */}
-        
-//      </CCardBody>
-// </CCard>
-//   </CContainer>
-//   );
-// };
-
-// export default EmployeeDetailsPage;
-// // _________________________________________
-
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
@@ -336,7 +11,8 @@ import {
   CModalTitle,
   CModalBody,
   CModalFooter,
-  CTab, CTabContent, CTabList, CTabPanel, CTabs
+  CTab, CTabContent, CTabList, CTabPanel, CTabs,
+  CBadge
 } from '@coreui/react';
 import { getAPICall, post } from '../../../util/api';
 import { useTranslation } from 'react-i18next';
@@ -521,223 +197,375 @@ const fetchDocuments = async () => {
   }
 };
 
+  // Helper function to format currency
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
 
+  // Helper function to get work type badge color
+  const getWorkTypeBadgeColor = (workType) => {
+    switch (workType) {
+      case 'fulltime':
+        return 'success';
+      case 'contract':
+        return 'warning';
+      case 'parttime':
+        return 'info';
+      default:
+        return 'secondary';
+    }
+  };
 
 // _______________________________________________________________________________ 
 
 
   return (
-    <CContainer>
-      <CCard className="mt-4  p-0">
-        <CCardHeader>{t('LABELS.employeeHistory')}: {employee.name}</CCardHeader>
-        <CCardBody>
-          {/* Employee Info */}
-<CRow className="g-2 mb-2 border border-2 p-2 border-info rounded rounded-2">
-  <CCol xs={6} sm={6} md={1} >
-    <CCard className="h-100 text-center  border-0" style={{ backgroundColor: '#FFCCCC' }}>
-      <CCardBody className="py-2 px-2">
-        <small className="text-muted d-block">ID</small>
-        <div className="fw-semibold">{employee.id}</div>
-      </CCardBody>
-    </CCard>
-  </CCol>
-
-  <CCol xs={6} sm={6} md={2}>
-    <CCard className="h-100 text-center border-0" style={{ backgroundColor: '#f1f8e9' }}>
-      <CCardBody className="py-2 px-2">
-        <small className="text-muted d-block">Mobile</small>
-        <div className="fw-semibold">{employee.mobile}</div>
-      </CCardBody>
-    </CCard>
-  </CCol>
-
-  <CCol xs={6} sm={6} md={2}>
-    <CCard className="h-100 text-center border-0" style={{ backgroundColor: '#fce4ec' }}>
-      <CCardBody className="py-2 px-2">
-        <small className="text-muted d-block">Aadhaar</small>
-        <div className="fw-semibold">{employee.adhaar_number}</div>
-      </CCardBody>
-    </CCard>
-  </CCol>
-
-  <CCol xs={6} sm={6} md={1}>
-    <CCard className="h-100 text-center border-0" style={{ backgroundColor: '#e8f5e9' }}>
-      <CCardBody className="py-2 px-2">
-        <small className="text-muted d-block">Wage/hr</small>
-        <div className="fw-semibold">₹{employee.wage_hour}</div>
-      </CCardBody>
-    </CCard>
-  </CCol>
-
-  <CCol xs={6} sm={6} md={1}>
-    <CCard className="h-100 text-center border-0" style={{ backgroundColor: '#fff3e0' }}>
-      <CCardBody className="py-2 px-2">
-        <small className="text-muted d-block">OT</small>
-        <div className="fw-semibold">₹{employee.wage_overtime}</div>
-      </CCardBody>
-    </CCard>
-  </CCol>
-
-  <CCol xs={6} sm={6} md={1}>
-    <CCard className="h-100 text-center border-0" style={{ backgroundColor: '#e3f2fd' }}>
-      <CCardBody className="py-2 px-2">
-        <small className="text-muted d-block">Credit</small>
-        <div className="fw-semibold">₹{employee.credit}</div>
-      </CCardBody>
-    </CCard>
-  </CCol>
-
-  <CCol xs={6} sm={6} md={1}>
-    <CCard className="h-100 text-center border-0" style={{ backgroundColor: '#fbe9e7' }}>
-      <CCardBody className="py-2 px-2">
-        <small className="text-muted d-block">Debit</small>
-        <div className="fw-semibold">₹{employee.debit}</div>
-      </CCardBody>
-    </CCard>
-  </CCol>
-
-  <CCol xs={6} sm={6} md={1}>
-    <CCard className="h-100 text-center border-0" style={{ backgroundColor: '#ede7f6' }}>
-      <CCardBody className="py-2 px-2">
-        <small className="text-muted d-block">Referral</small>
-        <div className="fw-semibold">{employee.refferal_by}</div>
-      </CCardBody>
-    </CCard>
-  </CCol>
-
-  <CCol xs={12} sm={12} md={2}>
-    <CCard className="h-100 w-100 text-center border-0" style={{ backgroundColor: '#fff8e1' }}>
-      <CCardBody className="py-2 px-2">
-        <CButton className="border border-primary" onClick={handleViewDocuments}>
+    <CContainer fluid className="px-3 px-md-4">
+      {/* Header Section */}
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 mt-3">
+        <div className="mb-2 mb-md-0">
+          <h4 className="mb-1 fw-bold text-dark">{employee.name}</h4>
+          <div className="d-flex flex-wrap gap-2 align-items-center">
+            <CBadge color={getWorkTypeBadgeColor(employee.work_type)} className="text-capitalize">
+              {employee.work_type}
+            </CBadge>
+            <small className="text-muted">ID: {employee.id}</small>
+          </div>
+        </div>
+        <CButton 
+          color="primary" 
+          variant="outline"
+          onClick={handleViewDocuments}
+          className="d-flex align-items-center gap-2 d-md-flex d-none"
+        >
+          <i className="fas fa-file-alt"></i>
           {viewDocuments ? t('LABELS.hideDocuments') : t('LABELS.viewDocuments')}
         </CButton>
-      </CCardBody>
-    </CCard>
-  </CCol>
-</CRow>
+      </div>
 
-
-
-
-           {/* <CButton className='border border-primary' onClick={handleViewDocuments}>
-                    {viewDocuments ? t('LABELS.hideDocuments') : t('LABELS.viewDocuments')}
-                  
-                </CButton> */}
-
-        
-      {/* Collapsible Document List */}
-     <CCollapse visible={viewDocuments}>
-  <CCard className="mt-3 mb-2">
-    <CCardBody>
-      <CRow className="g-3">
-        {documents.map((doc, index) => (
-          <CCol key={index} xs={12} sm={6} md={4} lg={3}>
-            <CCard className="h-100 shadow-sm">
-              <CCardBody className="d-flex flex-column justify-content-between">
-                <div className="mb-3">
-                  <h6 className="fw-semibold">{doc.name || 'Unknown Document'}</h6>
+      {/* Employee Information Cards */}
+      <CRow className="g-2 g-md-3 mb-3">
+        {/* Contact Information - Mobile: Full width, Desktop: Same */}
+        <CCol xs={12} md={6} lg={4}>
+          <CCard className="h-100 shadow-sm border-0 rounded-3">
+            <CCardBody className="p-3 p-md-4">
+              <div className="d-flex align-items-center mb-2 mb-md-3">
+                <div className="bg-primary bg-opacity-10 rounded-circle p-2 me-3 d-none d-md-flex">
+                  <i className="fas fa-phone text-primary"></i>
                 </div>
                 <div>
-                  <CButton
-                    color="primary"
-                    size="sm"
-                    className="w-100"
-                    onClick={() => handleOpenDocument(doc)}
-                  >
-                    View
-                  </CButton>
+                  <h6 className="mb-0 text-muted">
+                    <i className="fas fa-phone text-primary me-2 d-md-none"></i>
+                    Contact Details
+                  </h6>
                 </div>
-              </CCardBody>
-            </CCard>
-          </CCol>
-        ))}
+              </div>
+              <div className="row">
+                <div className="col-6 col-md-12 mb-2 mb-md-3">
+                  <small className="text-muted d-block">Mobile</small>
+                  <h6 className="mb-0 fw-semibold d-md-none">{employee.mobile}</h6>
+                  <h5 className="mb-0 fw-semibold d-none d-md-block">{employee.mobile}</h5>
+                </div>
+                <div className="col-6 col-md-12">
+                  <small className="text-muted d-block">Aadhaar</small>
+                  <h6 className="mb-0 fw-semibold">{employee.adhaar_number}</h6>
+                </div>
+              </div>
+            </CCardBody>
+          </CCard>
+        </CCol>
+
+        {/* Wage Information */}
+        <CCol xs={12} md={6} lg={4}>
+          <CCard className="h-100 shadow-sm border-0 rounded-3">
+            <CCardBody className="p-3 p-md-4">
+              <div className="d-flex align-items-center mb-2 mb-md-3">
+                <div className="bg-success bg-opacity-10 rounded-circle p-2 me-3 d-none d-md-flex">
+                  <i className="fas fa-rupee-sign text-success"></i>
+                </div>
+                <div>
+                  <h6 className="mb-0 text-muted">
+                    <i className="fas fa-rupee-sign text-success me-2 d-md-none"></i>
+                    Wage Details
+                  </h6>
+                </div>
+              </div>
+              <div className="row">
+                <div className="col-6">
+                  <small className="text-muted d-block">Regular</small>
+                  <h6 className="mb-0 fw-semibold text-success d-md-none">{formatCurrency(employee.wage_hour)}</h6>
+                  <h5 className="mb-0 fw-semibold text-success d-none d-md-block">{formatCurrency(employee.wage_hour)}</h5>
+                  <small className="text-muted d-none d-md-block">per hour</small>
+                </div>
+                <div className="col-6">
+                  <small className="text-muted d-block">Overtime</small>
+                  <h6 className="mb-0 fw-semibold text-warning d-md-none">{formatCurrency(employee.wage_overtime)}</h6>
+                  <h5 className="mb-0 fw-semibold text-warning d-none d-md-block">{formatCurrency(employee.wage_overtime)}</h5>
+                  <small className="text-muted d-none d-md-block">per hour</small>
+                </div>
+              </div>
+            </CCardBody>
+          </CCard>
+        </CCol>
+
+        {/* Financial Summary */}
+        <CCol xs={12} md={6} lg={4}>
+          <CCard className="h-100 shadow-sm border-0 rounded-3">
+            <CCardBody className="p-3 p-md-4">
+              <div className="d-flex align-items-center mb-2 mb-md-3">
+                <div className="bg-info bg-opacity-10 rounded-circle p-2 me-3 d-none d-md-flex">
+                  <i className="fas fa-wallet text-info"></i>
+                </div>
+                <div>
+                  <h6 className="mb-0 text-muted">
+                    <i className="fas fa-wallet text-info me-2 d-md-none"></i>
+                    Financial Summary
+                  </h6>
+                </div>
+              </div>
+              <div className="row">
+                <div className="col-6">
+                  <small className="text-muted d-block">Credit</small>
+                  <h6 className="mb-1 fw-semibold text-success d-md-none">{formatCurrency(employee.credit)}</h6>
+                  <h5 className="mb-2 fw-semibold text-success d-none d-md-block">{formatCurrency(employee.credit)}</h5>
+                  <small className="text-muted d-block">Debit</small>
+                  <h6 className="mb-0 fw-semibold text-danger d-md-none">{formatCurrency(employee.debit)}</h6>
+                  <h5 className="mb-0 fw-semibold text-danger d-none d-md-block">{formatCurrency(employee.debit)}</h5>
+                </div>
+                <div className="col-6">
+                  <small className="text-muted d-block">Referred By</small>
+                  <h6 className="mb-0 fw-semibold">{employee.refferal_by || 'N/A'}</h6>
+                </div>
+              </div>
+            </CCardBody>
+          </CCard>
+        </CCol>
       </CRow>
-    </CCardBody>
-  </CCard>
-</CCollapse>
 
+      {/* Mobile Documents Button */}
+      <div className="d-md-none mb-3">
+        <CButton 
+          color="primary" 
+          variant="outline"
+          onClick={handleViewDocuments}
+          className="w-100 d-flex align-items-center justify-content-center gap-2"
+        >
+          <i className="fas fa-file-alt"></i>
+          {viewDocuments ? t('LABELS.hideDocuments') : t('LABELS.viewDocuments')}
+        </CButton>
+      </div>
 
-      {/* Modal for Document Preview */}
-     <CModal
-  visible={modalVisible}
-  onClose={() => setModalVisible(false)}
-  size="xl"
-  fullscreen="md" // 🔹 Automatically go fullscreen on small/mobile screens
->
-  <CModalHeader className="d-flex justify-content-between align-items-center">
-    <CModalTitle className="text-truncate">
-      {selectedDocument?.document_type_name || 'Document'}
-    </CModalTitle>
-    {/* <CButton
-      className="btn-close"
-      aria-label="Close"
-      onClick={() => setModalVisible(false)}
-    /> */}
-  </CModalHeader>
+      {/* Collapsible Document Section */}
+      <CCollapse visible={viewDocuments}>
+        <CCard className="mb-3 shadow-sm border-0 rounded-3">
+          <CCardHeader className="bg-light border-0 rounded-top-3 py-2 py-md-3">
+            <h6 className="mb-0 fw-semibold">
+              <i className="fas fa-folder-open me-2"></i>
+              Employee Documents
+            </h6>
+          </CCardHeader>
+          <CCardBody className="p-3 p-md-4">
+            {documents.length === 0 ? (
+              <div className="text-center py-3 py-md-5">
+                <i className="fas fa-file-alt text-muted" style={{ fontSize: '2rem' }}></i>
+                <p className="text-muted mt-2 mb-0">No documents available</p>
+              </div>
+            ) : (
+              <CRow className="g-2 g-md-3">
+                {documents.map((doc, index) => (
+                  <CCol key={index} xs={6} sm={6} md={4} lg={3}>
+                    <CCard className="h-100 shadow-sm border-0 rounded-3 document-card">
+                      <CCardBody className="p-2 p-md-3 d-flex flex-column">
+                        <div className="text-center mb-2 mb-md-3">
+                          <div className="bg-primary bg-opacity-10 rounded-circle p-2 p-md-3 d-inline-flex">
+                            <i className="fas fa-file-image text-primary" style={{ fontSize: '1rem' }}></i>
+                          </div>
+                        </div>
+                        <h6 className="text-center mb-2 mb-md-3 fw-semibold text-truncate" style={{ fontSize: '0.85rem' }}>
+                          {doc.name || 'Unknown Document'}
+                        </h6>
+                        <div className="mt-auto">
+                          <CButton
+                            color="primary"
+                            size="sm"
+                            className="w-100 rounded-pill"
+                            style={{ fontSize: '0.75rem' }}
+                            onClick={() => handleOpenDocument(doc)}
+                          >
+                            <i className="fas fa-eye me-1"></i>
+                            View
+                          </CButton>
+                        </div>
+                      </CCardBody>
+                    </CCard>
+                  </CCol>
+                ))}
+              </CRow>
+            )}
+          </CCardBody>
+        </CCard>
+      </CCollapse>
 
-  <CModalBody style={{ height: '75vh', padding: '0.75rem' }}>
-    {selectedDocument?.url ? (
-      <iframe
-        src={selectedDocument.url}
-        title={selectedDocument.document_type_name}
-        width="100%"
-        height="100%"
-        style={{
-          border: 'none',
-          borderRadius: '4px'
-        }}
-      />
-    ) : (
-      <div className="text-center text-muted">{t('LABELS.documentPreview')}</div>
-    )}
-  </CModalBody>
+      {/* Document Preview Modal */}
+      <CModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        size="xl"
+        fullscreen="md"
+        className="document-modal"
+      >
+        <CModalHeader className="border-0 pb-0">
+          <CModalTitle className="d-flex align-items-center">
+            <i className="fas fa-file-alt me-2 text-primary"></i>
+            {selectedDocument?.document_type_name || 'Document Preview'}
+          </CModalTitle>
+        </CModalHeader>
 
-  <CModalFooter className="d-flex flex-column flex-sm-row justify-content-end gap-2">
-    <CButton color="primary" className="w-100 w-sm-auto" onClick={handleDownload}>
-      {t('LABELS.download')}
-    </CButton>
-    <CButton color="secondary" className="w-100 w-sm-auto" onClick={() => setModalVisible(false)}>
-      {t('LABELS.close')}
-    </CButton>
-  </CModalFooter>
-</CModal>
+        <CModalBody style={{ height: '75vh', padding: '1rem' }}>
+          {selectedDocument?.url ? (
+            <div className="h-100 rounded-3 overflow-hidden shadow-sm">
+              <iframe
+                src={selectedDocument.url}
+                title={selectedDocument.document_type_name}
+                width="100%"
+                height="100%"
+                style={{ border: 'none' }}
+              />
+            </div>
+          ) : (
+            <div className="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
+              <i className="fas fa-file-alt" style={{ fontSize: '4rem' }}></i>
+              <p className="mt-3">{t('LABELS.documentPreview')}</p>
+            </div>
+          )}
+        </CModalBody>
 
+        <CModalFooter className="border-0 pt-0">
+          <CButton 
+            color="primary" 
+            onClick={handleDownload}
+            className="me-2"
+          >
+            <i className="fas fa-download me-1"></i>
+            {t('LABELS.download')}
+          </CButton>
+          <CButton 
+            color="secondary" 
+            variant="outline"
+            onClick={() => setModalVisible(false)}
+          >
+            {t('LABELS.close')}
+          </CButton>
+        </CModalFooter>
+      </CModal>
 
+      {/* Work Data Section */}
+      <CCard className="shadow-sm border-0 rounded-3">
+        <CCardHeader className="bg-light border-0 rounded-top-3">
+          <h6 className="mb-0 fw-semibold">
+            <i className="fas fa-chart-line me-2"></i>
+            Work History & Reports
+          </h6>
+        </CCardHeader>
+        <CCardBody className="p-0">
+          {employee.work_type === 'fulltime' ? (
+            <CTabs activeItemKey={activeTab} onActiveItemChange={setActiveTab} defaultActiveItemKey="month">
+              <CTabList variant="pills" className="p-3 pb-0">
+                <CTab itemKey="month" className="rounded-pill me-2">
+                  <i className="fas fa-calendar-alt me-1"></i>
+                  Monthly
+                </CTab>
+                <CTab itemKey="Week" className="rounded-pill me-2">
+                  <i className="fas fa-calendar-week me-1"></i>
+                  Weekly
+                </CTab>
+                <CTab itemKey="Custom" className="rounded-pill">
+                  <i className="fas fa-calendar-day me-1"></i>
+                  Custom
+                </CTab>
+              </CTabList>
+              <CTabContent>
+                <CTabPanel className="p-3" itemKey="month">
+                  <Monthly id={id} employee={employee}/>
+                </CTabPanel>
+                <CTabPanel className="p-3" itemKey="Week">
+                  <Weekly id={id} employee={employee}/>
+                </CTabPanel>
+                <CTabPanel className="p-3" itemKey="Custom">
+                  <Customly id={id} employee={employee}/>
+                </CTabPanel>
+              </CTabContent>
+            </CTabs>
+          ) : (
+            <div className="p-3">
+              <Contract id={id} employee={employee}/>
+            </div>
+          )}
+        </CCardBody>
+      </CCard>
 
-{/* Section Monthly weekly custom */}
-{employee.work_type === 'fulltime' ? (
-      <CTabs activeItemKey={activeTab} onActiveItemChange={setActiveTab} defaultActiveItemKey="month">
-      <CTabList variant="tabs">
-        <CTab itemKey="month">Month</CTab>
-        <CTab itemKey="Week">Week</CTab>
-        <CTab itemKey="Custom">Custom</CTab>
-       
-      </CTabList>
-      <CTabContent>
-        <CTabPanel className="p-3" itemKey="month">
-          <Monthly id={id} employee={employee}/>
-        </CTabPanel>
-        <CTabPanel className="p-3" itemKey="Week">
-         <Weekly id={id} employee={employee}/>
-        </CTabPanel>
-        <CTabPanel className="p-3" itemKey="Custom">
-          <Customly id={id} employee={employee}/>
-        </CTabPanel>
+      {/* Custom Styles */}
+      <style jsx>{`
+        .document-card {
+          transition: all 0.3s ease;
+        }
         
-      </CTabContent>
-    </CTabs>
-):(
-  // <h1>contract</h1>
-  <Contract id={id} employee={employee}/>
-)}
-
-          {/* Filter Section */}
+        .document-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 25px rgba(0, 0, 0, 0.1) !important;
+        }
         
-     </CCardBody>
-</CCard>
-  </CContainer>
+        .document-modal .modal-content {
+          border-radius: 1rem;
+        }
+        
+        .nav-pills .nav-link {
+          border-radius: 50px !important;
+          padding: 0.5rem 1rem;
+          font-weight: 500;
+        }
+        
+        .nav-pills .nav-link.active {
+          background-color: #007bff !important;
+        }
+        
+        .bg-opacity-10 {
+          background-color: rgba(var(--bs-primary-rgb), 0.1) !important;
+        }
+        
+        .card {
+          transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+          box-shadow: 0 4px 25px rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        .rounded-3 {
+          border-radius: 1rem !important;
+        }
+        
+        .rounded-top-3 {
+          border-top-left-radius: 1rem !important;
+          border-top-right-radius: 1rem !important;
+        }
+        
+        .rounded-pill {
+          border-radius: 50px !important;
+        }
+        
+        @media (max-width: 768px) {
+          .modal-xl {
+            max-width: 95% !important;
+          }
+        }
+      `}</style>
+    </CContainer>
   );
 };
 
 export default EmployeeDetailsPage;
-// _________________________________________

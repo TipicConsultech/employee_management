@@ -112,18 +112,12 @@ export default function fetchNavItems(t1) {
               to: '/bulk_employee_tracker',
               icon: <CIcon icon={cilAsteriskCircle} customClassName="nav-icon" />,
       },
-      // {
-      //         component: CNavItem,
-      //         name: t("LABELS.checkInWithSelfie"),
-      //         to: '/checkInWithSelfie',
-      //         icon: <CIcon icon={cilCamera} customClassName="nav-icon" />,
-      // },
-      // {
-      //         component: CNavItem,
-      //         name: t("LABELS.leaveManagement"),
-      //         to: '/leaveManagement',
-      //         icon: <CIcon icon={cilCheck} customClassName="nav-icon" />,
-      // }
+      {
+              component: CNavItem,
+              name: t("LABELS.payrollAndAttendanceReport"),
+              to: '/payrollAndAttendanceReport',
+              icon: <CIcon icon={cilCheck} customClassName="nav-icon" />,
+      }
     ]
   }
 
