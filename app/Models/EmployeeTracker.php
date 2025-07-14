@@ -22,7 +22,10 @@ class EmployeeTracker extends Model
         'payment_status',
         'check_in_gps',
         'check_out_gps',
-        'check_out_time'
+        'check_out_time',
+        'half_day',
+        'status'
+
     ];
 
     /* casts → booleans return true / false */
@@ -30,6 +33,7 @@ class EmployeeTracker extends Model
         'check_in'       => 'boolean',
         'check_out'      => 'boolean',
         'payment_status' => 'boolean',
+        'half_day'=>'boolean'
     ];
 
     /* ─────── Relationships ─────── */

@@ -21,7 +21,7 @@ class Employee extends Model
         'payment_type',
         'work_type',
         'price',
-        'wage_day',
+        'wage_hour',
         'wage_overtime',
         'credit',
         'debit',
@@ -42,7 +42,7 @@ class Employee extends Model
     protected $casts = [
         'isActive'      => 'boolean',   // returns true / false
         'price'         => 'float',
-        'wage_day'     => 'float',
+        'wage_hour'     => 'float',
         'wage_overtime' => 'float',
         'credit'        => 'float',
         'debit'         => 'float',
