@@ -1,352 +1,6 @@
-.react-calendar__tile.present-day {
-  background-color: #90ee90 !important;  /* light green */
-  color: black !important;
-  border-radius: 50%;
-}
+/* =================== MONTHLY CALENDAR =================== */
 
-/* calendar.css */
-.present-day {
-  background-color: #28a745 !important;
-  color: white !important;
-  border-radius: 50%;
-}
-
-/* in your .css file */
-.highlight-day {
-  background-color: #7fffd4 !important;
-  border-radius: 50%;
-}
-
-.react-calendar__tile.highlight-week {
-  background-color: #ffa500 !important; /* Orange for week */
-  color: white;
-  border-radius: 10px;
-}
-
-.react-calendar__tile.highlight-success {
-  background-color: #198754 !important; /* Bootstrap success green */
-  color: white;
-  border-radius: 10px;
-  font-weight: bold;
-}
-
-
-/* Container for calendar */
-.calendar-wrapper {
-  width: 100%;
-  max-width: 100%;
-}
-
-/* Smaller and modern calendar */
-.compact-calendar {
-  width: 100%;
-  font-family: 'Segoe UI', sans-serif;
-  border: none;
-  padding: 0;
-}
-
-/* Navigation Header */
-.compact-calendar .react-calendar__navigation {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-}
-
-/* Weekday Header */
-.compact-calendar .react-calendar__month-view__weekdays {
-  text-transform: uppercase;
-  font-size: 12px;
-  font-weight: 600;
-  color: #555;
-}
-
-/* Weekday individual cell */
-.compact-calendar .react-calendar__month-view__weekdays__weekday {
-  padding: 4px 0;
-  text-align: center;
-}
-
-/* Day tiles - compact and clean */
-.compact-calendar .react-calendar__tile {
-  height: 65px;
-  font-size: 13px;
-  padding: 6px;
-  border-radius: 6px;
-  position: relative;
-  transition: background-color 0.3s ease;
-}
-
-/* Tile hover */
-.compact-calendar .react-calendar__tile:enabled:hover {
-  background-color: #f1f1f1;
-}
-
-/* Today highlight */
-.compact-calendar .react-calendar__tile--now {
-  /* border: 2px solid #0d6efd; */
-  background-color: #e7f1ff;
-}
-
-/* Attendance styles */
-.calendar-cell.blue-box {
-  /* background-color: #007bff; */
-  color: white;
-  border-radius: 10px;
-}
-
-.calendar-cell.green-circle {
-  background-color: #28a745;
-  color: white;
-  border-radius: 50%;
-}
-
-.calendar-cell.yellow-box {
-  background-color: #ffc107;
-  color: black;
-  border-radius: 8px;
-}
-
-.calendar-cell.sunday-red {
-  color: red;
-}
-
-/* Hours text inside day */
-.tile-hours {
-  font-size: 11px;
-  display: block;
-  margin-top: 4px;
-}
-
-.day-hours {
-  font-size: 0.7rem;
-  margin-top: 4px;
-  font-weight: 600; /* 👈 Semibold */
-  color: #333;
-}
-
-
-
-
-
-.calendar-ot {
-  font-size: 15px;
-  color: #d35400;
-  font-weight: 600;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
-/* Monthly  */
-
-.calendar-hours {
-  font-size: 20px;
-  font-weight: 600; /* semibold */
-  line-height: 1.2;
-  text-align: center;
-  margin-top: 4px;
-  color: #222;
-}
-
-.calendar-hours {
-  text-align: center;
-  font-size: 0.8rem;
-  margin-top: 2px;
-  color: #000;
-}
-
-
-
-/* Wrapper with padding and mobile awareness */
-.calendar-wrapper {
-  width: 100%;
-  padding: 2px;
-  background-color: #ffffff;
-}
-
-/* Center the calendar */
-.calendar-container {
-  display: flex;
-  justify-content: center;
-  overflow-x: auto;
-}
-
-/* Compact Calendar Styling */
-.compact-calendar {
-  border: 2px solid #000;
-  border-radius: 8px;
-  max-width: 100%;
-  width: 100%;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-/* Responsive tweaks */
-@media (max-width: 576px) {
-  .compact-calendar {
-    font-size: 12px;
-    padding: 2px;
-  }
-
-  .react-calendar__month-view__days__day {
-    min-width: 38px;
-    height: 38px;
-  }
-
-  .calendar-wrapper h6 {
-    font-size: 14px;
-  }
-}
-
-
-
-
-
-/* Weekly */
-.week-grid-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.week-day-box {
-  background-color: #fffbe6;
-  border: 1px solid #eee;
-  padding: 12px;
-  border-radius: 10px;
-  text-align: center;
-  font-weight: 500;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-}
-
-.day-name {
-  font-weight: bold;
-  font-size: 14px;
-}
-
-.day-number {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.day-details .hours {
-  font-size: 14px;
-}
-
-.week-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 10px;
-  margin-top: 15px;
-}
-
-.day-cell {
-  background-color: #ffecb3;
-  border-radius: 8px;
-  padding: 10px;
-  text-align: center;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-}
-
-.day-header {
-  font-weight: bold;
-  margin-bottom: 4px;
-}
-
-.date-number {
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.hours {
-  margin-top: 5px;
-  font-size: 20px;
-}
-
-.overtime {
-  color: green;
-  font-weight: bold;
-}
-
-.paid-label {
-  font-size: 14px;
-  color: white;
-  background-color: green;
-  border-radius: 4px;
-  padding: 2px 4px;
-  margin-top: 2px;
-}
-
-.paid-label {
-  display: inline-block;
-  margin-top: 4px;
-  background-color: green;
-  color: white;
-  padding: 2px 8px;
-  font-size: 12px;
-  border-radius: 4px;
-}
-
-
-
-
-
-
-
-
-/* Smaller screens */
-@media (max-width: 768px) {
-  .compact-calendar .react-calendar__tile {
-    height: 55px;
-    font-size: 12px;
-  }
-}
-
-
-
-/* Desktop layout */
-@media screen and (min-width: 768px) {
-  .week-grid-wrapper {
-    flex-direction: row;
-    justify-content: space-between;
-  }
-
-  .week-day-box {
-    flex: 1;
-    max-width: calc(100% / 7 - 8px);
-  }
-}
-
-
-
-
-
-
-/* Main container */
-.monthly-container {
-  width: 100%;
-  padding: 0 15px;
-}
-
-/* Calendar wrapper with better mobile handling */
+/* Wrapper */
 .calendar-wrapper {
   width: 100%;
   padding: 15px;
@@ -355,7 +9,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Calendar title */
+/* Title */
 .calendar-title {
   font-weight: 600;
   color: #333;
@@ -363,7 +17,7 @@
   font-size: 1.1rem;
 }
 
-/* Center the calendar with proper overflow */
+/* Calendar container */
 .calendar-container {
   display: flex;
   justify-content: center;
@@ -371,33 +25,30 @@
   padding: 10px 0;
 }
 
-/* Main calendar styling */
+/* Calendar main style */
 .responsive-calendar {
   border: 2px solid #dee2e6;
   border-radius: 8px;
-  max-width: 100%;
   width: 100%;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   background-color: white;
 }
 
-/* Calendar navigation */
+/* Navigation */
 .responsive-calendar .react-calendar__navigation {
   background-color: #f8f9fa;
   border-bottom: 1px solid #dee2e6;
 }
-
 .responsive-calendar .react-calendar__navigation button {
   font-weight: 600;
   color: #495057;
   padding: 10px;
 }
-
 .responsive-calendar .react-calendar__navigation button:hover {
   background-color: #e9ecef;
 }
 
-/* Month view styling */
+/* Month view */
 .responsive-calendar .react-calendar__month-view {
   padding: 10px;
 }
@@ -416,23 +67,19 @@
   font-size: 14px;
   transition: all 0.2s ease;
 }
-
 .responsive-calendar .react-calendar__tile:hover {
   background-color: #f8f9fa;
 }
-
-/* Present day styling */
 .responsive-calendar .react-calendar__tile.present-day {
   background-color: #e8f5e8;
   border-color: #28a745;
   font-weight: 600;
 }
-
 .responsive-calendar .react-calendar__tile.present-day:hover {
   background-color: #d4edda;
 }
 
-/* Calendar tile content */
+/* Tile content */
 .calendar-tile-content {
   display: flex;
   flex-direction: column;
@@ -440,7 +87,6 @@
   gap: 2px;
   width: 100%;
 }
-
 .hours-display {
   font-size: 11px;
   font-weight: 600;
@@ -450,7 +96,6 @@
   border-radius: 10px;
   white-space: nowrap;
 }
-
 .paid-indicator {
   font-size: 10px;
   color: #007bff;
@@ -460,7 +105,7 @@
   font-weight: 600;
 }
 
-/* Calendar legend */
+/* Legend */
 .calendar-legend {
   display: flex;
   justify-content: center;
@@ -470,7 +115,6 @@
   background-color: #f8f9fa;
   border-radius: 6px;
 }
-
 .legend-item {
   display: flex;
   align-items: center;
@@ -478,19 +122,16 @@
   font-size: 12px;
   color: #6c757d;
 }
-
 .legend-color {
   width: 16px;
   height: 16px;
   border-radius: 3px;
   border: 1px solid #dee2e6;
 }
-
 .legend-color.present-day {
   background-color: #e8f5e8;
   border-color: #28a745;
 }
-
 .legend-symbol {
   width: 16px;
   height: 16px;
@@ -504,126 +145,48 @@
   font-weight: 600;
 }
 
-/* Summary header for mobile */
-.summary-header {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 15px;
-  background-color: #f8f9fa;
-  border-radius: 6px;
-}
-
-.summary-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 5px 0;
-  border-bottom: 1px solid #e9ecef;
-}
-
-.summary-item:last-child {
-  border-bottom: none;
-}
-
-.summary-item .label {
-  font-weight: 600;
-  color: #6c757d;
-  font-size: 14px;
-}
-
-.summary-item .value {
-  font-weight: 700;
-  color: #495057;
-  font-size: 16px;
-}
-
-/* Mobile responsive adjustments */
+/* Responsive - Monthly */
 @media (max-width: 768px) {
-  .monthly-container {
-    padding: 0 10px;
-  }
-  
   .calendar-wrapper {
     padding: 10px;
   }
-  
   .calendar-title {
     font-size: 1rem;
   }
-  
   .responsive-calendar {
     font-size: 12px;
   }
-  
   .responsive-calendar .react-calendar__tile {
     min-height: 50px;
     padding: 6px 2px;
     font-size: 12px;
   }
-  
   .hours-display {
     font-size: 10px;
     padding: 1px 4px;
   }
-  
   .paid-indicator {
     font-size: 8px;
     padding: 1px 3px;
   }
-  
-  .summary-header {
-    padding: 10px;
-  }
-  
-  .summary-item .label {
-    font-size: 12px;
-  }
-  
-  .summary-item .value {
-    font-size: 14px;
-  }
-  
-  .calendar-legend {
-    gap: 15px;
-  }
-  
-  .legend-item {
-    font-size: 11px;
-  }
 }
 
-/* Extra small devices */
 @media (max-width: 576px) {
   .responsive-calendar .react-calendar__tile {
     min-height: 45px;
     padding: 4px 1px;
     font-size: 11px;
   }
-  
   .responsive-calendar .react-calendar__navigation button {
     padding: 8px;
     font-size: 14px;
   }
-  
-  .hours-display {
-    font-size: 9px;
-    padding: 1px 3px;
-  }
-  
-  .paid-indicator {
-    font-size: 7px;
-    padding: 0px 2px;
-  }
-  
   .calendar-legend {
     gap: 10px;
   }
-  
   .legend-item {
     font-size: 10px;
   }
-  
   .legend-color,
   .legend-symbol {
     width: 14px;
@@ -631,14 +194,114 @@
   }
 }
 
-/* Prevent horizontal scroll on very small screens */
-@media (max-width: 480px) {
-  .calendar-container {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* =================== WEEKLY VIEW =================== */
+/* .attendance-card {
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
+  padding: 1rem;
+  background-color: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  max-width: 300px;
+  margin: auto;
+} */
+
+.week-grid-wrapper {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 1rem;
+  padding: 0 4px;
+}
+
+.week-day-box {
+  background-color: #fffbe6;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 8px 4px;
+  text-align: center;
+  font-weight: 500;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.day-name {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.day-number {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 2px 0;
+}
+
+.day-details {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.day-details .hours {
+  font-size: 11px;
+  color: #333;
+}
+
+.paid-label {
+  background-color: green;
+  color: white;
+  padding: 1px 6px;
+  font-size: 10px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+/* 🔄 Optional hover effect for better touch feedback */
+.week-day-box:hover {
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
+  transform: scale(1.02);
+  transition: 0.2s;
+}
+
+/* Mobile optimization */
+@media (max-width: 768px) {
+  .week-grid-wrapper {
+    gap: 4px;
   }
-  
-  .responsive-calendar {
-    min-width: 320px;
+
+  .week-day-box {
+    padding: 6px 2px;
+  }
+
+  .day-name {
+    font-size: 11px;
+  }
+
+  .day-number {
+    font-size: 14px;
+  }
+
+  .paid-label {
+    font-size: 9px;
+    padding: 1px 4px;
   }
 }

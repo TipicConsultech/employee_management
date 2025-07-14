@@ -8,6 +8,7 @@ import { ChevronDown, ChevronRight, Users, Clock, DollarSign, TrendingUp, User, 
 import { getAPICall } from '../../../util/api';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import BulkEmployeeCheckInOut from './BulkEmployeeTracker';
 
 const Dashboard2 = () => {
 
@@ -33,85 +34,7 @@ const Dashboard2 = () => {
   const presentEmployees = employees.filter(e => e.trackers?.some(t => t.check_in)).length;
 
   return (
-//     <CContainer fluid>
-//       <CRow className="mb-4">
-//         <CCol><h3>Employee Management Dashboard</h3></CCol>
-//       </CRow>
-
-//       {/* Top Stat Cards */}
-//       <CRow className="mb-4">
-//         <CCol lg={3}><StatCard title="Total Employees" value={totalEmployees} icon={<Users />} color="primary" /></CCol>
-//         <CCol lg={3}><StatCard title="Present Today" value={presentEmployees} icon={<Clock />} color="success" /></CCol>
-//         <CCol lg={3}><StatCard title="Total Credit" value={`₹${calculateTotal('credit')}`} icon={<TrendingUp />} color="info" /></CCol>
-//         <CCol lg={3}><StatCard title="Total Debit" value={`₹${calculateTotal('debit')}`} icon={<DollarSign />} color="danger" /></CCol>
-//       </CRow>
-
-//       {/* Table Section */}
-//       <CCard className="mb-4 shadow">
-//         <CCardHeader>Employee Attendance & Details</CCardHeader>
-//         <CCardBody>
-//           <CTable bordered hover responsive align="middle">
-//             <CTableHead>
-//               <CTableRow>
-//                 <CTableHeaderCell>Employee</CTableHeaderCell>
-//                 <CTableHeaderCell>Check In</CTableHeaderCell>
-//                 <CTableHeaderCell>Check Out</CTableHeaderCell>
-//                 <CTableHeaderCell>Status</CTableHeaderCell>
-//                 <CTableHeaderCell>Actions</CTableHeaderCell>
-//               </CTableRow>
-//             </CTableHead>
-//             <CTableBody>
-//               {employees.map(emp => {
-//                 const tracker = emp.trackers?.[0] || {};
-//                 const checkIn = tracker?.check_in ? '✔️' : '❌';
-//                 const checkOut = tracker?.check_out ? '✔️' : '❌';
-
-//                 return (
-//                   <React.Fragment key={emp.id}>
-//                     <CTableRow>
-//                       <CTableDataCell>
-//                         <div className="d-flex align-items-center">
-//                           <CAvatar className="bg-primary text-white me-3"><User size={20} /></CAvatar>
-//                           <div>
-//                             <div className="fw-semibold">{emp.name}</div>
-//                             <div className="text-medium-emphasis small">ID: {emp.id}</div>
-//                           </div>
-//                         </div>
-//                       </CTableDataCell>
-//                       <CTableDataCell>{checkIn}</CTableDataCell>
-//                       <CTableDataCell>{checkOut}</CTableDataCell>
-//                       <CTableDataCell>
-//                         <CBadge color={tracker?.check_in ? "success" : "secondary"}>
-//                           {tracker?.check_in ? "Present" : "Absent"}
-//                         </CBadge>
-//                       </CTableDataCell>
-//                       <CTableDataCell>
-//                         {/* <CButton size="sm" color="primary" variant="outline" onClick={() => toggleRowExpansion(emp.id)}>
-//                           {expandedRows[emp.id] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-//                           <span className="ms-1">Details</span>
-//                         </CButton> */}
-//                         <CButton
-//   size="sm"
-//   color="primary"
-//   variant="outline"
-//   onClick={() => navigate(`/employees/${emp.id}`)}
-// >
-//   <ChevronRight size={16} />
-//   <span className="ms-1">Details</span>
-// </CButton>
-
-//                       </CTableDataCell>
-//                     </CTableRow>
-
-                  
-//                   </React.Fragment>
-//                 );
-//               })}
-//             </CTableBody>
-//           </CTable>
-//         </CCardBody>
-//       </CCard>
-//     </CContainer>
+<>
  <CContainer fluid>
       <CRow className="mb-4">
         <CCol><h3>{t('LABELS.employeeAttendance')}</h3></CCol>
@@ -123,63 +46,9 @@ const Dashboard2 = () => {
         <CCol lg={3}><StatCard title={t('LABELS.totalCredit')} value={`₹${calculateTotal('credit')}`} icon={<TrendingUp />} color="info" /></CCol>
         <CCol lg={3}><StatCard title={t('LABELS.totalDebit')} value={`₹${calculateTotal('debit')}`} icon={<DollarSign />} color="danger" /></CCol>
       </CRow>
-
-      <CCard className="mb-4 shadow">
-        <CCardHeader>{t('LABELS.employeeAttendance')}</CCardHeader>
-        <CCardBody>
-          <CTable bordered hover responsive align="middle">
-            <CTableHead>
-              <CTableRow>
-                <CTableHeaderCell>{t('LABELS.employees')}</CTableHeaderCell>
-                <CTableHeaderCell>{t('LABELS.checkIn')}</CTableHeaderCell>
-                <CTableHeaderCell>{t('LABELS.checkOut')}</CTableHeaderCell>
-                <CTableHeaderCell>{t('LABELS.status')}</CTableHeaderCell>
-                <CTableHeaderCell>{t('LABELS.actions')}</CTableHeaderCell>
-              </CTableRow>
-            </CTableHead>
-            <CTableBody>
-              {employees.map(emp => {
-                const tracker = emp.trackers?.[0] || {};
-                const checkIn = tracker?.check_in ? '✔️' : '❌';
-                const checkOut = tracker?.check_out ? '✔️' : '❌';
-
-                return (
-                  <CTableRow key={emp.id}>
-                    <CTableDataCell>
-                      <div className="d-flex align-items-center">
-                        <CAvatar className="bg-primary text-white me-3"><User size={20} /></CAvatar>
-                        <div>
-                          <div className="fw-semibold">{emp.name}</div>
-                          <div className="text-medium-emphasis small">ID: {emp.id}</div>
-                        </div>
-                      </div>
-                    </CTableDataCell>
-                    <CTableDataCell>{checkIn}</CTableDataCell>
-                    <CTableDataCell>{checkOut}</CTableDataCell>
-                    <CTableDataCell>
-                      <CBadge color={tracker?.check_in ? "success" : "secondary"}>  
-                        {tracker?.check_in ? t("LABELS.presentToday") :  t("LABELS.absent")}
-                      </CBadge>
-                    </CTableDataCell>
-                    <CTableDataCell>
-                      <CButton
-                        size="sm"
-                        color="primary"
-                        variant="outline"
-                        onClick={() => navigate(`/employees/${emp.id}`)}
-                      >
-                        <ChevronRight size={16} />
-                        <span className="ms-1">{t('LABELS.details')}</span>
-                      </CButton>
-                    </CTableDataCell>
-                  </CTableRow>
-                );
-              })}
-            </CTableBody>
-          </CTable>
-        </CCardBody>
-      </CCard>
     </CContainer>
+     <BulkEmployeeCheckInOut/>
+</>
   );
 };
 

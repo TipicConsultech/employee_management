@@ -48,4 +48,10 @@ class EmployeeTracker extends Model
         // local company_id → foreign company_id on company_info
         return $this->belongsTo(CompanyInfo::class, 'company_id', 'company_id');
     }
+
+    public function faceAttendance()
+{
+    // table is employee_face_attendance, but the *model* class name is used here
+    return $this->hasOne(EmployeeFaceAttendance::class, 'employee_tracker_id');
+}
 }

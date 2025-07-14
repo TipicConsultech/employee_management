@@ -252,7 +252,7 @@ export default function fetchRoutes () {
     routes = [
       { path: '/resetPassword',         name: 'Update Password', element: Resetpassword },
       { path: '/updatepassword',        name: 'Reset Password',  element: Updatepassword },
-
+ { path: '/checkInWithSelfie',              name: 'Checking In With Selfie',           element: checkInWithSelfie },
       { path: '/employee_tracker',    name: 'All Users',                element: EmployeeTracker },
     ]
   }

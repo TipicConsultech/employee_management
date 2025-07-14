@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use App\Models\EmployeeFaceAttendance;
 
 
 class EmployeeController extends Controller
@@ -31,7 +32,7 @@ class EmployeeController extends Controller
             'message' => 'Email already taken',
         ], 409);
     }
-
+   
     $productId=auth()->user()->product_id;
     $comapnyId=auth()->user()->company_id;
 
@@ -74,34 +75,53 @@ public function employeeDtailsForDashboard()
 {
     $productId = auth()->user()->product_id;
     $companyId = auth()->user()->company_id;
-    $today = now()->toDateString(); // Gets today's date in 'Y-m-d' format
+    $today     = now()->toDateString();
 
     $employees = Employee::where('product_id', $productId)
         ->where('company_id', $companyId)
-        ->with(['trackers' => function ($query) use ($today) {
-            $query->whereDate('created_at', $today)
-                  ->latest('created_at')
-                  ->limit(1);
+        ->with(['trackers' => function ($q) use ($today) {
+            $q->whereDate('created_at', $today)
+              ->latest('created_at')
+              ->limit(1)
+              ->with('faceAttendance');          // ← here
         }])->get()
-        ->map(function ($employee) use ($productId, $companyId) {
-            // If no tracker found for today, add default structure
-            if ($employee->trackers->isEmpty()) {
-                $employee->trackers = collect([
+        ->map(function ($emp) use ($productId, $companyId) {
+
+            if ($emp->trackers->isEmpty()) {
+                $emp->trackers = collect([
                     (object)[
-                        'id' => null, // or any placeholder
-                        'product_id' => $productId,
-                        'employee_id' => $employee->id,
-                        'company_id' => $companyId,
-                        'check_in' => false,
-                        'check_out' => false,
+                        'id'              => null,
+                        'product_id'      => $productId,
+                        'employee_id'     => $emp->id,
+                        'company_id'      => $companyId,
+                        'check_in'        => false,
+                        'check_out'       => false,
+                        'payment_status'  => false,
+                        'check_in_gps'    => null,
+                        'check_out_gps'   => null,
+                        'check_out_time'  => null,
+                        'checkin_img'     => null,
+                        'checkout_img'    => null,
+                        'created_at'      => null,
+                        'updated_at'      => null,
                     ]
                 ]);
+            } else {
+                // Merge attendance URLs into the tracker object
+                $emp->trackers->transform(function ($t) {
+                    $t->checkin_img  = optional($t->faceAttendance)->checkin_img;
+                    $t->checkout_img = optional($t->faceAttendance)->checkout_img;
+                    unset($t->faceAttendance);   // avoid nested clutter
+                    return $t;
+                });
             }
-            return $employee;
+
+            return $emp;
         });
 
     return response()->json($employees);
 }
+
 
  
 public function showEmployeesDetails($id)
@@ -147,21 +167,31 @@ public function showEmployeesDetails($id)
             'product_id'    => ['nullable', 'exists:products,id'],
             'company_id'    => ['nullable', 'integer', 'exists:company_info,company_id'],
             'name'          => ['required','string','max:255'],
-            'email'          => ['required','email','max:255'],
+            'email'          => ['nullable','email','max:255'],
             'gender'        => ['required','in:male,female,other'],
-            'payment_type'  => ['required','in:weekly,monthly'],
+            'payment_type'  => ['nullable','in:weekly,monthly'],
             'work_type'     => ['required','in:fulltime,contract'],
             'price'         => ['nullable','numeric','min:0'],
-            'wage_hour'     => ['required','numeric','min:0'],
-            'wage_overtime' => ['required','numeric','min:0'],
+            'wage_hour'     => ['nullable','numeric','min:0'],
+            'wage_overtime' => ['nullable','numeric','min:0'],
             'credit'        => ['nullable','numeric','min:0'],
             'debit'         => ['nullable','numeric','min:0'],
             'adhaar_number' => ['nullable','string','max:20'],
             'mobile'        => ['required','string','max:15'],
-            'refferal_by'   => ['required','string','max:255'],
+            'refferal_by'   => ['nullable','string','max:255'],
+            'refferal_number'   => ['nullable','string','max:255'],
             'isActive'      => ['boolean'],  // true / false
             'is_login'       => ['nullable','boolean'],
             'password'      => ['nullable','string','max:255'],
+
+            'user_id'=> ['nullable', 'integer'],
+            'half_day_rate'=> ['nullable','numeric','min:0'],
+            'holiday_rate'=> ['nullable','numeric','min:0'],
+            'overtime_type'=> ['nullable','in:fixed,hourly'],
+            'contract_type'=> ['nullable','in:volume_based,fixed'],
+            'attendance_type'=> ['nullable','in:face_attendance,location,both'],
+            'refferal_number'=> ['nullable','string'],
+            'user_id'=> ['nullable','string']
 
         ]);
     }

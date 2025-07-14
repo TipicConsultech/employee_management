@@ -44,7 +44,7 @@ Route::post('/newPassword',         [MailController::class, 'resetPassword']);
 */
 
 Route::middleware('auth:sanctum')->get('/employee-tracker/status', [EmployeeTrackerController::class, 'checkTodayStatus']);
-Route::middleware('auth:sanctum')->put('/employee-tracker/{id}', [EmployeeTrackerController::class, 'update']);
+Route::middleware('auth:sanctum')->post('/employee-tracker/{id}', [EmployeeTrackerController::class, 'update']);
 Route::middleware('auth:sanctum')->post('/workSummary', [EmployeeTrackerController::class, 'workSummary']);
 Route::middleware('auth:sanctum')->post('/payment', [EmployeeTransactionController::class, 'payment']);
 Route::middleware('auth:sanctum')->post('/storeCordinates', [CompanyCordinateController::class, 'storeCordinates']);
@@ -52,6 +52,9 @@ Route::middleware('auth:sanctum')->get('/getCordinates', [CompanyCordinateContro
 Route::middleware('auth:sanctum')->post('/bulkCheckIn', [EmployeeTrackerController::class, 'bulkCheckIn']);
 Route::middleware('auth:sanctum')->post('/bulkCheckOut', [EmployeeTrackerController::class, 'bulkCheckOut']);
 Route::middleware('auth:sanctum')->post('/employeeCredit', [CommonController::class, 'employeeCredit']);
+Route::middleware('auth:sanctum')->get('/isface-attendance', [CompanyInfoController::class, 'isFaceAttendance']);
+Route::middleware('auth:sanctum')->post('/contractSummary', [EmployeeTrackerController::class, 'contractSummary']);
+ 
 
 
 Route::middleware(['auth:sanctum'])->group(function () {

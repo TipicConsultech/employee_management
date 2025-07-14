@@ -13,7 +13,7 @@ import {
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
 import { cilClock, cilLocationPin, cilCheckCircle, cilXCircle } from '@coreui/icons';
-import { getAPICall, post, put } from '../../../util/api';
+import { getAPICall, post, postFormData, put } from '../../../util/api';
 import { useTranslation } from 'react-i18next';
 
 function EmployeeCheckInOut() {
@@ -191,23 +191,15 @@ function EmployeeCheckInOut() {
             }
 
             setSubmitting(true);
-
             const gpsString = `${location.latitude},${location.longitude}`;
-            const payload = {
-                check_in: true,
-                check_out: false,
-                payment_status: false,
-                check_out_time: null,
-                check_in_gps: gpsString,
-                check_out_gps: null
-            };
+          const formData = new FormData();
+          formData.append("check_in_gps",gpsString);
 
-            console.log('Check-in payload:', payload);
-            const response = await post('/api/employee-tracker', payload);
+            const response = await postFormData('/api/employee-tracker', formData);
             console.log('Check-in response:', response);
 
-            if (response && (response.id || response.tracker_id || response.trackerId)) {
-                const id = response.id || response.tracker_id || response.trackerId;
+            if (response && (response.tracker.id || response.tracker)) {
+                const id = response.tracker.id ;
                 setTrackerId(id);
                 console.log('Check-in successful, tracker ID:', id);
                 showNotification('success', t('MSG.checkInSuccess'));

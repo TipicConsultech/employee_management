@@ -703,9 +703,54 @@
 "actualPayment": "Actual Payment (Given to Employee)",
 "pendingAmount": "Pending Amount (From Owner)",
 "paymentMethod": "Payment Method",
-"submit": "Submit",
-"quickActions": "Quick Actions"
 
+"quickActions": "Quick Actions",
+
+"checkInCheckOut": "Check-In / Check-Out",
+ 
+
+    "currentScenario": "Current Scenario",
+    "instructions": "Instructions",
+    "checkInPhoto": "Check-In Photo",
+    "checkOutPhoto": "Check-Out Photo",
+    "capturePhoto": "Capture Photo",
+    "retake": "Retake",
+    "submitCheckIn": "Submit Check-In",
+    "submitCheckOut": "Submit Check-Out",
+    
+    "attendanceComplete": "Attendance Complete",
+    "checkInWithSelfie": "Check-In with Selfie",
+    "view":"view",
+    "url": "URL",
+    "employeeId":"Id",
+    "clickToViewCheckInImage": "Click to view check-in image",
+    "clickToViewCheckOutImage": "Click to view check-out image",
+    "noCheckInImageUploaded": "User did not upload the image for check-in / do not have right to check-In With Selfie",
+    "noCheckOutImageUploaded": "User did not upload the image for check-out / do not have right to check-Out With Selfie",
+
+    "faceAttendance": "Face Attendance",
+    "location": "Location",
+    "both": "Both",
+    "hourly": "Hourly",
+    "fixed": "Fixed",
+  
+    "volumeBasedContract": "Volume Based Contract",
+    "fixedContract": "Fixed Contract",
+   
+    "contractType": "Contract Type",
+    "selectContractType": "Select Contract Type",
+    "overtimeType": "Overtime Type",
+    "selectOvertimeType": "Select Overtime Type",
+   
+    "halfDayPayment": "Half Day Payment",
+    "holidayPayment": "Holiday Payment",
+   
+    "referralByNumber": "Referral By Number",
+    "referralByNumberPlaceholder": "Enter 10-digit referral number",
+   
+    "attendanceType": "Attendance Type",
+    "selectAttendanceType": "Select Attendance Type"
+   
     },
 
 
@@ -985,7 +1030,52 @@
         "failedToFetchEmployees": "Failed to fetch employees",
         "selectEmployeesFirst": "Please select employees first",
         "employeesUpdated": "employees updated",
-        "checkBackLater": "Please check back later"
+        "checkBackLater": "Please check back later",
+        "errorFetchingStatus": "Error fetching status",
+    "cameraAccessError": "Camera access is required. Please allow camera access to continue.",
+    "photoCapturepd": "Photo captured successfully",
+    "invalidFileType": "Please upload a valid image file",
+    
+    "imageUploaded": "Image uploaded successfully",
+    "pleaseUploadImage": "Please capture or upload an image",
+    "checkinSuccess": "Check-in successful",
+    "checkoutSuccess": "Check-out successful",
+    "operationFailed": "Operation failed",
+ 
+    "alreadyCheckedIn": "You have already checked in today",
+    "checkInFirst": "Please check in first before checking out",
+    "alreadyCheckedOut": "You have already checked out today",
+    "loadingStatus": "Loading status...",
+    "dailyCheckInCheckOutCompleted": "Today's check-in and check-out already completed. Thank you!",
+    "scenario1": "Scenario 1: Ready for check-in",
+    "scenario2": "Scenario 2: Checked in, ready for check-out",
+    "scenario3": "Scenario 3: Both check-in and check-out completed",
+    "takeSelfieCameraOnly": "Take a selfie using your camera only",
+    "ensureGoodLighting": "Ensure good lighting for clear photo",
+    "imageAutoCompressed": "Image will be automatically compressed",
+    "cameraAccessRequired": "Camera access is required for this feature",
+    "cameraAccessReleased": "Camera access will be released after photo submission",
+    "todaysAttendanceComplete": "Today's Check-in and Check-out Already Completed",
+    "thankYouMessage": "Thank you for maintaining your attendance record!",
+   
+    "imageNotAvailable": "Image Not Available",
+    "imageNotAvailableForEmployee": "image is not available for this employee",
+    "failedToLoadImage": "Failed to Load Image",
+    "unableToLoadImage": "Unable to load the image. Please check if the image URL is valid.",
+    "imageFor": "image for",
+
+    
+    "overtimeTypeRequired": "Overtime type is required",
+    "contractTypeRequired": "Contract type is required",
+   
+    "halfDayPaymentPositiveNumber": "Half day payment must be a positive number",
+    "holidayPaymentPositiveNumber": "Holiday payment must be a positive number",
+   
+    "referralNumberInvalid": "Referral number must be 10 digits",
+   
+    "attendanceTypeRequired": "Attendance type is required",
+    "emailInvalid": "Invalid email format"
+   
 
     }
    }

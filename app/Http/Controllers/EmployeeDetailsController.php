@@ -103,11 +103,18 @@ public function store(Request $request)
         ]);
     }
 
-    public function documentView($employee_id)
+   public function documentView($employee_id)
 {
     $documents = DB::table('employee_details')
-        ->where('employee_id', $employee_id)
-        ->select('employee_id', 'company_id', 'document_id', 'document_link')
+        ->where('employee_details.employee_id', $employee_id)
+        ->join('document_type', 'employee_details.document_id', '=', 'document_type.id')
+        ->select(
+            'employee_details.employee_id',
+            'employee_details.company_id',
+            'employee_details.document_id',
+            'employee_details.document_link',
+            'document_type.document_name as document_type_name' // ✅ Corrected column name
+        )
         ->get();
  
     return response()->json($documents);

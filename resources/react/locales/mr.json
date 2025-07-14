@@ -547,6 +547,8 @@
      "avgFat"	:"सरासरी फॅट ",
      "avgRate":"सरासरी दर",
      "totalAmount":	"एकूण रक्कम",
+     
+     "employeeId":"आय.डी ",
 
     "male": "पुरुष",
     "female": "महिला",
@@ -700,10 +702,51 @@
 "pendingAmount": "थकबाकी रक्कम (मालकाकडून)",
 "paymentMethod": "देयक पद्धत",
 "submit": "सबमिट",
-"quickActions": "त्वरित कृती"
+"quickActions": "त्वरित कृती",
 
+ "checkInCheckOut": "चेक-इन / चेक-आउट",
+  
+    "currentScenario": "सध्याची परिस्थिती",
+    "instructions": "सूचना",
+    "checkInPhoto": "चेक-इन फोटो",
+    "checkOutPhoto": "चेक-आउट फोटो",
+    "capturePhoto": "फोटो काढा",
+    "retake": "पुन्हा काढा",
+    "submitCheckIn": "चेक-इन सबमिट करा",
+    "submitCheckOut": "चेक-आउट सबमिट करा",
+   
+    "attendanceComplete": "उपस्थिती पूर्ण",
+    "checkInWithSelfie": "सेल्फीसह चेक-इन",
+    "view":"पहा",
+    "url": "यूआरएल",
+    "clickToViewCheckInImage": "चेक-इन प्रतिमा पाहण्यासाठी क्लिक करा",
+    "clickToViewCheckOutImage": "चेक-आउट प्रतिमा पाहण्यासाठी क्लिक करा",
+    "noCheckInImageUploaded": "वापरकर्त्याने चेक-इनसाठी प्रतिमा अपलोड केली नाही किंवा सेल्फीसह चेक-आउट करण्याचा अधिकार नाही",
+    "noCheckOutImageUploaded": "वापरकर्त्याने चेक-आउटसाठी प्रतिमा अपलोड केली नाही किंवा सेल्फीसह चेक-इन करण्याचा अधिकार नाही",
 
+    "faceAttendance": "चेहरा हजेरी",
+    "location": "स्थान",
+    "both": "दोन्ही",
+    "hourly": "तासाप्रमाणे",
+    "fixed": "निश्चित",
 
+    "volumeBasedContract": "आकारमान आधारित कंत्राट",
+    "fixedContract": "निश्चित कंत्राट",
+   
+    "contractType": "कंत्राटचा प्रकार",
+    "selectContractType": "कंत्राटचा प्रकार निवडा",
+    "overtimeType": "ओव्हरटाईमचा प्रकार",
+    "selectOvertimeType": "ओव्हरटाईमचा प्रकार निवडा",
+    
+    "halfDayPayment": "अर्धा दिवस पेमेंट",
+    "holidayPayment": "सुट्टीचे पेमेंट",
+   
+    "referralByNumber": "संदर्भ क्रमांक",
+    "referralByNumberPlaceholder": "10 अंकी संदर्भ क्रमांक टाका",
+   
+    "attendanceType": "हजेरीचा प्रकार",
+    "selectAttendanceType": "हजेरीचा प्रकार निवडा"
+   
     },
 
 
@@ -807,7 +850,7 @@
         "userUnblockedSuccess": "वापरकर्ता यशस्वीरित्या अनब्लॉक केला",
         "userBlockedSuccess": "वापरकर्ता यशस्वीरित्या ब्लॉक केला",
         "failedToUpdateUser": "वापरकर्ता अपडेट करण्यात अयशस्वी",
-        "error": "त्रुटी",
+  
         "noUsersAvailable": "कोणतेही वापरकर्ते उपलब्ध नाहीत",
         "selectCompany": "दुकान / कंपनी निवडा",
         "selectValidRole": "कृपया वैध भूमिका निवडा.",
@@ -990,7 +1033,48 @@
     "failedToFetchEmployees": "कर्मचारी मिळवण्यात अपयश",
     "selectEmployeesFirst": "कृपया प्रथम कर्मचारी निवडा",
     "employeesUpdated": "कर्मचारी अपडेट केले",
-    "checkBackLater": "कृपया नंतर तपासा"
+    "checkBackLater": "कृपया नंतर तपासा",
+    "errorFetchingStatus": "स्थिती आणण्यात त्रुटी",
+    "cameraAccessError": "कॅमेरा प्रवेश आवश्यक आहे. कृपया कॅमेरा प्रवेशाची अनुमती द्या.",
+    "photoCapturepd": "फोटो यशस्वीपणे काढला गेला",
+    "invalidFileType": "कृपया वैध प्रतिमा फाइल अपलोड करा",
+   
+    "imageUploaded": "प्रतिमा यशस्वीपणे अपलोड केली गेली",
+    "pleaseUploadImage": "कृपया फोटो काढा किंवा अपलोड करा",
+    "checkinSuccess": "चेक-इन यशस्वी",
+    "checkoutSuccess": "चेक-आउट यशस्वी",
+    "operationFailed": "ऑपरेशन अयशस्वी",
+    "error": "त्रुटी",
+    "alreadyCheckedIn": "तुम्ही आधीच आज चेक-इन केले आहे",
+    "checkInFirst": "कृपया चेक-आउट करण्यापूर्वी प्रथम चेक-इन करा",
+    "alreadyCheckedOut": "तुम्ही आधीच आज चेक-आउट केले आहे",
+    "loadingStatus": "स्थिती लोड करत आहे...",
+    "dailyCheckInCheckOutCompleted": "आजचे चेक-इन आणि चेक-आउट आधीच पूर्ण झाले आहे. धन्यवाद!",
+    "scenario1": "परिस्थिती 1: चेक-इनसाठी तयार",
+    "scenario2": "परिस्थिती 2: चेक-इन झाले, चेक-आउटसाठी तयार",
+    "scenario3": "परिस्थिती 3: चेक-इन आणि चेक-आउट दोन्ही पूर्ण",
+    "takeSelfieCameraOnly": "फक्त तुमच्या कॅमेऱ्याचा वापर करून सेल्फी घ्या",
+    "ensureGoodLighting": "स्पष्ट फोटोसाठी चांगला प्रकाश सुनिश्चित करा",
+    "imageAutoCompressed": "प्रतिमा आपोआप संकुचित केली जाईल",
+    "cameraAccessRequired": "या वैशिष्ट्यासाठी कॅमेरा प्रवेश आवश्यक आहे",
+    "cameraAccessReleased": "फोटो सबमिट केल्यानंतर कॅमेरा प्रवेश मुक्त केला जाईल",
+    "todaysAttendanceComplete": "आजची चेक-इन आणि चेक-आउट आधीच पूर्ण झाली आहे",
+    "thankYouMessage": "तुमच्या उपस्थितीचा रेकॉर्ड राखल्याबद्दल धन्यवाद!",
+    
+    "imageNotAvailable": "प्रतिमा उपलब्ध नाही",
+    "imageNotAvailableForEmployee": "प्रतिमा या कर्मचाऱ्यासाठी उपलब्ध नाही",
+    "failedToLoadImage": "प्रतिमा लोड करण्यात अयशस्वी",
+    "unableToLoadImage": "प्रतिमा लोड करण्यात अक्षम. कृपया प्रतिमा URL वैध आहे की नाही तपासा.",
+    "imageFor": "साठी प्रतिमा",
+    "overtimeTypeRequired": "ओव्हरटाईमचा प्रकार आवश्यक आहे",
+    "contractTypeRequired": "कंत्राटचा प्रकार आवश्यक आहे",
+    
+    "halfDayPaymentPositiveNumber": "अर्धा दिवस पेमेंट हा धनात्मक संख्या असावी",
+    "holidayPaymentPositiveNumber": "सुट्टीचे पेमेंट हा धनात्मक संख्या असावी",
+    "referralNumberInvalid": "संदर्भ क्रमांक 10 अंकी असावा",
+    "attendanceTypeRequired": "हजेरीचा प्रकार आवश्यक आहे",
+    "emailInvalid": "अवैध ईमेल स्वरूप"
+   
 
 
 

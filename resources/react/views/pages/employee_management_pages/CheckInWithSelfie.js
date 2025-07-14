@@ -33,6 +33,10 @@ function CheckInCheckOut() {
     const [compressedImage, setCompressedImage] = useState(null);
     const [actionType, setActionType] = useState(''); // 'checkin' or 'checkout'
     const [employeeStatus, setEmployeeStatus] = useState({ checkIn: false, checkout: false });
+    const [gpsCoordinates, setGpsCoordinates] = useState(null);
+    const [gpsLoading, setGpsLoading] = useState(false);
+    const [trackerId, setTrackerId] = useState(null);
+    const [completionModal, setCompletionModal] = useState(false);
 
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
@@ -48,16 +52,56 @@ function CheckInCheckOut() {
         }
     }, []);
 
+    // Get GPS coordinates
+    const getCurrentLocation = useCallback(() => {
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) {
+                reject(new Error('Geolocation is not supported by this browser'));
+                return;
+            }
+
+            setGpsLoading(true);
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const coords = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude
+                    };
+                    setGpsCoordinates(coords);
+                    setGpsLoading(false);
+                    resolve(coords);
+                },
+                (error) => {
+                    setGpsLoading(false);
+                    reject(error);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 60000
+                }
+            );
+        });
+    }, []);
+
     // Fetch employee status
     const fetchEmployeeStatus = useCallback(async () => {
         try {
             setStatusLoading(true);
             const response = await getAPICall('/api/employee-tracker/status');
-            if (response && typeof response.checkIn !== 'undefined' && typeof response.checkout !== 'undefined') {
+            if (response && typeof response.checkIn !== 'undefined' && typeof response.checkOut !== 'undefined') {
                 setEmployeeStatus({
                     checkIn: response.checkIn,
-                    checkout: response.checkout
+                    checkout: response.checkOut
                 });
+                if(response.tracker_id){
+                    setTrackerId(response.tracker_id);
+                }
+                
+                // Check for completion scenario after setting status
+                if (response.checkIn && response.checkOut) {
+                    setCompletionModal(true);
+                }
             }
         } catch (error) {
             console.error('Error fetching employee status:', error);
@@ -67,7 +111,7 @@ function CheckInCheckOut() {
         }
     }, [showNotification, t]);
 
-    // Image compression function
+    // Image compression function - Modified to return File object
     const compressImage = useCallback((file, quality = 0.7, maxWidth = 800, maxHeight = 600) => {
         return new Promise((resolve) => {
             const canvas = document.createElement('canvas');
@@ -88,7 +132,14 @@ function CheckInCheckOut() {
 
                 // Draw and compress
                 ctx.drawImage(img, 0, 0, width, height);
-                canvas.toBlob(resolve, 'image/jpeg', quality);
+                canvas.toBlob((blob) => {
+                    // Convert blob to File object with JPEG type
+                    const compressedFile = new File([blob], 'selfie.jpg', {
+                        type: 'image/jpeg',
+                        lastModified: Date.now()
+                    });
+                    resolve(compressedFile);
+                }, 'image/jpeg', quality);
             };
 
             img.src = URL.createObjectURL(file);
@@ -140,9 +191,9 @@ function CheckInCheckOut() {
             if (blob) {
                 setCapturedImage(URL.createObjectURL(blob));
 
-                // Compress the image
-                const compressedBlob = await compressImage(blob);
-                setCompressedImage(compressedBlob);
+                // Compress the image and convert to File
+                const compressedFile = await compressImage(blob);
+                setCompressedImage(compressedFile);
 
                 showNotification('success', t('MSG.photoCapturepd') || 'Photo captured successfully');
             }
@@ -169,14 +220,14 @@ function CheckInCheckOut() {
 
         setCapturedImage(URL.createObjectURL(file));
 
-        // Compress the image
-        const compressedBlob = await compressImage(file);
-        setCompressedImage(compressedBlob);
+        // Compress the image and convert to File
+        const compressedFile = await compressImage(file);
+        setCompressedImage(compressedFile);
 
         showNotification('success', t('MSG.imageUploaded') || 'Image uploaded successfully');
     }, [compressImage, showNotification, t]);
 
-    // Submit check-in/check-out
+    // Submit check-in/check-out - Updated to handle the new response structure
     const handleSubmit = useCallback(async () => {
         if (!compressedImage) {
             showNotification('warning', t('MSG.pleaseUploadImage') || 'Please capture or upload an image');
@@ -185,49 +236,131 @@ function CheckInCheckOut() {
 
         setLoading(true);
         try {
-            const formData = new FormData();
-            formData.append('image', compressedImage, 'selfie.jpg');
+            // Get current GPS coordinates
+            let currentCoords = gpsCoordinates;
+            if (!currentCoords) {
+                try {
+                    currentCoords = await getCurrentLocation();
+                } catch (gpsError) {
+                    console.error('GPS Error:', gpsError);
+                    showNotification('warning', 'Could not get GPS coordinates. Using default location.');
+                    // Use default coordinates if GPS fails
+                    currentCoords = { latitude: 18.5597952, longitude: 73.8033664 };
+                }
+            }
 
-            const endpoint = actionType === 'checkin'
-                ? '/api/checkin'
-                : '/api/checkout';
+            const formData = new FormData();
+            
+            // Send GPS coordinates as combined string with correct field name based on action type
+            if (actionType === 'checkin') {
+                formData.append('check_in_gps', `${currentCoords.latitude},${currentCoords.longitude}`);
+                formData.append('checkin_img', compressedImage);
+            } else {
+                formData.append('check_out_gps', `${currentCoords.latitude},${currentCoords.longitude}`);
+                formData.append('checkout_img', compressedImage);
+            }
+
+            let endpoint;
+            if (actionType === 'checkin') {
+                endpoint = '/api/employee-tracker';
+            } else {
+                // For checkout, use the tracker_id in the endpoint
+                endpoint = `/api/employee-tracker/${trackerId}`;
+            }
+
             const response = await postFormData(endpoint, formData);
 
-            if (response.success) {
-                showNotification('success',
-                    actionType === 'checkin'
+            // Updated response handling to match the new structure
+            // Check if response has tracker and message (successful response structure)
+            if (response && (response.tracker || response.message)) {
+                // Show success notification with the message from response
+                const successMessage = response.message || 
+                    (actionType === 'checkin' 
                         ? t('MSG.checkinSuccess') || 'Check-in successful'
-                        : t('MSG.checkoutSuccess') || 'Check-out successful'
-                );
+                        : t('MSG.checkoutSuccess') || 'Check-out successful');
 
-                // Reset form and close modal
+                showNotification('success', successMessage);
+
+                // Reset form state
                 setCapturedImage(null);
                 setCompressedImage(null);
-                setCameraModal(false);
+                setGpsCoordinates(null);
 
                 // Stop camera immediately after successful submission
                 stopCamera();
 
-                // Refresh employee status
-                await fetchEmployeeStatus();
+                // Close modal immediately after successful submission
+                setCameraModal(false);
+
+                // Update tracker ID if received in response
+                if (response.tracker && response.tracker.id) {
+                    setTrackerId(response.tracker.id);
+                }
+
+                // Refresh employee status after a short delay to ensure UI updates properly
+                setTimeout(async () => {
+                    await fetchEmployeeStatus();
+                }, 500);
             } else {
-                showNotification('danger', response.message || t('MSG.operationFailed') || 'Operation failed');
+                // Handle error response
+                const errorMessage = response?.message || 
+                    response?.error || 
+                    t('MSG.operationFailed') || 
+                    'Operation failed';
+                showNotification('danger', errorMessage);
             }
         } catch (error) {
             console.error('Error submitting:', error);
-            showNotification('danger', `${t('MSG.error') || 'Error'}: ${error.message}`);
+            
+            // Handle different types of errors
+            let errorMessage = t('MSG.error') || 'Error';
+            
+            if (error.response && error.response.data) {
+                // If it's an API error with response data
+                errorMessage = error.response.data.message || 
+                    error.response.data.error || 
+                    `${errorMessage}: ${error.message}`;
+            } else if (error.message) {
+                errorMessage = `${errorMessage}: ${error.message}`;
+            }
+            
+            showNotification('danger', errorMessage);
         } finally {
             setLoading(false);
         }
-    }, [compressedImage, actionType, showNotification, t, stopCamera, fetchEmployeeStatus]);
+    }, [compressedImage, actionType, gpsCoordinates, getCurrentLocation, showNotification, t, stopCamera, fetchEmployeeStatus, trackerId]);
 
-    // Open camera modal
+    // Open camera modal with validation
     const openCameraModal = useCallback((type) => {
+        const { checkIn, checkout } = employeeStatus;
+        
+        // Validation logic for opening camera modal
+        if (type === 'checkin' && checkIn) {
+            showNotification('warning', t('MSG.alreadyCheckedIn') || 'You have already checked in today');
+            return;
+        }
+        
+        if (type === 'checkout' && !checkIn) {
+            showNotification('warning', t('MSG.checkInFirst') || 'Please check in first before checking out');
+            return;
+        }
+        
+        if (type === 'checkout' && checkout) {
+            showNotification('warning', t('MSG.alreadyCheckedOut') || 'You have already checked out today');
+            return;
+        }
+
         setActionType(type);
         setCameraModal(true);
         setCapturedImage(null);
         setCompressedImage(null);
-    }, []);
+        setGpsCoordinates(null);
+        // Get GPS coordinates when modal opens
+        getCurrentLocation().catch(error => {
+            console.error('Error getting GPS:', error);
+            showNotification('warning', 'Could not get GPS coordinates. Will use default location.');
+        });
+    }, [employeeStatus, getCurrentLocation, showNotification, t]);
 
     // Close camera modal
     const closeCameraModal = useCallback(() => {
@@ -235,6 +368,7 @@ function CheckInCheckOut() {
         stopCamera();
         setCapturedImage(null);
         setCompressedImage(null);
+        setGpsCoordinates(null);
     }, [stopCamera]);
 
     // Effect for starting camera when modal opens
@@ -259,14 +393,21 @@ function CheckInCheckOut() {
         return new Date().toLocaleString();
     };
 
-    // Get button states based on employee status
+    // Get button states based on employee status - Enhanced validation
     const getButtonStates = () => {
         const { checkIn, checkout } = employeeStatus;
 
         return {
+            // Scenario 1: Both false - only check-in active
             checkInDisabled: checkIn, // Disabled if already checked in
+            checkInActive: !checkIn, // Active only if not checked in
+            
+            // Scenario 2: checkIn true, checkout false - only check-out active
             checkOutDisabled: !checkIn || checkout, // Disabled if not checked in or already checked out
-            bothCompleted: checkIn && checkout // Both actions completed
+            checkOutActive: checkIn && !checkout, // Active only if checked in but not checked out
+            
+            // Scenario 3: Both true - show completion message
+            bothCompleted: checkIn && checkout
         };
     };
 
@@ -284,10 +425,10 @@ function CheckInCheckOut() {
                             </div>
                         </CCardHeader>
 
-                        {/* Notifications */}
+                        {/* Notifications - Fixed to use proper CoreUI alert colors */}
                         {notification.show && (
                             <CAlert
-                                color={notification.type}
+                                color={notification.type === 'success' ? 'success' : notification.type}
                                 dismissible
                                 onClose={() => setNotification({ show: false, type: '', message: '' })}
                             >
@@ -326,24 +467,32 @@ function CheckInCheckOut() {
                                                 }
                                             </CBadge>
                                         </div>
+                                        {trackerId && (
+                                            <div className="mt-2">
+                                                <CBadge color="primary" className="py-1 px-2">
+                                                    Tracker ID: {trackerId}
+                                                </CBadge>
+                                            </div>
+                                        )}
                                     </div>
 
-                                    {/* Complete Status Message */}
+                                    {/* Complete Status Message - Scenario 3 */}
                                     {buttonStates.bothCompleted && (
                                         <div className="mb-4 p-3 bg-success bg-opacity-10 rounded border border-success">
                                             <div className="text-success text-center">
                                                 <h6 className="mb-0">
-                                                    ✅ {t('MSG.dailyCheckInCheckOutCompleted') || 'Daily check-in and check-out completed successfully!'}
+                                                    ✅ {t('MSG.dailyCheckInCheckOutCompleted') || 'Today\'s check-in and check-out already completed. Thank you!'}
                                                 </h6>
                                             </div>
                                         </div>
                                     )}
 
-                                    {/* Action Buttons */}
+                                    {/* Action Buttons - Scenarios 1 & 2 */}
                                     {!buttonStates.bothCompleted && (
                                         <div className="d-grid gap-3">
+                                            {/* Check-In Button - Active in Scenario 1 */}
                                             <CButton
-                                                color="success"
+                                                color={buttonStates.checkInActive ? "success" : "secondary"}
                                                 size="lg"
                                                 onClick={() => openCameraModal('checkin')}
                                                 disabled={loading || buttonStates.checkInDisabled}
@@ -358,8 +507,9 @@ function CheckInCheckOut() {
                                                 )}
                                             </CButton>
 
+                                            {/* Check-Out Button - Active in Scenario 2 */}
                                             <CButton
-                                                color="danger"
+                                                color={buttonStates.checkOutActive ? "danger" : "secondary"}
                                                 size="lg"
                                                 onClick={() => openCameraModal('checkout')}
                                                 disabled={loading || buttonStates.checkOutDisabled}
@@ -379,6 +529,24 @@ function CheckInCheckOut() {
                                         </div>
                                     )}
 
+                                    {/* Current Scenario Information */}
+                                    <div className="mt-4 p-3 bg-warning bg-opacity-10 rounded">
+                                        <h6 className="text-warning mb-2">
+                                            {t('LABELS.currentScenario') || 'Current Scenario'}:
+                                        </h6>
+                                        <p className="mb-0 small">
+                                            {!employeeStatus.checkIn && !employeeStatus.checkout && 
+                                                (t('MSG.scenario1') || 'Scenario 1: Ready for check-in')
+                                            }
+                                            {employeeStatus.checkIn && !employeeStatus.checkout && 
+                                                (t('MSG.scenario2') || 'Scenario 2: Checked in, ready for check-out')
+                                            }
+                                            {employeeStatus.checkIn && employeeStatus.checkout && 
+                                                (t('MSG.scenario3') || 'Scenario 3: Both check-in and check-out completed')
+                                            }
+                                        </p>
+                                    </div>
+
                                     {/* Instructions */}
                                     <div className="mt-4 p-3 bg-info bg-opacity-10 rounded">
                                         <h6 className="text-info mb-2">
@@ -390,6 +558,7 @@ function CheckInCheckOut() {
                                             <li>{t('MSG.imageAutoCompressed') || 'Image will be automatically compressed'}</li>
                                             <li>{t('MSG.cameraAccessRequired') || 'Camera access is required for this feature'}</li>
                                             <li>{t('MSG.cameraAccessReleased') || 'Camera access will be released after photo submission'}</li>
+                                            <li>GPS location will be automatically captured for attendance</li>
                                         </ul>
                                     </div>
                                 </>
@@ -416,6 +585,18 @@ function CheckInCheckOut() {
                 </CModalHeader>
                 <CModalBody>
                     <div className="text-center">
+                        {/* GPS Status */}
+                        {gpsLoading && (
+                            <div className="mb-2">
+                                <CSpinner size="sm" /> Getting GPS coordinates...
+                            </div>
+                        )}
+                        {gpsCoordinates && (
+                            <div className="mb-2 text-success small">
+                                📍 Location: {gpsCoordinates.latitude.toFixed(6)}, {gpsCoordinates.longitude.toFixed(6)}
+                            </div>
+                        )}
+
                         {!capturedImage ? (
                             <div>
                                 {/* Camera View */}
@@ -484,6 +665,47 @@ function CheckInCheckOut() {
                 <CModalFooter>
                     <CButton color="secondary" onClick={closeCameraModal}>
                         {t('LABELS.cancel') || 'Cancel'}
+                    </CButton>
+                </CModalFooter>
+            </CModal>
+
+            {/* Completion Modal for Scenario 3 */}
+            <CModal
+                visible={completionModal}
+                onClose={() => setCompletionModal(false)}
+                size="md"
+                alignment="center"
+            >
+                <CModalHeader>
+                    <CModalTitle>
+                        ✅ {t('LABELS.attendanceComplete') || 'Attendance Complete'}
+                    </CModalTitle>
+                </CModalHeader>
+                <CModalBody>
+                    <div className="text-center">
+                        <div className="mb-3">
+                            <div className="text-success" style={{ fontSize: '3rem' }}>
+                                ✅
+                            </div>
+                        </div>
+                        <h5 className="text-success mb-3">
+                            {t('MSG.todaysAttendanceComplete') || 'Today\'s Check-in and Check-out Already Completed'}
+                        </h5>
+                        <p className="text-muted">
+                            {t('MSG.thankYouMessage') || 'Thank you for maintaining your attendance record!'}
+                        </p>
+                        {trackerId && (
+                            <div className="mt-3">
+                                <CBadge color="primary" className="py-2 px-3">
+                                    Tracker ID: {trackerId}
+                                </CBadge>
+                            </div>
+                        )}
+                    </div>
+                </CModalBody>
+                <CModalFooter>
+                    <CButton color="primary" onClick={() => setCompletionModal(false)}>
+                        {t('LABELS.ok') || 'OK'}
                     </CButton>
                 </CModalFooter>
             </CModal>

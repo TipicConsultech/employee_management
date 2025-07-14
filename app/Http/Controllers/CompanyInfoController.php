@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\CompanyInfo;
 use App\Models\Plan;
 use App\Models\User;
+    
+ use Illuminate\Http\JsonResponse;
 
 class CompanyInfoController extends Controller
 {  
@@ -147,7 +149,26 @@ class CompanyInfoController extends Controller
     
         return response()->json(['message' => 'Company info updated successfully', 'details' => $companyInfo], 200);
     }
-    
+
+
+
+public function isFaceAttendance(): JsonResponse
+{
+    // Grab only the column; null if the row doesn’t exist
+    $flag = CompanyInfo::where('company_id',auth()->user()->company_id)
+            ->value('face_attendance');   // 1, 0, or null
+
+    if ($flag === null) {
+        return response()->json([
+            'message'         => 'Company not found.',
+            'face_attendance' => false,
+        ], 404);
+    }
+
+    return response()->json([
+        'face_attendance' => (bool) $flag,   // cast 1/0 → true/false
+    ]);
+}
 
     /**
      * Remove the specified resource from storage.

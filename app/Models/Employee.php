@@ -29,6 +29,13 @@ class Employee extends Model
         'mobile',
         'refferal_by',
         'isActive',
+        'half_day_rate',
+        'holiday_rate',
+        'overtime_type',
+        'contract_type',
+        'attendance_type',
+        'refferal_number',
+        'user_id'
     ];
 
     /* ───── Casts ───── */

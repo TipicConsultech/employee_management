@@ -12,6 +12,15 @@ import {
   cibElasticStack,
   cibPostgresql,
   cilCamera,
+  cilCheck,
+  cilChartLine,
+  cilSearch,
+  cilMoney,
+  cilPeople,
+  cilPin,
+  cilLocationPin,
+  cibPivotaltracker,
+  cilAsteriskCircle,
 } from '@coreui/icons'
 import { CNavGroup, CNavItem } from '@coreui/react'
 import { getUserData } from './util/session'
@@ -19,6 +28,9 @@ import { getUserData } from './util/session'
 export default function fetchNavItems(t1) {
   const userData = getUserData()
   const user = userData?.type
+  const attendance_type = userData?.attendance_type
+
+
   const t = t1
 
   let _nav = []
@@ -62,25 +74,25 @@ export default function fetchNavItems(t1) {
               component: CNavItem,
               name: t("LABELS.dashboard"),
               to: '/dashboard',
-              icon: <CIcon icon={cilFile} customClassName="nav-icon"/>,
+              icon: <CIcon icon={cilChartLine} customClassName="nav-icon"/>,
       },
       {
         component: CNavItem,
         name: t("LABELS.docs_verification"),
         to: '/Document_verification',
-        icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
+        icon: <CIcon icon={cilSearch} customClassName="nav-icon" />,
       },
       {
               component: CNavItem,
               name: t("LABELS.credit_screen"),
               to: '/credit_screen',
-              icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
+              icon: <CIcon icon={cilMoney} customClassName="nav-icon" />,
       },
       {
               component: CNavItem,
               name: t("LABELS.employee_registration"),
               to: '/employee_registration',
-              icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
+              icon: <CIcon icon={cilPeople} customClassName="nav-icon" />,
       },
       // {
       //         component: CNavItem,
@@ -92,34 +104,54 @@ export default function fetchNavItems(t1) {
               component: CNavItem,
               name: t("LABELS.set_coordinates"),
               to: '/set_coordinates',
-              icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
+              icon: <CIcon icon={cilLocationPin} customClassName="nav-icon" />,
       },
       {
               component: CNavItem,
               name: t("LABELS.bulk_employee_tracker"),
               to: '/bulk_employee_tracker',
-              icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
+              icon: <CIcon icon={cilAsteriskCircle} customClassName="nav-icon" />,
       },
-      {
-              component: CNavItem,
-              name: t("LABELS.checkInWithSelfie"),
-              to: '/checkInWithSelfie',
-              icon: <CIcon icon={cilCamera} customClassName="nav-icon" />,
-      }
+      // {
+      //         component: CNavItem,
+      //         name: t("LABELS.checkInWithSelfie"),
+      //         to: '/checkInWithSelfie',
+      //         icon: <CIcon icon={cilCamera} customClassName="nav-icon" />,
+      // },
+      // {
+      //         component: CNavItem,
+      //         name: t("LABELS.leaveManagement"),
+      //         to: '/leaveManagement',
+      //         icon: <CIcon icon={cilCheck} customClassName="nav-icon" />,
+      // }
     ]
   }
 
 
 
   else if (user === 10){
-    _nav = [
-       {
-              component: CNavItem,
-              name: t("LABELS.employee_tracker"),
-              to: '/employee_tracker',
-              icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
-      }
-    ]
+   _nav = [
+  // show “Employee Tracker” when attendance is location‑based or both
+  ...(attendance_type === "location" || attendance_type === "both"
+    ? [{
+        component: CNavItem,
+        name: t("LABELS.employee_tracker"),
+        to: '/employee_tracker',
+        icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
+      }]
+    : []),
+
+  // show “Check‑in with Selfie” when attendance uses face recognition
+  ...(attendance_type === "both" || attendance_type === "face_attendance"
+    ? [{
+        component: CNavItem,
+        name: t("LABELS.checkInWithSelfie"),
+        to: '/checkInWithSelfie',
+        icon: <CIcon icon={cilCamera} customClassName="nav-icon" />,
+      }]
+    : [])
+];
+
   }
 
   return _nav

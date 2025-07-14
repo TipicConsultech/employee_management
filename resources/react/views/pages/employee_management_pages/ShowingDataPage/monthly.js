@@ -398,7 +398,7 @@ const Monthly = ({ id, employee }) => {
       employee_id: parseInt(id),
       start_date: startDate,
       end_date: endDate,
-      standard_day_hours: 8,
+      working_hours: 8,
     }
 
     try {
@@ -557,142 +557,303 @@ const Monthly = ({ id, employee }) => {
       )}
 
       {/* Work Summary Card */}
-      {workSummary && (
-        <CCard className="shadow-sm mt-2">
-          <CCardBody>
-            <div className="summary-header mb-3">
-              <div className="summary-item">
-                <span className="label">{t('LABELS.regularHours')}:</span>
-                <span className="value">{workSummary.regular_hours}</span>
+    {workSummary && (
+  <CCard className="shadow-sm mt-3 border-0">
+    <CCardBody>
+      <h4 className="text-center fw-bold mb-4" style={{ borderBottom: '2px solid #cce5ff', paddingBottom: '10px' }}>
+        Work Summary & Payment
+      </h4>
+
+      {/* Section 1: Work Hours Overview */}
+      <h6 className="text-primary fw-semibold mb-3">🕒 Work Hours Overview</h6>
+      <CRow className="mb-4">
+        <CCol md={4}>
+          <CCard className="bg-success-subtle text-center">
+            <CCardBody>
+              <div className="text-muted">Regular Hours</div>
+              <div className="fw-bold fs-4 text-success">{workSummary.regular_hours ?? 0} hrs</div>
+            </CCardBody>
+          </CCard>
+        </CCol>
+        <CCol md={4}>
+          <CCard className="bg-warning-subtle text-center">
+            <CCardBody>
+              <div className="text-muted">Overtime Hours</div>
+              <div className="fw-bold fs-4 text-warning">{workSummary.overtime_hours ?? 0} hrs</div>
+            </CCardBody>
+          </CCard>
+        </CCol>
+        <CCol md={4}>
+          <CCard className="bg-primary-subtle text-center">
+            <CCardBody>
+              <div className="text-muted">Total Worked Hours</div>
+              <div className="fw-bold fs-4 text-primary">
+                {(workSummary.regular_hours || 0) + (workSummary.overtime_hours || 0)} hrs
               </div>
-              <div className="summary-item">
-                <span className="label">{t('LABELS.overtimeHours')}:</span>
-                <span className="value">{workSummary.overtime_hours}</span>
-              </div>
-              <div className="summary-item">
-                <span className="label">{t('LABELS.totalWorkedHours')}:</span>
-                <span className="value">{(workSummary.regular_hours || 0) + (workSummary.overtime_hours || 0)}</span>
-              </div>
-            </div>
+            </CCardBody>
+          </CCard>
+        </CCol>
+      </CRow>
 
-            {/* Wage Inputs */}
-            <CRow className="mb-3">
-              <CCol xs={12} md={6} className="mb-2">
-                <label className="form-label">{t('LABELS.regularWagePerHour')}</label>
-                <CFormInput
-                  type="number"
-                  value={Math.max(0, workSummary.custom_regular_wage ?? 0)}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value || '0', 10)
-                    setWorkSummary({
-                      ...workSummary,
-                      custom_regular_wage: val >= 0 ? val : 0,
-                    })
-                  }}
-                />
-              </CCol>
-              <CCol xs={12} md={6} className="mb-2">
-                <label className="form-label">{t('LABELS.overtimeWagePerHour')}</label>
-                <CFormInput
-                  type="number"
-                  value={Math.max(0, workSummary.custom_overtime_wage ?? 0)}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value || '0', 10)
-                    setWorkSummary({
-                      ...workSummary,
-                      custom_overtime_wage: val >= 0 ? val : 0,
-                    })
-                  }}
-                />
-              </CCol>
-            </CRow>
+      {/* Section 2: Wage Configuration */}
+      <h6 className="text-primary fw-semibold mb-3">⚙️ Wage Configuration</h6>
+      <CRow className="bg-light p-3 rounded mb-4 border border-primary-subtle">
+        <CCol md={6} className="mb-3">
+          <label className="form-label fw-semibold">Regular Wage / Hour</label>
+          <CFormInput
+            type="number"
+            value={Math.max(0, workSummary.custom_regular_wage ?? 0)}
+            onChange={(e) =>
+              setWorkSummary({
+                ...workSummary,
+                custom_regular_wage: parseInt(e.target.value || '0', 10),
+              })
+            }
+          />
+        </CCol>
+        <CCol md={6}>
+          <label className="form-label fw-semibold">Overtime Wage / Hour</label>
+          <CFormInput
+            type="number"
+            value={Math.max(0, workSummary.custom_overtime_wage ?? 0)}
+            onChange={(e) =>
+              setWorkSummary({
+                ...workSummary,
+                custom_overtime_wage: parseInt(e.target.value || '0', 10),
+              })
+            }
+          />
+        </CCol>
+      </CRow>
 
-            {/* Calculated Payments */}
-            <CRow className="mb-4">
-              <CCol xs={12} md={4} className="mb-2">
-                <label className="form-label">{t('LABELS.regularPayment')}</label>
-                <CFormInput
-                  readOnly
-                  value={(workSummary.regular_hours || 0) * (workSummary.custom_regular_wage || 0)}
-                />
-              </CCol>
-              <CCol xs={12} md={4} className="mb-2">
-                <label className="form-label">{t('LABELS.overtimePayment')}</label>
-                <CFormInput
-                  readOnly
-                  value={(workSummary.overtime_hours || 0) * (workSummary.custom_overtime_wage || 0)}
-                />
-              </CCol>
-              <CCol xs={12} md={4} className="mb-2">
-                <label className="form-label">{t('LABELS.totalCalculatedPayment')}</label>
-                <CFormInput
-                  readOnly
-                  value={
-                    ((workSummary.regular_hours || 0) * (workSummary.custom_regular_wage || 0)) +
-                    ((workSummary.overtime_hours || 0) * (workSummary.custom_overtime_wage || 0))
-                  }
-                />
-              </CCol>
-            </CRow>
+      {/* Section 3: Payment Breakdown */}
+      <h6 className="text-success fw-semibold mb-3">💰 Payment Breakdown</h6>
+      <CRow className="bg-success-subtle p-3 rounded mb-4">
+        <CCol md={4} className="mb-3">
+          <label className="form-label fw-semibold">Regular Payment</label>
+          <CFormInput
+            readOnly
+            value={(workSummary.regular_hours || 0) * (workSummary.custom_regular_wage || 0)}
+          />
+        </CCol>
+        <CCol md={4} className="mb-3">
+          <label className="form-label fw-semibold">Overtime Payment</label>
+          <CFormInput
+            readOnly
+            value={(workSummary.overtime_hours || 0) * (workSummary.custom_overtime_wage || 0)}
+          />
+        </CCol>
+        <CCol md={4}>
+          <label className="form-label fw-semibold">Total Calculated Payment</label>
+          <CFormInput
+            readOnly
+            value={
+              ((workSummary.regular_hours || 0) * (workSummary.custom_regular_wage || 0)) +
+              ((workSummary.overtime_hours || 0) * (workSummary.custom_overtime_wage || 0))
+            }
+          />
+        </CCol>
+      </CRow>
 
-            {/* Actual Payment */}
-            <CRow className="mb-4">
-              <CCol xs={12} md={6} className="mb-2">
-                <label className="form-label">{t('LABELS.actualPayment')}</label>
-                <CFormInput
-                  type="number"
-                  value={workSummary.payed_amount || ''}
-                  onChange={(e) => {
-                    const actual = parseInt(e.target.value || 0)
-                    const total =
-                      (workSummary.regular_hours * (workSummary.custom_regular_wage ?? employee.wage_hour)) +
-                      (workSummary.overtime_hours * (workSummary.custom_overtime_wage ?? employee.wage_overtime))
-                    const pending = total - actual
-                    setWorkSummary({
-                      ...workSummary,
-                      payed_amount: actual,
-                      pending_payment: pending >= 0 ? pending : 0,
-                    })
-                  }}
-                />
-              </CCol>
-              <CCol xs={12} md={6} className="mb-2">
-                <label className="form-label">{t('LABELS.pendingAmount')}</label>
-                <CFormInput readOnly value={workSummary.pending_payment || 0} />
-              </CCol>
-            </CRow>
+      {/* Section 4: Payment Status */}
+      <h6 className="text-primary fw-semibold mb-3">📥 Payment Status</h6>
+      <CRow className="bg-info-subtle p-3 rounded mb-4">
+        <CCol md={6} className="mb-3">
+          <label className="form-label fw-semibold">Actual Payment</label>
+          <CFormInput
+            type="number"
+            value={workSummary.payed_amount || ''}
+            onChange={(e) => {
+              const actual = parseInt(e.target.value || 0);
+              const total =
+                (workSummary.regular_hours * (workSummary.custom_regular_wage ?? employee.wage_hour)) +
+                (workSummary.overtime_hours * (workSummary.custom_overtime_wage ?? employee.wage_overtime));
+              const pending = total - actual;
+              setWorkSummary({
+                ...workSummary,
+                payed_amount: actual,
+                pending_payment: pending >= 0 ? pending : 0,
+              });
+            }}
+          />
+        </CCol>
+        <CCol md={6}>
+          <label className="form-label fw-semibold">Pending Amount</label>
+          <CFormInput readOnly className="bg-danger-subtle" value={workSummary.pending_payment || 0} />
+        </CCol>
+      </CRow>
 
-            {/* Payment Method */}
-            <CRow className="mb-3">
-              <CCol xs={12} md={6}>
-                <label className="form-label">{t('LABELS.paymentMethod')}</label>
-                <CFormSelect
-                  value={workSummary.payment_type || ''}
-                  onChange={(e) =>
-                    setWorkSummary({
-                      ...workSummary,
-                      payment_type: e.target.value,
-                    })
-                  }
-                >
-                  <option value="">-- Select Payment Method --</option>
-                  <option value="cash">Cash</option>
-                  <option value="upi">UPI</option>
-                  <option value="bank_transfer">Bank Transfer</option>
-                </CFormSelect>
-              </CCol>
-            </CRow>
+      {/* Section 5: Payment Method */}
+      <h6 className="text-warning fw-semibold mb-3">💳 Payment Method</h6>
+      <CRow className="bg-warning-subtle p-3 rounded mb-4">
+        <CCol md={6}>
+          <label className="form-label fw-semibold">Payment Method</label>
+          <CFormSelect
+            value={workSummary.payment_type || ''}
+            onChange={(e) =>
+              setWorkSummary({
+                ...workSummary,
+                payment_type: e.target.value,
+              })
+            }
+          >
+            <option value="">-- Select --</option>
+            <option value="cash">Cash</option>
+            <option value="upi">UPI</option>
+            <option value="bank_transfer">Bank Transfer</option>
+          </CFormSelect>
+        </CCol>
+      </CRow>
 
-            <div className="d-flex justify-content-end">
-              <CButton color="success" onClick={handleSubmit}>
-                {t('LABELS.submit')}
-              </CButton>
-            </div>
-          </CCardBody>
-        </CCard>
-      )}
+      {/* Submit Button */}
+      <div className="d-flex justify-content-center">
+        <CButton color="success" size="lg" onClick={handleSubmit}>
+          ✅ Submit & Save
+        </CButton>
+      </div>
+    </CCardBody>
+  </CCard>
+)}
+
     </div>
   )
 }
 
 export default Monthly
+
+
+
+//  {workSummary && (
+//         <CCard className="shadow-sm mt-2">
+//           <CCardBody>
+//             <div className="summary-header mb-3">
+//               <div className="summary-item">
+//                 <span className="label">{t('LABELS.regularHours')}:</span>
+//                 <span className="value">{workSummary.regular_hours}</span>
+//               </div>
+//               <div className="summary-item">
+//                 <span className="label">{t('LABELS.overtimeHours')}:</span>
+//                 <span className="value">{workSummary.overtime_hours}</span>
+//               </div>
+//               <div className="summary-item">
+//                 <span className="label">{t('LABELS.totalWorkedHours')}:</span>
+//                 <span className="value">{(workSummary.regular_hours || 0) + (workSummary.overtime_hours || 0)}</span>
+//               </div>
+//             </div>
+
+//             {/* Wage Inputs */}
+//             <CRow className="mb-3">
+//               <CCol xs={12} md={6} className="mb-2">
+//                 <label className="form-label">{t('LABELS.regularWagePerHour')}</label>
+//                 <CFormInput
+//                   type="number"
+//                   value={Math.max(0, workSummary.custom_regular_wage ?? 0)}
+//                   onChange={(e) => {
+//                     const val = parseInt(e.target.value || '0', 10)
+//                     setWorkSummary({
+//                       ...workSummary,
+//                       custom_regular_wage: val >= 0 ? val : 0,
+//                     })
+//                   }}
+//                 />
+//               </CCol>
+//               <CCol xs={12} md={6} className="mb-2">
+//                 <label className="form-label">{t('LABELS.overtimeWagePerHour')}</label>
+//                 <CFormInput
+//                   type="number"
+//                   value={Math.max(0, workSummary.custom_overtime_wage ?? 0)}
+//                   onChange={(e) => {
+//                     const val = parseInt(e.target.value || '0', 10)
+//                     setWorkSummary({
+//                       ...workSummary,
+//                       custom_overtime_wage: val >= 0 ? val : 0,
+//                     })
+//                   }}
+//                 />
+//               </CCol>
+//             </CRow>
+
+//             {/* Calculated Payments */}
+//             <CRow className="mb-4">
+//               <CCol xs={12} md={4} className="mb-2">
+//                 <label className="form-label">{t('LABELS.regularPayment')}</label>
+//                 <CFormInput
+//                   readOnly
+//                   value={(workSummary.regular_hours || 0) * (workSummary.custom_regular_wage || 0)}
+//                 />
+//               </CCol>
+//               <CCol xs={12} md={4} className="mb-2">
+//                 <label className="form-label">{t('LABELS.overtimePayment')}</label>
+//                 <CFormInput
+//                   readOnly
+//                   value={(workSummary.overtime_hours || 0) * (workSummary.custom_overtime_wage || 0)}
+//                 />
+//               </CCol>
+//               <CCol xs={12} md={4} className="mb-2">
+//                 <label className="form-label">{t('LABELS.totalCalculatedPayment')}</label>
+//                 <CFormInput
+//                   readOnly
+//                   value={
+//                     ((workSummary.regular_hours || 0) * (workSummary.custom_regular_wage || 0)) +
+//                     ((workSummary.overtime_hours || 0) * (workSummary.custom_overtime_wage || 0))
+//                   }
+//                 />
+//               </CCol>
+//             </CRow>
+
+//             {/* Actual Payment */}
+//             <CRow className="mb-4">
+//               <CCol xs={12} md={6} className="mb-2">
+//                 <label className="form-label">{t('LABELS.actualPayment')}</label>
+//                 <CFormInput
+//                   type="number"
+//                   value={workSummary.payed_amount || ''}
+//                   onChange={(e) => {
+//                     const actual = parseInt(e.target.value || 0)
+//                     const total =
+//                       (workSummary.regular_hours * (workSummary.custom_regular_wage ?? employee.wage_hour)) +
+//                       (workSummary.overtime_hours * (workSummary.custom_overtime_wage ?? employee.wage_overtime))
+//                     const pending = total - actual
+//                     setWorkSummary({
+//                       ...workSummary,
+//                       payed_amount: actual,
+//                       pending_payment: pending >= 0 ? pending : 0,
+//                     })
+//                   }}
+//                 />
+//               </CCol>
+//               <CCol xs={12} md={6} className="mb-2">
+//                 <label className="form-label">{t('LABELS.pendingAmount')}</label>
+//                 <CFormInput readOnly value={workSummary.pending_payment || 0} />
+//               </CCol>
+//             </CRow>
+
+//             {/* Payment Method */}
+//             <CRow className="mb-3">
+//               <CCol xs={12} md={6}>
+//                 <label className="form-label">{t('LABELS.paymentMethod')}</label>
+//                 <CFormSelect
+//                   value={workSummary.payment_type || ''}
+//                   onChange={(e) =>
+//                     setWorkSummary({
+//                       ...workSummary,
+//                       payment_type: e.target.value,
+//                     })
+//                   }
+//                 >
+//                   <option value="">-- Select Payment Method --</option>
+//                   <option value="cash">Cash</option>
+//                   <option value="upi">UPI</option>
+//                   <option value="bank_transfer">Bank Transfer</option>
+//                 </CFormSelect>
+//               </CCol>
+//             </CRow>
+
+//             <div className="d-flex justify-content-end">
+//               <CButton color="success" onClick={handleSubmit}>
+//                 {t('LABELS.submit')}
+//               </CButton>
+//             </div>
+//           </CCardBody>
+//         </CCard>
+//       )}

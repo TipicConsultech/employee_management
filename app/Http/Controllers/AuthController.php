@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Employee;
+
 
 
 class AuthController extends Controller
@@ -133,7 +135,10 @@ class AuthController extends Controller
 
         //Check if mobile no exists
         $user = User::where('mobile', $fields['mobile'])->first();
-
+        $employee=Employee::where('mobile',$user->mobile)->first();
+       
+          $user->attendance_type = $employee->attendance_type;
+          $user->employee_id     = $employee->id;   // typo fixed
         //Check password
         if (!$user || !Hash::check($fields['password'], $user->password)) {
             return response()->json([
@@ -147,6 +152,8 @@ class AuthController extends Controller
             ], 401);
         }
 
+
+
         $token = $user->createToken('mobileLoginToken')->plainTextToken;
         $response = [
             'user' => $user,
@@ -155,11 +162,29 @@ class AuthController extends Controller
         return response($response, 201);
     }
 
-    function logout(Request $request)
-    {
-        auth()->user()->tokens()->delete();
-        return ['message' => 'Logged out'];
-    }
+    // function logout(Request $request)
+    // {
+    //     auth()->user()->tokens()->delete();
+    //     return ['message' => 'Logged out'];
+    // }
+
+  public function logout(Request $request)
+{
+    $request->user()->currentAccessToken()->delete();
+ 
+    return response()->json([
+        'message' => 'Logged out from current session'
+    ], 200);
+}
+ 
+public function logoutEverywhere(Request $request)
+{
+    $request->user()->tokens()->delete();
+ 
+    return response()->json([
+        'message' => 'Logged out from all devices'
+    ], 200);
+}
 
     function changePassword(Request $request)
     {

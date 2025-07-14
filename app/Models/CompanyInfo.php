@@ -28,7 +28,8 @@ class CompanyInfo extends Model
     'appMode',
     'subscribed_plan',
     'subscription_validity',
-    'refer_by_id'
+    'refer_by_id',
+    'face_attendance'
     ];
 
     protected $hidden = [

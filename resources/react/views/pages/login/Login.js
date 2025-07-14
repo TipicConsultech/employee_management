@@ -64,14 +64,28 @@ const Login = () => {
     }
   };
 
-  const getRedirectPathByUserType = (userType) => {
+const getEmployeePath = (type) => {
+  switch (type) {
+    case 'face_attendance':
+      return '/checkInWithSelfie';
+
+    case 'both':
+    case 'location':
+      return '/employee_tracker';
+
+    default:
+      return '/employee_tracker'; // fallback if type is unknown or undefined
+  }
+};
+  
+  const getRedirectPathByUserType = (userType,type=null) => {
     switch (userType) {
       case 0:
         return '/company/new';
       case 1:
          return '/dashboard';
       case 10:
-        return '/employee_tracker';
+        return  type ? getEmployeePath(type) : '/employee_tracker';
       default:
         return '/employee_tracker';
     }
@@ -183,6 +197,8 @@ const Login = () => {
       if (loginType === "Employee") {
         try {
           resp = await post('/api/mobileLogin', loginData);
+          console.log(resp);
+          
         } catch (employeeError) {
           console.error('Employee login error:', employeeError);
           // Handle employee login specific errors
@@ -224,7 +240,7 @@ const Login = () => {
       // Check if login was successful
       if (resp.user) {
         storeUserData(resp);
-        const redirectPath = getRedirectPathByUserType(resp.user.type);
+        const redirectPath = getRedirectPathByUserType(resp.user.type,resp?.user?.attendance_type);
         navigate(redirectPath);
         return;
       }
