@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
 import {
-  CRow, CCol, CFormInput, CButton, CFormSelect,
+  CRow, CCol, CFormInput,
   CCard, CCardBody,
 } from '@coreui/react';
 import { useTranslation } from 'react-i18next';
 import { post } from '../../../../util/api';
-import './calendarStyles.css';
+import WorkSummaryPayment from './WorkSummaryPayment ';
 
 function WeeklyView({ id, employee }) {
   const { t } = useTranslation('global');
 
-  const [startDate, setStartDate]       = useState('');
-  const [endDate, setEndDate]           = useState('');
-  const [weekDates, setWeekDates]       = useState([]);
-  const [attendance, setAttendance]     = useState([]);
-  const [payload, setPayload]           = useState([]);   // still used for the grid
-  const [workSummary, setWorkSummary]   = useState({});
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [weekDates, setWeekDates] = useState([]);
+  const [attendance, setAttendance] = useState([]);
+  const [payload, setPayload] = useState([]);
+  const [workSummary, setWorkSummary] = useState({});
   const [showWeekGrid, setShowWeekGrid] = useState(false);
 
   /* ──────────────────────────────────────────── */
@@ -23,7 +23,7 @@ function WeeklyView({ id, employee }) {
   /* ──────────────────────────────────────────── */
   const handleStartDateChange = async (value) => {
     const selectedDate = new Date(value);
-    const dayOfWeek    = selectedDate.getDay();         // 0 (Sun) → 6 (Sat)
+    const dayOfWeek = selectedDate.getDay(); // 0 (Sun) → 6 (Sat)
 
     // Monday of that week
     const monday = new Date(selectedDate);
@@ -46,9 +46,9 @@ function WeeklyView({ id, employee }) {
     setWeekDates(weekDays);
 
     const requestData = {
-      employee_id  : parseInt(id, 10),
-      start_date   : monday.toISOString().split('T')[0],
-      end_date     : sunday.toISOString().split('T')[0],
+      employee_id: parseInt(id, 10),
+      start_date: monday.toISOString().split('T')[0],
+      end_date: sunday.toISOString().split('T')[0],
       working_hours: 8,
     };
 
@@ -60,10 +60,10 @@ function WeeklyView({ id, employee }) {
 
       setWorkSummary({
         ...response,
-        custom_regular_wage : response.wage_hour     ?? employee.wage_hour,
+        custom_regular_wage: response.wage_hour ?? employee.wage_hour,
         custom_overtime_wage: response.wage_overtime ?? employee.wage_overtime,
-        payed_amount        : response.payed_amount  ?? 0,
-        pending_payment     : response.pending_payment ?? 0,
+        payed_amount: response.payed_amount ?? 0,
+        pending_payment: response.pending_payment ?? 0,
       });
 
       setShowWeekGrid(true);
@@ -76,17 +76,17 @@ function WeeklyView({ id, employee }) {
   /* Submit payment                               */
   /* ──────────────────────────────────────────── */
   const handleSubmit = async () => {
-    const regularWage  = workSummary.custom_regular_wage  ?? employee.wage_hour;
+    const regularWage = workSummary.custom_regular_wage ?? employee.wage_hour;
     const overtimeWage = workSummary.custom_overtime_wage ?? employee.wage_overtime;
 
     const salary_amount =
-      (workSummary.regular_hours  || 0) * regularWage +
+      (workSummary.regular_hours || 0) * regularWage +
       (workSummary.overtime_hours || 0) * overtimeWage;
 
     const payloadData = {
-      start_date  : startDate,
-      end_date    : endDate,
-      employee_id : parseInt(id, 10),
+      start_date: startDate,
+      end_date: endDate,
+      employee_id: parseInt(id, 10),
       payed_amount: workSummary.payed_amount,
       salary_amount,
       payment_type: workSummary.payment_type,
@@ -97,11 +97,11 @@ function WeeklyView({ id, employee }) {
       alert('Payment submitted successfully!');
       setWorkSummary((prev) => ({
         ...prev,
-        custom_regular_wage : '',
+        custom_regular_wage: '',
         custom_overtime_wage: '',
-        payed_amount        : '',
-        pending_payment     : 0,
-        payment_type        : '',
+        payed_amount: '',
+        pending_payment: 0,
+        payment_type: '',
       }));
     } catch (err) {
       console.error('Payment Error:', err);
@@ -121,20 +121,44 @@ function WeeklyView({ id, employee }) {
           Attendance week
         </h6>
 
-        <div className="week-grid-wrapper">
+        <div className="week-grid-horizontal">
           {weekDates.map((date, idx) => {
-            const entry   = attendance.find((d) => d.date === date);
-            const worked  = entry?.total_hours || '';
-            const isPaid  = entry?.payment_status === true;
+            const entry = attendance.find((d) => d.date === date);
+            const worked = entry?.total_hours || '';
+            const isPaid = entry?.payment_status === true;
+            const type = entry?.type || '';
+            const hasWorked = worked && parseFloat(worked) > 0;
+
+            // Determine cell class based on type
+            let cellClass = 'week-day-cell';
+            if (type === 'P') {
+              cellClass += ' present-day';
+            } else if (type === 'H') {
+              cellClass += ' holiday';
+            } else if (type === 'HD') {
+              cellClass += ' half-day';
+            } else if (['SL', 'PL', 'CL'].includes(type)) {
+              cellClass += ' paid-leave';
+            } else {
+              cellClass += ' no-work';
+            }
 
             return (
-              <div key={date} className="week-day-box">
-                <div className="day-name">{days[idx]}</div>
+              <div 
+                key={date} 
+                className={cellClass}
+              >
                 <div className="day-number">{new Date(date).getDate()}</div>
-                <div className="day-details">
-                  {worked && <div className="hours">{worked}h</div>}
-                  {isPaid && <div className="paid-label">Paid</div>}
-                </div>
+                {/* Show hours only for Present days and not for half days */}
+                {type === 'P' && hasWorked && (
+                  <div className="hours-worked">{worked}h</div>
+                )}
+                {/* Show type indicator for non-present days */}
+                {type && type !== 'P' && (
+                  <div className="type-indicator">{type}</div>
+                )}
+                {/* Show paid indicator */}
+                {isPaid && <div className="paid-indicator">✓</div>}
               </div>
             );
           })}
@@ -143,7 +167,19 @@ function WeeklyView({ id, employee }) {
         <div className="calendar-legend mt-3">
           <div className="legend-item">
             <div className="legend-color present-day" />
-            <span>Present Day</span>
+            <span>Present (P)</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-color holiday" />
+            <span>Holiday (H)</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-color half-day" />
+            <span>Half Day (HD)</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-color paid-leave" />
+            <span>Paid Leave (SL/PL/CL)</span>
           </div>
           <div className="legend-item">
             <div className="legend-symbol">✓</div>
@@ -155,21 +191,197 @@ function WeeklyView({ id, employee }) {
   };
 
   /* ──────────────────────────────────────────── */
-  /* Salary calculations (✅ FIXED)               */
-  /* ──────────────────────────────────────────── */
-  const regularHours  = workSummary.regular_hours  || 0;           // 8
-  const overtimeHours = workSummary.overtime_hours || 0;           // 4
-
-  const regularPay  = regularHours  * (workSummary.custom_regular_wage  || 0);
-  const overtimePay = overtimeHours * (workSummary.custom_overtime_wage || 0);
-  const totalPay    = regularPay + overtimePay;
-  const totalWorked = regularHours + overtimeHours;                // 12
-
-  /* ──────────────────────────────────────────── */
   /* JSX                                          */
   /* ──────────────────────────────────────────── */
   return (
     <div>
+      <style jsx>{`
+        /* Horizontal Week Grid Layout */
+        .week-grid-horizontal {
+          display: flex;
+          width: 100%;
+          border: 1px solid #28a745;
+          border-radius: 4px;
+          overflow: hidden;
+        }
+
+        .week-day-cell {
+          flex: 1;
+          min-height: 80px;
+          border-right: 1px solid #28a745;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          padding: 8px 4px;
+        }
+
+        .week-day-cell:last-child {
+          border-right: none;
+        }
+
+        .week-day-cell.has-work {
+          background-color: #d4edda;
+          color: #155724;
+        }
+
+        .week-day-cell.no-work {
+          background-color: #f8f9fa;
+          color: #6c757d;
+        }
+
+        /* Different status colors */
+        .week-day-cell.present-day {
+          background-color: #d4edda;
+          color: #155724;
+          border-color: #28a745;
+        }
+
+        .week-day-cell.holiday {
+          background-color: #fff3cd;
+          color: #856404;
+          border-color: #ffc107;
+        }
+
+        .week-day-cell.half-day {
+          background-color: #cce7ff;
+          color: #004085;
+          border-color: #007bff;
+        }
+
+        .week-day-cell.paid-leave {
+          background-color: #e2d8f0;
+          color: #553c9a;
+          border-color: #6f42c1;
+        }
+
+        .week-day-cell .type-indicator {
+          font-size: 12px;
+          font-weight: 600;
+          color: inherit;
+          background-color: rgba(255, 255, 255, 0.3);
+          padding: 2px 6px;
+          border-radius: 12px;
+          margin-top: 2px;
+        }
+
+        .week-day-cell .day-number {
+          font-size: 18px;
+          font-weight: bold;
+          margin-bottom: 4px;
+        }
+
+        .week-day-cell .hours-worked {
+          font-size: 14px;
+          font-weight: 500;
+          color: #28a745;
+        }
+
+        .week-day-cell .paid-indicator {
+          position: absolute;
+          top: 4px;
+          right: 4px;
+          background-color: #28a745;
+          color: white;
+          border-radius: 50%;
+          width: 16px;
+          height: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 10px;
+          font-weight: bold;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+          .week-day-cell {
+            min-height: 60px;
+            padding: 4px 2px;
+          }
+          
+          .week-day-cell .day-number {
+            font-size: 16px;
+          }
+          
+          .week-day-cell .hours-worked {
+            font-size: 12px;
+          }
+        }
+
+        /* Legend styles */
+        .calendar-legend {
+          display: flex;
+          justify-content: center;
+          gap: 20px;
+          margin-top: 12px;
+        }
+
+        .legend-item {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 12px;
+        }
+
+        .legend-color.present-day {
+          width: 16px;
+          height: 16px;
+          background-color: #d4edda;
+          border: 1px solid #28a745;
+          border-radius: 2px;
+        }
+
+        .legend-color.holiday {
+          width: 16px;
+          height: 16px;
+          background-color: #fff3cd;
+          border: 1px solid #ffc107;
+          border-radius: 2px;
+        }
+
+        .legend-color.half-day {
+          width: 16px;
+          height: 16px;
+          background-color: #cce7ff;
+          border: 1px solid #007bff;
+          border-radius: 2px;
+        }
+
+        .legend-color.paid-leave {
+          width: 16px;
+          height: 16px;
+          background-color: #e2d8f0;
+          border: 1px solid #6f42c1;
+          border-radius: 2px;
+        }
+
+        .legend-symbol {
+          width: 16px;
+          height: 16px;
+          background-color: #28a745;
+          color: white;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 10px;
+          font-weight: bold;
+        }
+
+        .attendance-card {
+          background: white;
+          padding: 16px;
+          margin-bottom: 16px;
+        }
+
+        .calendar-title {
+          font-weight: 600;
+          color: #333;
+        }
+      `}</style>
+
       {/* Date range picker */}
       <CRow className="mb-3">
         <CCol md={4}>
@@ -189,183 +401,13 @@ function WeeklyView({ id, employee }) {
       {showWeekGrid && weekDates.length > 0 && renderWeekGrid()}
 
       {showWeekGrid && (
-        <CCard className="shadow-sm mt-3 border-0">
-          <CCardBody>
-            <h4
-              className="text-center fw-bold mb-4"
-              style={{ borderBottom: '2px solid #cce5ff', paddingBottom: '10px' }}
-            >
-              Weekly Work Summary &amp; Payment
-            </h4>
-
-            {/* 🕒 Work Hours Overview */}
-            <h6 className="text-primary fw-semibold mb-3">
-              🕒 Work Hours Overview
-            </h6>
-            <CRow className="mb-4">
-              <CCol md={4}>
-                <CCard className="bg-success-subtle text-center">
-                  <CCardBody>
-                    <div className="text-muted">Regular Hours</div>
-                    <div className="fw-bold fs-4 text-success">
-                      {regularHours} hrs
-                    </div>
-                  </CCardBody>
-                </CCard>
-              </CCol>
-              <CCol md={4}>
-                <CCard className="bg-warning-subtle text-center">
-                  <CCardBody>
-                    <div className="text-muted">Overtime Hours</div>
-                    <div className="fw-bold fs-4 text-warning">
-                      {overtimeHours} hrs
-                    </div>
-                  </CCardBody>
-                </CCard>
-              </CCol>
-              <CCol md={4}>
-                <CCard className="bg-primary-subtle text-center">
-                  <CCardBody>
-                    <div className="text-muted">Total Worked Hours</div>
-                    <div className="fw-bold fs-4 text-primary">
-                      {totalWorked} hrs
-                    </div>
-                  </CCardBody>
-                </CCard>
-              </CCol>
-            </CRow>
-
-            {/* ⚙️ Wage Inputs */}
-            <h6 className="text-primary fw-semibold mb-3">
-              ⚙️ Wage Configuration
-            </h6>
-            <CRow className="bg-light p-3 rounded mb-4 border border-primary-subtle">
-              <CCol md={6} className="mb-3">
-                <label className="form-label fw-semibold">
-                  {t('LABELS.regularWagePerHour')}
-                </label>
-                <CFormInput
-                  type="number"
-                  value={workSummary.custom_regular_wage}
-                  onChange={(e) =>
-                    setWorkSummary((prev) => ({
-                      ...prev,
-                      custom_regular_wage: parseInt(e.target.value || 0, 10),
-                    }))
-                  }
-                />
-              </CCol>
-              <CCol md={6}>
-                <label className="form-label fw-semibold">
-                  {t('LABELS.overtimeWagePerHour')}
-                </label>
-                <CFormInput
-                  type="number"
-                  value={workSummary.custom_overtime_wage}
-                  onChange={(e) =>
-                    setWorkSummary((prev) => ({
-                      ...prev,
-                      custom_overtime_wage: parseInt(e.target.value || 0, 10),
-                    }))
-                  }
-                />
-              </CCol>
-            </CRow>
-
-            {/* 💰 Payment Breakdown */}
-            <h6 className="text-success fw-semibold mb-3">
-              💰 Payment Breakdown
-            </h6>
-            <CRow className="bg-success-subtle p-3 rounded mb-4">
-              <CCol md={4} className="mb-3">
-                <label className="form-label fw-semibold">
-                  {t('LABELS.regularPayment')}
-                </label>
-                <CFormInput readOnly value={regularPay} />
-              </CCol>
-              <CCol md={4} className="mb-3">
-                <label className="form-label fw-semibold">
-                  {t('LABELS.overtimePayment')}
-                </label>
-                <CFormInput readOnly value={overtimePay} />
-              </CCol>
-              <CCol md={4}>
-                <label className="form-label fw-semibold">
-                  {t('LABELS.totalCalculatedPayment')}
-                </label>
-                <CFormInput readOnly value={totalPay} />
-              </CCol>
-            </CRow>
-
-            {/* 📥 Payment Status */}
-            <h6 className="text-primary fw-semibold mb-3">
-              📥 Payment Status
-            </h6>
-            <CRow className="bg-info-subtle p-3 rounded mb-4">
-              <CCol md={6} className="mb-3">
-                <label className="form-label fw-semibold">
-                  {t('LABELS.actualPayment')}
-                </label>
-                <CFormInput
-                  type="number"
-                  value={workSummary.payed_amount}
-                  onChange={(e) => {
-                    const actual   = parseInt(e.target.value || 0, 10);
-                    const pending  = totalPay - actual;
-                    setWorkSummary((prev) => ({
-                      ...prev,
-                      payed_amount   : actual,
-                      pending_payment: pending >= 0 ? pending : 0,
-                    }));
-                  }}
-                />
-              </CCol>
-              <CCol md={6}>
-                <label className="form-label fw-semibold">
-                  {t('LABELS.pendingAmount')}
-                </label>
-                <CFormInput
-                  readOnly
-                  className="bg-danger-subtle"
-                  value={workSummary.pending_payment || 0}
-                />
-              </CCol>
-            </CRow>
-
-            {/* 💳 Payment Method */}
-            <h6 className="text-warning fw-semibold mb-3">
-              💳 Payment Method
-            </h6>
-            <CRow className="bg-warning-subtle p-3 rounded mb-4">
-              <CCol md={6}>
-                <label className="form-label fw-semibold">
-                  {t('LABELS.paymentMethod')}
-                </label>
-                <CFormSelect
-                  value={workSummary.payment_type || ''}
-                  onChange={(e) =>
-                    setWorkSummary((prev) => ({
-                      ...prev,
-                      payment_type: e.target.value,
-                    }))
-                  }
-                >
-                  <option value="">-- Select Payment Method --</option>
-                  <option value="cash">Cash</option>
-                  <option value="upi">UPI</option>
-                  <option value="bank_transfer">Bank Transfer</option>
-                </CFormSelect>
-              </CCol>
-            </CRow>
-
-            {/* Submit */}
-            <div className="d-flex justify-content-center">
-              <CButton color="success" size="lg" onClick={handleSubmit}>
-                ✅ {t('LABELS.submit')}
-              </CButton>
-            </div>
-          </CCardBody>
-        </CCard>
+        <WorkSummaryPayment
+          workSummary={workSummary}
+          setWorkSummary={setWorkSummary}
+          employee={employee}
+          onSubmit={handleSubmit}
+          title="Weekly Work Summary & Payment"
+        />
       )}
     </div>
   );

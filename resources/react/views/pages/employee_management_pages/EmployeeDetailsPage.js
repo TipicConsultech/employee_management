@@ -305,7 +305,7 @@ const fetchDocuments = async () => {
                   <small className="text-muted d-block">Overtime</small>
                   <h6 className="mb-0 fw-semibold text-warning d-md-none">{formatCurrency(employee.wage_overtime)}</h6>
                   <h5 className="mb-0 fw-semibold text-warning d-none d-md-block">{formatCurrency(employee.wage_overtime)}</h5>
-                  <small className="text-muted d-none d-md-block">per hour</small>
+                  <small className="text-muted d-none d-md-block">{employee.overtime_type=="hourly" ?"per hour":"per day"}</small>
                 </div>
               </div>
             </CCardBody>
@@ -338,7 +338,9 @@ const fetchDocuments = async () => {
                 </div>
                 <div className="col-6">
                   <small className="text-muted d-block">Referred By</small>
-                  <h6 className="mb-0 fw-semibold">{employee.refferal_by || 'N/A'}</h6>
+                  <h6 className="mb-2 fw-semibold">{employee.refferal_by || '-'}</h6>
+                  <small className="text-muted d-block">Refferal Mobile</small>
+                  <h6 className="mb-0 fw-semibold">{employee.refferal_number || '-'}</h6>
                 </div>
               </div>
             </CCardBody>

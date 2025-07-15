@@ -385,91 +385,158 @@ public function bulkCheckOut(Request $request)
 }
 
 
+
+
+
 // public function workSummary(Request $request)
 // {
 //     /* 1. Validate input --------------------------------------------------- */
 //     $validated = $request->validate([
-//         'employee_id'    => ['required', 'integer', 'exists:employee,id'],
-//         'start_date'     => ['required', 'date'],
-//         'end_date'       => ['required', 'date', 'after_or_equal:start_date'],
+//         'employee_id' => ['required', 'integer', 'exists:employee,id'],
+//         'start_date'  => ['required', 'date'],
+//         'end_date'    => ['required', 'date', 'after_or_equal:start_date'],
 //     ]);
- 
-//     $employee = Employee::find($validated['employee_id']);
-//     $validated['working_hours']=$employee->working_hours;
-//     $employeeId = (int) $validated['employee_id'];
-//     $standard   = (int) ($validated['working_hours'] ?? 9);
- 
+
+//     $employee     = Employee::find($validated['employee_id']);
+//     $validated['working_hours'] = $employee->working_hours;
+//     $employeeId   = (int) $validated['employee_id'];
+//     $standard     = (int) ($validated['working_hours'] ?? 9);   // hours per day
+
 //     $start = Carbon::parse($validated['start_date'], 'Asia/Kolkata')->startOfDay();
-//     $end   = Carbon::parse($validated['end_date'], 'Asia/Kolkata')->endOfDay();
- 
-//     /* 2. Aggregate per day (work summary) ---------------------------------- */
-//     $daily = EmployeeTracker::query()
+//     $end   = Carbon::parse($validated['end_date'],   'Asia/Kolkata')->endOfDay();
+
+//     /* 2. Pull one row per day with all we need ---------------------------- */
+//     $dailyInfo = EmployeeTracker::query()
 //         ->selectRaw(
-//             'DATE(created_at) AS work_date,
-//              SUM(TIMESTAMPDIFF(MINUTE, created_at, check_out_time))                 AS worked_minutes,
-//              SUM(GREATEST(TIMESTAMPDIFF(MINUTE, created_at, check_out_time) - ?, 0)) AS overtime_minutes',
-//             [$standard * 60]
+//             'DATE(created_at)                            AS work_date,
+//              MAX(status)                                 AS day_status,
+//              MAX(half_day)                               AS half_day,
+//              MAX(payment_status)                         AS payment_status,
+//              SUM(
+//                  CASE
+//                      WHEN check_out_time IS NOT NULL
+//                      THEN TIMESTAMPDIFF(MINUTE, created_at, check_out_time)
+//                      ELSE 0
+//                  END
+//              )                                            AS worked_minutes'
 //         )
 //         ->where('employee_id', $employeeId)
-//         ->where('payment_status', 0)
 //         ->whereBetween('created_at', [$start, $end])
-//         ->whereNotNull('check_out_time')
 //         ->groupBy(DB::raw('DATE(created_at)'))
 //         ->orderBy('work_date')
 //         ->get();
- 
-//     /* 3. Build per‑day payload --------------------------------------------- */
-//     $payload = $daily->map(fn ($d) => [
-//         'date'           => $d->work_date,
-//         'worked_hours'   => round($d->worked_minutes   / 60, 2),
-//         'overtime_hours' => round($d->overtime_minutes / 60, 2),
-//     ]);
- 
-//     /* 4. Grand totals (minutes) -------------------------------------------- */
-//     $totalWorkedMinutes   = $daily->sum('worked_minutes');
-//     $totalOvertimeMinutes = $daily->sum('overtime_minutes');
- 
-//     /* 5. Apply 30‑minute rounding on totals -------------------------------- */
-//     $roundHours = static fn (int $minutes) => intdiv($minutes, 60)
-//                                         + (($minutes % 60) > 30 ? 1 : 0);
- 
-//     $totalWorkedHours   = $roundHours($totalWorkedMinutes);
-//     $overtimeHours      = $roundHours($totalOvertimeMinutes);
- 
-//     /* 6. Regular hours ------------------------------------------------------ */
-//     $regularHours = max($totalWorkedHours - $overtimeHours, 0);
- 
-//     /* 7. Attendance list ---------------------------------------------------- */
-//     $Attendance = EmployeeTracker::query()
-//         ->selectRaw('DATE(created_at) as date')
-//         ->selectRaw('payment_status')
-//         ->selectRaw('ROUND(SUM(TIMESTAMPDIFF(MINUTE, created_at, check_out_time)) / 60, 2) AS total_hours')
-//         ->where('employee_id', $employeeId)
-//         ->whereBetween('created_at', [$start, $end])
-//         ->whereNotNull('check_out_time')
-//         ->groupBy(DB::raw('DATE(created_at)'), 'payment_status')
-//         ->orderBy('date')
-//         ->get();
- 
-//      $attendance = $Attendance->map(fn ($d) => [
-//         'date'           => $d->date,
-//         'total_hours'   => round($d->total_hours),
-//         'payment_status' => $d->payment_status
-//     ]);
- 
-//     /* 8. Respond with everything -------------------------------------------- */
+
+//     /* 3. Helper lambdas --------------------------------------------------- */
+//     $payloadType = static function (string $status, bool $halfDay): string {
+//         if ($status === 'H')                      return 'H';      // Holiday
+//         if (in_array($status, ['CL','PL','SL']))  return 'PL';     // Paid leave (generic)
+//         return $halfDay ? 'HD' : 'P';                               // Half‑day / Present
+//     };
+
+//     $attendanceType = static function (string $status, bool $halfDay): string {
+//         if ($status === 'H')                      return 'H';
+//         if (in_array($status, ['CL','PL','SL']))  return $status;  // Real leave code
+//         return $halfDay ? 'HD' : 'P';
+//     };
+
+//     /* 4. Build payload & attendance arrays -------------------------------- */
+//     $payload = [];
+//     $attendance = [];
+
+//     $totalWorkedMinutes   = 0;
+//     $totalOvertimeMinutes = 0;
+
+//     // Initialize counters
+//     $overtimeDayCount = 0;
+//     $regularDayCount = 0;
+//     $paidLeavesCount = 0;
+//     $holidayCount = 0;
+//     $halfDayCount = 0;
+
+//     foreach ($dailyInfo as $d) {
+//         $overtimeMinutes = max($d->worked_minutes - ($standard * 60), 0);
+//         $isHalfDay = (bool) $d->half_day;
+
+//         // --- payload (two‑decimal worked hours) --------------------------
+//         $payload[] = [
+//             'type'           => $payloadType($d->day_status, $isHalfDay),
+//             'date'           => $d->work_date,
+//             'worked_hours'   => round($d->worked_minutes   / 60, 2),
+//             'overtime_hours' => round($overtimeMinutes      / 60, 2),
+//         ];
+
+//         // --- attendance (integer hours) ----------------------------------
+//         $attendance[] = [
+//             'type'           => $attendanceType($d->day_status, $isHalfDay),
+//             'date'           => $d->work_date,
+//             'total_hours'    => round($d->worked_minutes / 60),  // nearest int
+//             'payment_status' => (bool) $d->payment_status,
+//         ];
+
+//         // --- Calculate counts based on requirements ----------------------
+        
+//         // Count half days
+//         if ($isHalfDay) {
+//             $halfDayCount++;
+//         }
+        
+//         // Count holidays
+//         if ($d->day_status === 'H') {
+//             $holidayCount++;
+//         }
+        
+//         // Count paid leaves (SL, CL, PL)
+//         if (in_array($d->day_status, ['SL', 'CL', 'PL'])) {
+//             $paidLeavesCount++;
+//         }
+        
+//         // Count regular days (status is NA/null or not in special statuses)
+//         // and not half day, not holiday, not paid leave
+//         if (!in_array($d->day_status, ['H', 'SL', 'CL', 'PL']) && !$isHalfDay) {
+//             $regularDayCount++;
+//         }
+        
+//         // Count overtime days (overtime >= 1 hour and not half day)
+//         if (!$isHalfDay && ($overtimeMinutes >= 60)) {
+//             $overtimeDayCount++;
+//         }
+
+//         // --- roll up totals ----------------------------------------------
+//         $totalWorkedMinutes += $d->worked_minutes;
+        
+//         // ✨ KEY FIX: Only add overtime minutes if it's NOT a half day
+//         if (!$isHalfDay) {
+//             $totalOvertimeMinutes += $overtimeMinutes;
+//         }
+//     }
+
+//     /* 5. 30‑minute rounding on totals ------------------------------------ */
+//     $roundHours = static fn (int $minutes) =>
+//         intdiv($minutes, 60) + (($minutes % 60) > 30 ? 1 : 0);
+
+//     $totalWorkedHours = $roundHours($totalWorkedMinutes);
+//     $overtimeHours    = $roundHours($totalOvertimeMinutes);
+//     $regularHours     = max($totalWorkedHours - $overtimeHours, 0);
+
+//     /* 6. Respond ---------------------------------------------------------- */
 //     return response()->json([
-//         'employee_id'         => $employeeId,
-//         'start_date'          => $validated['start_date'],
-//         'end_date'            => $validated['end_date'],
-//         'standard_day_hours'  => $standard,
-//         'payload'             => $payload,
-//         'total_worked_hours'  => $totalWorkedHours,
-//         'overtime_hours'      => $overtimeHours,
-//         'regular_hours'       => $regularHours,
-//         'wage_hour'           => $employee->wage_hour,
-//         'wage_overtime'       => $employee->wage_overtime,
-//         'attendance'          => $attendance,  // ✅ New added response
+//         'employee_id'        => $employeeId,
+//         'employee'         =>$employee ,
+//         'start_date'         => $validated['start_date'],
+//         'end_date'           => $validated['end_date'],
+//         'standard_day_hours' => $standard,
+//         'payload'            => $payload,
+//         'total_worked_hours' => $totalWorkedHours,
+//         'overtime_hours'     => $overtimeHours,
+//         'regular_hours'      => $regularHours,
+//         'wage_hour'          => $employee->wage_hour,
+//         'wage_overtime'      => $employee->wage_overtime,
+//         'attendance'         => $attendance,
+//         'over_time_day'      => $overtimeDayCount,
+//         'regular_day'        => $regularDayCount,
+//         'paid_leaves'        => $paidLeavesCount,
+//         'holiday'            => $holidayCount,
+//         'half_day'           => $halfDayCount,
 //     ]);
 // }
 
@@ -485,12 +552,12 @@ public function workSummary(Request $request)
     $employee     = Employee::find($validated['employee_id']);
     $validated['working_hours'] = $employee->working_hours;
     $employeeId   = (int) $validated['employee_id'];
-    $standard     = (int) ($validated['working_hours'] ?? 9);   // hours per day
+    $standard     = (int) ($validated['working_hours'] ?? 9);
 
     $start = Carbon::parse($validated['start_date'], 'Asia/Kolkata')->startOfDay();
     $end   = Carbon::parse($validated['end_date'],   'Asia/Kolkata')->endOfDay();
 
-    /* 2. Pull one row per day with all we need ---------------------------- */
+    /* 2. One row per day -------------------------------------------------- */
     $dailyInfo = EmployeeTracker::query()
         ->selectRaw(
             'DATE(created_at)                            AS work_date,
@@ -511,74 +578,93 @@ public function workSummary(Request $request)
         ->orderBy('work_date')
         ->get();
 
-    /* 3. Helper lambdas --------------------------------------------------- */
+    /* 3. Helpers ---------------------------------------------------------- */
     $payloadType = static function (string $status, bool $halfDay): string {
-        if ($status === 'H')                      return 'H';      // Holiday
-        if (in_array($status, ['CL','PL','SL']))  return 'PL';     // Paid leave (generic)
-        return $halfDay ? 'HD' : 'P';                               // Half‑day / Present
+        if ($status === 'H')                      return 'H';
+        if (in_array($status, ['CL','PL','SL']))  return 'PL';
+        return $halfDay ? 'HD' : 'P';
     };
 
     $attendanceType = static function (string $status, bool $halfDay): string {
         if ($status === 'H')                      return 'H';
-        if (in_array($status, ['CL','PL','SL']))  return $status;  // Real leave code
+        if (in_array($status, ['CL','PL','SL']))  return $status;   // keep real code
         return $halfDay ? 'HD' : 'P';
     };
 
-    /* 4. Build payload & attendance arrays -------------------------------- */
-    $payload = [];
+    /* 4. Build arrays ----------------------------------------------------- */
+    $payload  = [];
     $attendance = [];
 
     $totalWorkedMinutes   = 0;
     $totalOvertimeMinutes = 0;
 
+    $overtimeDayCount = $regularDayCount = $paidLeavesCount = $holidayCount = $halfDayCount = 0;
+
     foreach ($dailyInfo as $d) {
+        $isHalfDay = (bool) $d->half_day;
+        $isPaid    = (bool) $d->payment_status;          // 1 = already settled
+
         $overtimeMinutes = max($d->worked_minutes - ($standard * 60), 0);
 
-        // --- payload (two‑decimal worked hours) --------------------------
-        $payload[] = [
-            'type'           => $payloadType($d->day_status, (bool) $d->half_day),
-            'date'           => $d->work_date,
-            'worked_hours'   => round($d->worked_minutes   / 60, 2),
-            'overtime_hours' => round($overtimeMinutes      / 60, 2),
-        ];
-
-        // --- attendance (integer hours) ----------------------------------
+        /* ---- ATTENDANCE: always show ----------------------------------- */
         $attendance[] = [
-            'type'           => $attendanceType($d->day_status, (bool) $d->half_day),
+            'type'           => $attendanceType($d->day_status, $isHalfDay),
             'date'           => $d->work_date,
-            'total_hours'    => round($d->worked_minutes / 60),  // nearest int
-            'payment_status' => (bool) $d->payment_status,
+            'total_hours'    => round($d->worked_minutes / 60),   // nearest int
+            'payment_status' => $isPaid,
         ];
 
-        // --- roll up totals ----------------------------------------------
-        $totalWorkedMinutes   += $d->worked_minutes;
-        $totalOvertimeMinutes += $overtimeMinutes;
+        /* ---- PAYLOAD & totals: only if NOT paid ------------------------- */
+        if (!$isPaid) {
+            $payload[] = [
+                'type'           => $payloadType($d->day_status, $isHalfDay),
+                'date'           => $d->work_date,
+                'worked_hours'   => round($d->worked_minutes   / 60, 2),
+                'overtime_hours' => round($overtimeMinutes      / 60, 2),
+            ];
+
+            // counters
+            if ($isHalfDay)                     $halfDayCount++;
+            elseif ($d->day_status === 'H')     $holidayCount++;
+            elseif (in_array($d->day_status, ['SL','CL','PL'])) $paidLeavesCount++;
+            else                                $regularDayCount++;
+
+            if (!$isHalfDay && $overtimeMinutes >= 60)   $overtimeDayCount++;
+
+            // roll‑up only unpaid minutes
+            $totalWorkedMinutes   += $d->worked_minutes;
+            if (!$isHalfDay)        $totalOvertimeMinutes += $overtimeMinutes;
+        }
     }
 
-    /* 5. 30‑minute rounding on totals ------------------------------------ */
-    $roundHours = static fn (int $minutes) =>
-        intdiv($minutes, 60) + (($minutes % 60) > 30 ? 1 : 0);
+    /* 5. Totals & rounding ----------------------------------------------- */
+    $roundHours = static fn (int $m) => intdiv($m, 60) + (($m % 60) > 30 ? 1 : 0);
 
     $totalWorkedHours = $roundHours($totalWorkedMinutes);
     $overtimeHours    = $roundHours($totalOvertimeMinutes);
     $regularHours     = max($totalWorkedHours - $overtimeHours, 0);
 
-    /* 6. Respond ---------------------------------------------------------- */
+    /* 6. Response --------------------------------------------------------- */
     return response()->json([
         'employee_id'        => $employeeId,
         'start_date'         => $validated['start_date'],
         'end_date'           => $validated['end_date'],
         'standard_day_hours' => $standard,
-        'payload'            => $payload,
+        'payload'            => $payload,            // ← unpaid days only
         'total_worked_hours' => $totalWorkedHours,
         'overtime_hours'     => $overtimeHours,
         'regular_hours'      => $regularHours,
         'wage_hour'          => $employee->wage_hour,
         'wage_overtime'      => $employee->wage_overtime,
-        'attendance'         => $attendance,
-        // ✨ no more regular_days / half_days / holidays / paid_leaves arrays
+        'attendance'         => $attendance,         // ← shows both paid/unpaid
+        'over_time_day'      => $overtimeDayCount,
+        'regular_day'        => $regularDayCount,
+        'paid_leaves'        => $paidLeavesCount,
+        'holiday'            => $holidayCount,
+        'half_day'           => $halfDayCount,
     ]);
 }
+
 
 
 public function checkTodayStatus(Request $request): JsonResponse

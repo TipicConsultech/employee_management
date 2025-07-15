@@ -24,7 +24,6 @@ class RazorpayController extends Controller
     public function createOrder(Request $request)
  
     {
- 
         $amount = $request->amount;
         try {
             $orderData = [
@@ -63,7 +62,6 @@ class RazorpayController extends Controller
     // Verify Payment
  
     public function verifyPayment(Request $request)
- 
     {
  
         $request->validate([

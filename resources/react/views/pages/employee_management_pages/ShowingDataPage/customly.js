@@ -11,6 +11,11 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { post, getAPICall } from '../../../../util/api';
+import WorkSummaryPayment from './WorkSummaryPayment ';
+
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
+import './calendarStyles.css';
 
 function Customly() {
   const { t } = useTranslation('global');
@@ -21,6 +26,8 @@ function Customly() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [workSummary, setWorkSummary] = useState(null);
+  const [attendance, setAttendance] = useState([]);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   /* ──────────────────────────────────────────────────────────── */
   /* Load employee once                                          */
@@ -54,8 +61,11 @@ function Customly() {
     };
 
     try {
-      const res = await post('/api/workSummary', requestData); // util already unwraps .data
+      const res = await post('/api/workSummary', requestData);
       const data = res || {};
+
+      // Set attendance data for calendar
+      setAttendance(data.attendance || []);
 
       /* 👉  Use what the API already gives us  */
       setWorkSummary({
@@ -65,9 +75,102 @@ function Customly() {
         payed_amount: data.payed_amount ?? 0,
         pending_payment: data.pending_payment ?? 0,
       });
+
+      setShowCalendar(true);
     } catch (err) {
       console.error('Error fetching work summary:', err);
     }
+  };
+
+  /* ──────────────────────────────────────────────────────────── */
+  /* Calendar Helper Functions                                   */
+  /* ──────────────────────────────────────────────────────────── */
+  
+  // Enhanced tile styling with different status types
+  const tileClassName = ({ date, view }) => {
+    if (view === 'month') {
+      const dateStr = date.toLocaleDateString('sv-SE');
+      const entry = attendance.find((att) => att.date === dateStr);
+      
+      if (entry) {
+        const type = entry.type || '';
+        
+        // Return different classes based on attendance type
+        if (type === 'P') {
+          return 'present-day';
+        } else if (type === 'H') {
+          return 'holiday';
+        } else if (type === 'HD') {
+          return 'half-day';
+        } else if (['SL', 'PL', 'CL'].includes(type)) {
+          return 'paid-leave';
+        } else {
+          return 'present-day'; // Default for entries with hours but no type
+        }
+      }
+    }
+    return null;
+  };
+
+  // Enhanced tile content with better status indicators
+  const tileContent = ({ date, view }) => {
+    if (view === 'month') {
+      const dateStr = date.toLocaleDateString('sv-SE');
+      const entry = attendance.find((d) => d.date === dateStr);
+
+      if (entry) {
+        const type = entry.type || '';
+        const hasWorked = entry.total_hours && parseFloat(entry.total_hours) > 0;
+        
+        return (
+          <div className="calendar-tile-content">
+            {/* Show hours only for Present days and not for half days */}
+            {type === 'P' && hasWorked && (
+              <div className="hours-display">
+                {entry.total_hours}h
+              </div>
+            )}
+            
+            {/* Show type indicator for non-present days */}
+            {type && type !== 'P' && (
+              <div className="type-indicator">
+                {type}
+              </div>
+            )}
+            
+            {/* Show paid indicator */}
+            {entry.payment_status && (
+              <div className="paid-indicator">
+                ✓
+              </div>
+            )}
+          </div>
+        );
+      }
+    }
+    return null;
+  };
+
+  // Get the date range for calendar navigation
+  const getCalendarDateRange = () => {
+    if (!startDate || !endDate) return { start: new Date(), end: new Date() };
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    return { start, end };
+  };
+
+  // Custom navigation for multi-month view
+  const getNavigationLabel = ({ date, view }) => {
+    if (view === 'month') {
+      const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+    }
+    return '';
   };
 
   /* ──────────────────────────────────────────────────────────── */
@@ -117,6 +220,8 @@ function Customly() {
 
   if (loading) return <p>Loading...</p>;
 
+  const { start: calendarStart, end: calendarEnd } = getCalendarDateRange();
+
   return (
     <div>
       {/* ─── Filters ──────────────────────────────────────────── */}
@@ -161,216 +266,106 @@ function Customly() {
         </CCol>
       </CRow>
 
-      {/* ─── Results ────────────────────────────────────────── */}
-      {workSummary && (
-        <CCard className="shadow-sm mt-3 border-0">
-          <CCardBody>
-            <h4
-              className="text-center fw-bold mb-4 text-dark"
-              style={{ borderBottom: '2px solid #cce5ff', paddingBottom: '10px' }}
-            >
-              Work Summary &amp; Payment
-            </h4>
+      {/* ─── Multi-Month Calendar ──────────────────────────────── */}
+      {showCalendar && (
+        <div className="calendar-wrapper mb-4 mt-4">
+          <h6 className="mb-3 text-center calendar-title">
+            Attendance Calendar ({startDate} to {endDate})
+          </h6>
+          
+          {/* Info about date range */}
+          <div className="text-center mb-3">
+            <small className="text-muted">
+              Showing attendance data for the selected date range. 
+              Navigate between months to view all data.
+            </small>
+          </div>
 
-            {/* 🕒 Work Hours Overview */}
-            <h6 className="text-primary fw-semibold mb-3">
-              🕒 Work Hours Overview
-            </h6>
-            <CRow className="mb-4">
-              <CCol md={4}>
-                <CCard className="bg-success-subtle text-center">
-                  <CCardBody>
-                    <div className="text-muted">Regular Hours</div>
-                    <div className="fw-bold fs-4 text-success">
-                      {workSummary.regular_hours ?? 0} hrs
-                    </div>
-                  </CCardBody>
-                </CCard>
-              </CCol>
-              <CCol md={4}>
-                <CCard className="bg-warning-subtle text-center">
-                  <CCardBody>
-                    <div className="text-muted">Overtime Hours</div>
-                    <div className="fw-bold fs-4 text-warning">
-                      {workSummary.overtime_hours ?? 0} hrs
-                    </div>
-                  </CCardBody>
-                </CCard>
-              </CCol>
-              <CCol md={4}>
-                <CCard className="bg-primary-subtle text-center">
-                  <CCardBody>
-                    <div className="text-muted">Total Worked Hours</div>
-                    <div className="fw-bold fs-4 text-primary">
-                      {(workSummary.total_worked_hours ??
-                        (workSummary.regular_hours || 0) +
-                          (workSummary.overtime_hours || 0))}{' '}
-                      hrs
-                    </div>
-                  </CCardBody>
-                </CCard>
-              </CCol>
-            </CRow>
-
-            {/* ⚙️ Wage Inputs */}
-            <h6 className="fw-semibold text-primary mb-2">
-              ⚙️ Wage Configuration
-            </h6>
-            <CRow className="bg-light-subtle p-3 rounded border mb-4">
-              <CCol md={6} className="mb-3">
-                <label className="form-label fw-semibold">
-                  Regular Wage / Hour
-                </label>
-                <CFormInput
-                  type="number"
-                  value={Math.max(0, workSummary.custom_regular_wage || 0)}
-                  onChange={(e) =>
-                    setWorkSummary((prev) => ({
-                      ...prev,
-                      custom_regular_wage: parseInt(e.target.value || 0, 10),
-                    }))
-                  }
-                />
-              </CCol>
-              <CCol md={6}>
-                <label className="form-label fw-semibold">
-                  Overtime Wage / Hour
-                </label>
-                <CFormInput
-                  type="number"
-                  value={Math.max(0, workSummary.custom_overtime_wage || 0)}
-                  onChange={(e) =>
-                    setWorkSummary((prev) => ({
-                      ...prev,
-                      custom_overtime_wage: parseInt(e.target.value || 0, 10),
-                    }))
-                  }
-                />
-              </CCol>
-            </CRow>
-
-            {/* 💰 Payment Breakdown */}
-            <h6 className="fw-semibold text-success mb-2">
-              💰 Payment Breakdown
-            </h6>
-            <CRow className="bg-success-subtle p-3 rounded mb-4">
-              <CCol md={4} className="mb-3">
-                <label className="form-label fw-semibold">
-                  Regular Payment
-                </label>
-                <CFormInput
-                  type="number"
-                  readOnly
-                  value={
-                    (workSummary.regular_hours || 0) *
-                    (workSummary.custom_regular_wage || 0)
-                  }
-                />
-              </CCol>
-              <CCol md={4} className="mb-3">
-                <label className="form-label fw-semibold">
-                  Overtime Payment
-                </label>
-                <CFormInput
-                  type="number"
-                  readOnly
-                  value={
-                    (workSummary.overtime_hours || 0) *
-                    (workSummary.custom_overtime_wage || 0)
-                  }
-                />
-              </CCol>
-              <CCol md={4}>
-                <label className="form-label fw-semibold">
-                  Total Calculated Payment
-                </label>
-                <CFormInput
-                  type="number"
-                  readOnly
-                  value={
-                    (workSummary.regular_hours || 0) *
-                      (workSummary.custom_regular_wage || 0) +
-                    (workSummary.overtime_hours || 0) *
-                      (workSummary.custom_overtime_wage || 0)
-                  }
-                />
-              </CCol>
-            </CRow>
-
-            {/* 🧾 Payment Status */}
-            <h6 className="fw-semibold text-primary mb-2">
-              🧾 Payment Status
-            </h6>
-            <CRow className="bg-info-subtle p-3 rounded mb-4">
-              <CCol md={6} className="mb-3">
-                <label className="form-label fw-semibold">Actual Payment</label>
-                <CFormInput
-                  type="number"
-                  value={workSummary.payed_amount || ''}
-                  onChange={(e) => {
-                    const actual = parseFloat(e.target.value || 0);
-                    const total =
-                      (workSummary.regular_hours || 0) *
-                        (workSummary.custom_regular_wage || 0) +
-                      (workSummary.overtime_hours || 0) *
-                        (workSummary.custom_overtime_wage || 0);
-                    const pending = total - actual;
-                    setWorkSummary((prev) => ({
-                      ...prev,
-                      payed_amount: actual,
-                      pending_payment: pending >= 0 ? pending : 0,
-                    }));
-                  }}
-                />
-              </CCol>
-              <CCol md={6}>
-                <label className="form-label fw-semibold">
-                  Pending Amount
-                </label>
-                <CFormInput
-                  type="number"
-                  readOnly
-                  className="bg-danger-subtle"
-                  value={workSummary.pending_payment || 0}
-                />
-              </CCol>
-            </CRow>
-
-            {/* 💳 Payment Method */}
-            <h6 className="fw-semibold text-warning mb-2">
-              💳 Payment Method
-            </h6>
-            <CRow className="bg-warning-subtle p-3 rounded mb-4">
-              <CCol md={6}>
-                <label className="form-label fw-semibold">
-                  Payment Method
-                </label>
-                <CFormSelect
-                  value={workSummary.payment_type || ''}
-                  onChange={(e) =>
-                    setWorkSummary((prev) => ({
-                      ...prev,
-                      payment_type: e.target.value,
-                    }))
-                  }
-                >
-                  <option value="">-- Select Payment Method --</option>
-                  <option value="cash">Cash</option>
-                  <option value="upi">UPI</option>
-                  <option value="bank_transfer">Bank Transfer</option>
-                </CFormSelect>
-              </CCol>
-            </CRow>
-
-            {/* Submit */}
-            <div className="d-flex justify-content-center">
-              <CButton color="success" size="lg" onClick={handleSubmit}>
-                ✅ Submit &amp; Save
-              </CButton>
+          <div className="calendar-container">
+            <Calendar
+              className="responsive-calendar"
+              tileClassName={tileClassName}
+              tileContent={tileContent}
+              value={null}
+              showNeighboringMonth={false}
+              minDetail="month"
+              maxDetail="month"
+              defaultActiveStartDate={calendarStart}
+              minDate={calendarStart}
+              maxDate={calendarEnd}
+              navigationLabel={getNavigationLabel}
+              // Allow navigation between months in the date range
+              onActiveStartDateChange={({ activeStartDate }) => {
+                // Optional: You can add logic here to handle month navigation
+                console.log('Active month changed to:', activeStartDate);
+              }}
+            />
+          </div>
+          
+          {/* Enhanced Calendar Legend */}
+          <div className="calendar-legend mt-3">
+            <div className="legend-item">
+              <div className="legend-color present-day"></div>
+              <span>Present (P)</span>
             </div>
-          </CCardBody>
-        </CCard>
+            <div className="legend-item">
+              <div className="legend-color holiday"></div>
+              <span>Holiday (H)</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-color half-day"></div>
+              <span>Half Day (HD)</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-color paid-leave"></div>
+              <span>Paid Leave (SL/PL/CL)</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-symbol">✓</div>
+              <span>Paid</span>
+            </div>
+          </div>
+
+          {/* Date Range Summary */}
+          <div className="mt-3 p-3 bg-light rounded">
+            <div className="row text-center">
+              <div className="col-md-3">
+                <strong>Total Days:</strong><br />
+                <span className="text-primary">
+                  {Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) + 1}
+                </span>
+              </div>
+              <div className="col-md-3">
+                <strong>Present Days:</strong><br />
+                <span className="text-success">
+                  {attendance.filter(att => att.type === 'P').length}
+                </span>
+              </div>
+              <div className="col-md-3">
+                <strong>Holidays:</strong><br />
+                <span className="text-warning">
+                  {attendance.filter(att => att.type === 'H').length}
+                </span>
+              </div>
+              <div className="col-md-3">
+                <strong>Leaves:</strong><br />
+                <span className="text-info">
+                  {attendance.filter(att => ['SL', 'PL', 'CL', 'HD'].includes(att.type)).length}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
+
+      {/* ─── Work Summary & Payment Component ────────────────────── */}
+      <WorkSummaryPayment
+        workSummary={workSummary}
+        setWorkSummary={setWorkSummary}
+        employee={employee}
+        onSubmit={handleSubmit}
+        title="Work Summary & Payment"
+      />
     </div>
   );
 }

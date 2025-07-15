@@ -57,7 +57,7 @@
 .responsive-calendar .react-calendar__tile {
   position: relative;
   padding: 8px 4px;
-  min-height: 60px;
+  min-height: 70px;
   border: 1px solid #e9ecef;
   background-color: white;
   display: flex;
@@ -67,16 +67,54 @@
   font-size: 14px;
   transition: all 0.2s ease;
 }
+
 .responsive-calendar .react-calendar__tile:hover {
   background-color: #f8f9fa;
 }
+
+/* Enhanced status-based styling */
 .responsive-calendar .react-calendar__tile.present-day {
-  background-color: #e8f5e8;
+  background-color: #d4edda;
   border-color: #28a745;
+  color: #155724;
   font-weight: 600;
 }
+
 .responsive-calendar .react-calendar__tile.present-day:hover {
-  background-color: #d4edda;
+  background-color: #c3e6cb;
+}
+
+.responsive-calendar .react-calendar__tile.holiday {
+  background-color: #fff3cd;
+  border-color: #ffc107;
+  color: #856404;
+  font-weight: 600;
+}
+
+.responsive-calendar .react-calendar__tile.holiday:hover {
+  background-color: #ffeaa7;
+}
+
+.responsive-calendar .react-calendar__tile.half-day {
+  background-color: #cce7ff;
+  border-color: #007bff;
+  color: #004085;
+  font-weight: 600;
+}
+
+.responsive-calendar .react-calendar__tile.half-day:hover {
+  background-color: #b3d9ff;
+}
+
+.responsive-calendar .react-calendar__tile.paid-leave {
+  background-color: #e2d8f0;
+  border-color: #6f42c1;
+  color: #553c9a;
+  font-weight: 600;
+}
+
+.responsive-calendar .react-calendar__tile.paid-leave:hover {
+  background-color: #d1c4e9;
 }
 
 /* Tile content */
@@ -87,6 +125,7 @@
   gap: 2px;
   width: 100%;
 }
+
 .hours-display {
   font-size: 11px;
   font-weight: 600;
@@ -96,53 +135,90 @@
   border-radius: 10px;
   white-space: nowrap;
 }
-.paid-indicator {
+
+.type-indicator {
   font-size: 10px;
-  color: #007bff;
-  background-color: rgba(0, 123, 255, 0.1);
-  padding: 1px 4px;
-  border-radius: 8px;
   font-weight: 600;
+  color: inherit;
+  background-color: rgba(255, 255, 255, 0.3);
+  padding: 2px 6px;
+  border-radius: 12px;
+  margin-top: 2px;
 }
 
-/* Legend */
+.paid-indicator {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background-color: #28a745;
+  color: white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+/* Enhanced Legend */
 .calendar-legend {
   display: flex;
   justify-content: center;
-  gap: 20px;
+  gap: 15px;
   flex-wrap: wrap;
-  padding: 10px;
+  padding: 12px;
   background-color: #f8f9fa;
   border-radius: 6px;
 }
+
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   font-size: 12px;
   color: #6c757d;
 }
+
 .legend-color {
   width: 16px;
   height: 16px;
   border-radius: 3px;
   border: 1px solid #dee2e6;
 }
+
 .legend-color.present-day {
-  background-color: #e8f5e8;
+  background-color: #d4edda;
   border-color: #28a745;
 }
+
+.legend-color.holiday {
+  background-color: #fff3cd;
+  border-color: #ffc107;
+}
+
+.legend-color.half-day {
+  background-color: #cce7ff;
+  border-color: #007bff;
+}
+
+.legend-color.paid-leave {
+  background-color: #e2d8f0;
+  border-color: #6f42c1;
+}
+
 .legend-symbol {
   width: 16px;
   height: 16px;
+  background-color: #28a745;
+  color: white;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(0, 123, 255, 0.1);
-  border-radius: 3px;
-  color: #007bff;
   font-size: 10px;
-  font-weight: 600;
+  font-weight: bold;
 }
 
 /* Responsive - Monthly */
@@ -157,7 +233,7 @@
     font-size: 12px;
   }
   .responsive-calendar .react-calendar__tile {
-    min-height: 50px;
+    min-height: 60px;
     padding: 6px 2px;
     font-size: 12px;
   }
@@ -165,21 +241,14 @@
     font-size: 10px;
     padding: 1px 4px;
   }
+  .type-indicator {
+    font-size: 9px;
+    padding: 1px 4px;
+  }
   .paid-indicator {
-    font-size: 8px;
-    padding: 1px 3px;
-  }
-}
-
-@media (max-width: 576px) {
-  .responsive-calendar .react-calendar__tile {
-    min-height: 45px;
-    padding: 4px 1px;
-    font-size: 11px;
-  }
-  .responsive-calendar .react-calendar__navigation button {
-    padding: 8px;
-    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    font-size: 9px;
   }
   .calendar-legend {
     gap: 10px;
@@ -194,29 +263,30 @@
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+@media (max-width: 576px) {
+  .responsive-calendar .react-calendar__tile {
+    min-height: 50px;
+    padding: 4px 1px;
+    font-size: 11px;
+  }
+  .responsive-calendar .react-calendar__navigation button {
+    padding: 8px;
+    font-size: 14px;
+  }
+  .calendar-legend {
+    gap: 8px;
+  }
+  .legend-item {
+    font-size: 9px;
+  }
+  .legend-color,
+  .legend-symbol {
+    width: 12px;
+    height: 12px;
+  }
+}
 
 /* =================== WEEKLY VIEW =================== */
-/* .attendance-card {
-  border: 1px solid #dee2e6;
-  border-radius: 12px;
-  padding: 1rem;
-  background-color: #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-  max-width: 300px;
-  margin: auto;
-} */
 
 .week-grid-wrapper {
   display: flex;
@@ -275,6 +345,104 @@
   font-weight: 500;
 }
 
+/* Weekly grid horizontal layout */
+.week-grid-horizontal {
+  display: flex;
+  width: 100%;
+  border: 1px solid #28a745;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.week-day-cell {
+  flex: 1;
+  min-height: 80px;
+  border-right: 1px solid #28a745;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 8px 4px;
+}
+
+.week-day-cell:last-child {
+  border-right: none;
+}
+
+.week-day-cell.no-work {
+  background-color: #f8f9fa;
+  color: #6c757d;
+}
+
+.week-day-cell.present-day {
+  background-color: #d4edda;
+  color: #155724;
+  border-color: #28a745;
+}
+
+.week-day-cell.holiday {
+  background-color: #fff3cd;
+  color: #856404;
+  border-color: #ffc107;
+}
+
+.week-day-cell.half-day {
+  background-color: #cce7ff;
+  color: #004085;
+  border-color: #007bff;
+}
+
+.week-day-cell.paid-leave {
+  background-color: #e2d8f0;
+  color: #553c9a;
+  border-color: #6f42c1;
+}
+
+.week-day-cell .type-indicator {
+  font-size: 12px;
+  font-weight: 600;
+  color: inherit;
+  background-color: rgba(255, 255, 255, 0.3);
+  padding: 2px 6px;
+  border-radius: 12px;
+  margin-top: 2px;
+}
+
+.week-day-cell .day-number {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.week-day-cell .hours-worked {
+  font-size: 14px;
+  font-weight: 500;
+  color: #28a745;
+}
+
+.week-day-cell .paid-indicator {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background-color: #28a745;
+  color: white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.attendance-card {
+  background: white;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
 /* 🔄 Optional hover effect for better touch feedback */
 .week-day-box:hover {
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
@@ -303,5 +471,18 @@
   .paid-label {
     font-size: 9px;
     padding: 1px 4px;
+  }
+
+  .week-day-cell {
+    min-height: 60px;
+    padding: 4px 2px;
+  }
+  
+  .week-day-cell .day-number {
+    font-size: 16px;
+  }
+  
+  .week-day-cell .hours-worked {
+    font-size: 12px;
   }
 }
