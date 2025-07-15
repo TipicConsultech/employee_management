@@ -707,7 +707,7 @@
 "quickActions": "Quick Actions",
 
 "checkInCheckOut": "Check-In / Check-Out",
- 
+
 
     "currentScenario": "Current Scenario",
     "instructions": "Instructions",
@@ -717,7 +717,7 @@
     "retake": "Retake",
     "submitCheckIn": "Submit Check-In",
     "submitCheckOut": "Submit Check-Out",
-    
+
     "attendanceComplete": "Attendance Complete",
     "checkInWithSelfie": "Check-In with Selfie",
     "view":"view",
@@ -733,24 +733,52 @@
     "both": "Both",
     "hourly": "Hourly",
     "fixed": "Fixed",
-  
+
     "volumeBasedContract": "Volume Based Contract",
     "fixedContract": "Fixed Contract",
-   
+
     "contractType": "Contract Type",
     "selectContractType": "Select Contract Type",
     "overtimeType": "Overtime Type",
     "selectOvertimeType": "Select Overtime Type",
-   
+
     "halfDayPayment": "Half Day Payment",
     "holidayPayment": "Holiday Payment",
-   
+
     "referralByNumber": "Referral By Number",
     "referralByNumberPlaceholder": "Enter 10-digit referral number",
-   
+
     "attendanceType": "Attendance Type",
-    "selectAttendanceType": "Select Attendance Type"
-   
+    "selectAttendanceType": "Select Attendance Type",
+
+    "weeklyPresentyPayrollChart": "Weekly Presenty and Payroll Chart",
+    "selectWeekParameters": "Select Week Parameters",
+    "selectWeekStartingDay": "Select Week Starting Day",
+    "selectAnyDateInWeek": "Select Any Date in Week",
+    "weekRange": "Week Range",
+    "getEmployeesData": "Get Employees Data",
+    "exportToPDF": "Export to PDF",
+    "employeeAttendancePayrollReport": "Employee Attendance & Payroll Report",
+    "week": "Week",
+    "to": "to",
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday",
+    "sunday": "Sunday",
+    "chooseADay": "Choose a day...",
+    "serialNo": "S.No.",
+    "weekDays": "Week Days",
+    "totalDays": "Total Days",
+    "dayRate": "Day Rate",
+    "holidayRate": "Holiday Rate",
+    "halfDayRate": "Half-Day Rate",
+    "paidAmount": "Paid Amount",
+    "overTime": "Over Time",
+    "payrollAndAttendanceReport":"Payroll & Presenty Report"
+
     },
 
 
@@ -1037,13 +1065,13 @@
     "cameraAccessError": "Camera access is required. Please allow camera access to continue.",
     "photoCapturepd": "Photo captured successfully",
     "invalidFileType": "Please upload a valid image file",
-    
+
     "imageUploaded": "Image uploaded successfully",
     "pleaseUploadImage": "Please capture or upload an image",
     "checkinSuccess": "Check-in successful",
     "checkoutSuccess": "Check-out successful",
     "operationFailed": "Operation failed",
- 
+
     "alreadyCheckedIn": "You have already checked in today",
     "checkInFirst": "Please check in first before checking out",
     "alreadyCheckedOut": "You have already checked out today",
@@ -1059,25 +1087,32 @@
     "cameraAccessReleased": "Camera access will be released after photo submission",
     "todaysAttendanceComplete": "Today's Check-in and Check-out Already Completed",
     "thankYouMessage": "Thank you for maintaining your attendance record!",
-   
+
     "imageNotAvailable": "Image Not Available",
     "imageNotAvailableForEmployee": "image is not available for this employee",
     "failedToLoadImage": "Failed to Load Image",
     "unableToLoadImage": "Unable to load the image. Please check if the image URL is valid.",
     "imageFor": "image for",
 
-    
+
     "overtimeTypeRequired": "Overtime type is required",
     "contractTypeRequired": "Contract type is required",
-   
+
     "halfDayPaymentPositiveNumber": "Half day payment must be a positive number",
     "holidayPaymentPositiveNumber": "Holiday payment must be a positive number",
-   
+
     "referralNumberInvalid": "Referral number must be 10 digits",
-   
+
     "attendanceTypeRequired": "Attendance type is required",
-    "emailInvalid": "Invalid email format"
-   
+    "emailInvalid": "Invalid email format",
+
+    "pleaseSelectWeekdayFirst": "Please select a weekday first",
+    "pleaseSelectWeekAndDate": "Please select week starting day and a date in the week",
+    "employeeDataFetchedSuccess": "Employee data fetched successfully",
+    "failedToFetchEmployeeData": "Failed to fetch employee data",
+    "pdfExportedSuccess": "PDF exported successfully",
+    "noEmployeeDataAvailable": "No employee data available"
+
 
     }
    }

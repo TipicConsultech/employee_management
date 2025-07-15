@@ -547,7 +547,7 @@
      "avgFat"	:"सरासरी फॅट ",
      "avgRate":"सरासरी दर",
      "totalAmount":	"एकूण रक्कम",
-     
+
      "employeeId":"आय.डी ",
 
     "male": "पुरुष",
@@ -705,7 +705,7 @@
 "quickActions": "त्वरित कृती",
 
  "checkInCheckOut": "चेक-इन / चेक-आउट",
-  
+
     "currentScenario": "सध्याची परिस्थिती",
     "instructions": "सूचना",
     "checkInPhoto": "चेक-इन फोटो",
@@ -714,7 +714,7 @@
     "retake": "पुन्हा काढा",
     "submitCheckIn": "चेक-इन सबमिट करा",
     "submitCheckOut": "चेक-आउट सबमिट करा",
-   
+
     "attendanceComplete": "उपस्थिती पूर्ण",
     "checkInWithSelfie": "सेल्फीसह चेक-इन",
     "view":"पहा",
@@ -732,21 +732,49 @@
 
     "volumeBasedContract": "आकारमान आधारित कंत्राट",
     "fixedContract": "निश्चित कंत्राट",
-   
+
     "contractType": "कंत्राटचा प्रकार",
     "selectContractType": "कंत्राटचा प्रकार निवडा",
     "overtimeType": "ओव्हरटाईमचा प्रकार",
     "selectOvertimeType": "ओव्हरटाईमचा प्रकार निवडा",
-    
+
     "halfDayPayment": "अर्धा दिवस पेमेंट",
     "holidayPayment": "सुट्टीचे पेमेंट",
-   
+
     "referralByNumber": "संदर्भ क्रमांक",
     "referralByNumberPlaceholder": "10 अंकी संदर्भ क्रमांक टाका",
-   
+
     "attendanceType": "हजेरीचा प्रकार",
-    "selectAttendanceType": "हजेरीचा प्रकार निवडा"
-   
+    "selectAttendanceType": "हजेरीचा प्रकार निवडा",
+
+    "weeklyPresentyPayrollChart": "साप्ताहिक उपस्थिति आणि पगार चार्ट",
+    "selectWeekParameters": "आठवडा पॅरामीटर निवडा",
+    "selectWeekStartingDay": "आठवडा सुरू होणारा दिवस निवडा",
+    "selectAnyDateInWeek": "आठवड्यातील कोणताही दिनांक निवडा",
+    "weekRange": "आठवडा श्रेणी",
+    "getEmployeesData": "कर्मचारी डेटा मिळवा",
+    "exportToPDF": "PDF मध्ये निर्यात करा",
+    "employeeAttendancePayrollReport": "कर्मचारी उपस्थिति आणि पेरोल अहवाल",
+    "week": "आठवडा",
+    "to": "ते",
+    "monday": "सोमवार",
+    "tuesday": "मंगळवार",
+    "wednesday": "बुधवार",
+    "thursday": "गुरुवार",
+    "friday": "शुक्रवार",
+    "saturday": "शनिवार",
+    "sunday": "रविवार",
+    "chooseADay": "एक दिवस निवडा...",
+    "serialNo": "अ.क्र.",
+    "weekDays": "आठवड्याचे दिवस",
+    "totalDays": "एकूण दिवस",
+    "dayRate": "दिवसाचा दर",
+    "holidayRate": "सुट्टीचा दर",
+    "halfDayRate": "अर्धा दिवसाचा दर",
+    "paidAmount": "भरलेली रक्कम",
+    "overTime": "ओव्हर टाइम",
+    "payrollAndAttendanceReport": "पगार आणि उपस्थिती अहवाल"
+
     },
 
 
@@ -850,7 +878,7 @@
         "userUnblockedSuccess": "वापरकर्ता यशस्वीरित्या अनब्लॉक केला",
         "userBlockedSuccess": "वापरकर्ता यशस्वीरित्या ब्लॉक केला",
         "failedToUpdateUser": "वापरकर्ता अपडेट करण्यात अयशस्वी",
-  
+
         "noUsersAvailable": "कोणतेही वापरकर्ते उपलब्ध नाहीत",
         "selectCompany": "दुकान / कंपनी निवडा",
         "selectValidRole": "कृपया वैध भूमिका निवडा.",
@@ -1040,7 +1068,7 @@
     "cameraAccessError": "कॅमेरा प्रवेश आवश्यक आहे. कृपया कॅमेरा प्रवेशाची अनुमती द्या.",
     "photoCapturepd": "फोटो यशस्वीपणे काढला गेला",
     "invalidFileType": "कृपया वैध प्रतिमा फाइल अपलोड करा",
-   
+
     "imageUploaded": "प्रतिमा यशस्वीपणे अपलोड केली गेली",
     "pleaseUploadImage": "कृपया फोटो काढा किंवा अपलोड करा",
     "checkinSuccess": "चेक-इन यशस्वी",
@@ -1062,7 +1090,7 @@
     "cameraAccessReleased": "फोटो सबमिट केल्यानंतर कॅमेरा प्रवेश मुक्त केला जाईल",
     "todaysAttendanceComplete": "आजची चेक-इन आणि चेक-आउट आधीच पूर्ण झाली आहे",
     "thankYouMessage": "तुमच्या उपस्थितीचा रेकॉर्ड राखल्याबद्दल धन्यवाद!",
-    
+
     "imageNotAvailable": "प्रतिमा उपलब्ध नाही",
     "imageNotAvailableForEmployee": "प्रतिमा या कर्मचाऱ्यासाठी उपलब्ध नाही",
     "failedToLoadImage": "प्रतिमा लोड करण्यात अयशस्वी",
@@ -1070,13 +1098,20 @@
     "imageFor": "साठी प्रतिमा",
     "overtimeTypeRequired": "ओव्हरटाईमचा प्रकार आवश्यक आहे",
     "contractTypeRequired": "कंत्राटचा प्रकार आवश्यक आहे",
-    
+
     "halfDayPaymentPositiveNumber": "अर्धा दिवस पेमेंट हा धनात्मक संख्या असावी",
     "holidayPaymentPositiveNumber": "सुट्टीचे पेमेंट हा धनात्मक संख्या असावी",
     "referralNumberInvalid": "संदर्भ क्रमांक 10 अंकी असावा",
     "attendanceTypeRequired": "हजेरीचा प्रकार आवश्यक आहे",
-    "emailInvalid": "अवैध ईमेल स्वरूप"
-   
+    "emailInvalid": "अवैध ईमेल स्वरूप",
+
+    "pleaseSelectWeekdayFirst": "कृपया प्रथम आठवड्याचा दिवस निवडा",
+    "pleaseSelectWeekAndDate": "कृपया आठवडा सुरू होणारा दिवस आणि आठवड्यातील दिनांक निवडा",
+    "employeeDataFetchedSuccess": "कर्मचारी डेटा यशस्वीरित्या मिळवला",
+    "failedToFetchEmployeeData": "कर्मचारी डेटा मिळवण्यात अयशस्वी",
+    "pdfExportedSuccess": "PDF यशस्वीरित्या निर्यात केला",
+    "noEmployeeDataAvailable": "कोणताही कर्मचारी डेटा उपलब्ध नाही"
+
 
 
 
