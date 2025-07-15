@@ -26,7 +26,6 @@ import { getAPICall, post } from '../../../util/api';
 import { useTranslation } from 'react-i18next';
 import {  useNavigate } from 'react-router-dom';
 import ImageViewModal from '../../../views/pages/employee_management_pages/ImageViewModal';
-import MapViewModal from './MapViewModal';
 
 
 const MobileEmployeeRow = ({ employee, empId, empName, isSelected, handleEmployeeSelection, openImageModal, getImageUrl, hasValidImageUrl, navigate, t, faceAttendanceEnabled }) => (
