@@ -165,12 +165,19 @@ const validateForm = useCallback(() => {
     if (!formData.wage_overtime) newErrors.wage_overtime = t('MSG.wageOvertimeRequired');
 
     // Number validations for fulltime
-    if (formData.wage_hour && (isNaN(formData.wage_hour) || parseFloat(formData.wage_hour) <= 0)) {
-      newErrors.wage_hour = t('MSG.wageHourPositiveNumber');
-    }
-    if (formData.wage_overtime && (isNaN(formData.wage_overtime) || parseFloat(formData.wage_overtime) <= 0)) {
-      newErrors.wage_overtime = t('MSG.wageOvertimePositiveNumber');
-    }
+  if (
+  formData.wage_hour !== '' &&
+  (isNaN(formData.wage_hour) || parseFloat(formData.wage_hour) < 0)
+) {
+  newErrors.wage_hour = t('MSG.wageHourPositiveNumber'); // Accepts 0
+}
+
+if (
+  formData.wage_overtime !== '' &&
+  (isNaN(formData.wage_overtime) || parseFloat(formData.wage_overtime) < 0)
+) {
+  newErrors.wage_overtime = t('MSG.wageOvertimePositiveNumber'); // Accepts 0
+}
     if (formData.credit && (isNaN(formData.credit) || parseFloat(formData.credit) < 0)) {
       newErrors.credit = t('MSG.creditPositiveNumber');
     }
@@ -637,7 +644,8 @@ useEffect(() => {
                         />
                         {errors.wage_hour && <div className="text-danger small">{errors.wage_hour}</div>}
                       </CCol>
-                      <CCol xs={12} md={6}>
+
+                      {/* <CCol xs={12} md={6}>
                         <CFormLabel className="fw-semibold text-dark mb-2">
                           {t('LABELS.wageOvertime')}
                           <span className="text-danger ms-1">*</span>
@@ -652,7 +660,31 @@ useEffect(() => {
                           className="mb-1"
                         />
                         {errors.wage_overtime && <div className="text-danger small">{errors.wage_overtime}</div>}
-                      </CCol>
+                      </CCol> */}
+                      <CCol xs={12} md={6}>
+  <CFormLabel className="fw-semibold text-dark mb-2">
+    {formData.overtime_type === 'hourly'
+      ? 'Overtime per Hour'
+      : formData.overtime_type === 'fixed'
+      ? 'Overtime per Day'
+      : t('LABELS.wageOvertime')}
+    <span className="text-danger ms-1">*</span>
+  </CFormLabel>
+  <CFormInput
+    type="text"
+    placeholder={t('LABELS.priceZero')}
+    value={formData.wage_overtime}
+    onChange={(e) => handleNumberInput('wage_overtime', e.target.value)}
+    invalid={!!errors.wage_overtime}
+    disabled={submitting}
+    className="mb-1"
+  />
+  {errors.wage_overtime && (
+    <div className="text-danger small">{errors.wage_overtime}</div>
+  )}
+</CCol>
+
+
                     </CRow>
 
                     {/* Credit and Debit */}

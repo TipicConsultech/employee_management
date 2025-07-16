@@ -141,14 +141,44 @@ public function showEmployeesDetails($id)
     }
 
     /* PUT / PATCH /api/employees/{employee} */
-    public function update(Request $request, Employee $employee): JsonResponse
-    {
-        $data = $this->validatedData($request, $employee->id);
-
-        $employee->update($data);
-
-        return response()->json($employee);
-    }
+   public function update(Request $request, Employee $employee): JsonResponse
+{
+    $data = $request->only($employee->getFillable()); // Only allow fillable fields
+ 
+    // Optionally validate only the fields that are being updated
+    $validated = validator($data, [
+        'product_id'       => 'sometimes|integer|exists:products,id',
+        'company_id'       => 'sometimes|integer|exists:company_info,company_id',
+        'name'             => 'sometimes|string|max:255',
+        'gender'           => 'sometimes|in:male,female,other',
+        'payment_type'     => 'sometimes|string|max:100',
+        'work_type'        => 'sometimes|string|max:100',
+        'price'            => 'sometimes|numeric',
+        'wage_hour'        => 'sometimes|numeric',
+        'wage_overtime'    => 'sometimes|numeric',
+        'credit'           => 'sometimes|numeric',
+        'debit'            => 'sometimes|numeric',
+        'adhaar_number'    => 'sometimes|string|max:20',
+        'mobile'           => 'sometimes|string|max:15',
+        'refferal_by'      => 'sometimes|string|max:255',
+        'isActive'         => 'sometimes|boolean',
+        'half_day_rate'    => 'sometimes|numeric',
+        'holiday_rate'     => 'sometimes|numeric',
+        'overtime_type'    => 'sometimes|string|max:50',
+        'contract_type'    => 'sometimes|string|max:50',
+        'attendance_type'  => 'sometimes|string|max:50',
+        'refferal_number'  => 'sometimes|string|max:20',
+        'user_id'          => 'sometimes|integer|exists:users,id',
+        'working_hours'    => 'sometimes|numeric',
+    ])->validate();
+ 
+    $employee->update($validated);
+ 
+    return response()->json([
+        'message' => 'Employee updated successfully.',
+        'data' => $employee
+    ]);
+}
 
     /* DELETE /api/employees/{employee} */
     public function destroy(Employee $employee): JsonResponse

@@ -126,7 +126,7 @@ export default function fetchNavItems(t1) {
   else if (user === 10){
    _nav = [
   // show “Employee Tracker” when attendance is location‑based or both
-  ...(attendance_type === "location" || attendance_type === "both"
+  ...(attendance_type === "location"
     ? [{
         component: CNavItem,
         name: t("LABELS.employee_tracker"),
@@ -136,10 +136,20 @@ export default function fetchNavItems(t1) {
     : []),
 
   // show “Check‑in with Selfie” when attendance uses face recognition
-  ...(attendance_type === "both" || attendance_type === "face_attendance"
+  ...(attendance_type === "face_attendance"
     ? [{
         component: CNavItem,
-        name: t("LABELS.checkInWithSelfie"),
+        // name: t("LABELS.checkInWithSelfie"),
+        name: t("LABELS.employee_tracker"),
+        to: '/checkInWithSelfie',
+        icon: <CIcon icon={cilCamera} customClassName="nav-icon" />,
+      }]
+    : []),
+     ...(attendance_type === "both"
+    ? [{
+        component: CNavItem,
+        // name: t("LABELS.checkInWithSelfie"),
+        name: t("LABELS.employee_tracker"),
         to: '/checkInWithSelfie',
         icon: <CIcon icon={cilCamera} customClassName="nav-icon" />,
       }]

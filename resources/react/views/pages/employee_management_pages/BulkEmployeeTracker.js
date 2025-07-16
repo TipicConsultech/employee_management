@@ -28,7 +28,7 @@ import {  useNavigate } from 'react-router-dom';
 import ImageViewModal from '../../../views/pages/employee_management_pages/ImageViewModal';
 
 
-const MobileEmployeeRow = ({ employee, empId, empName, isSelected, handleEmployeeSelection, openImageModal, getImageUrl, hasValidImageUrl, navigate, t }) => (
+const MobileEmployeeRow = ({ employee, empId, empName, isSelected, handleEmployeeSelection, openImageModal, getImageUrl, hasValidImageUrl, navigate, t, faceAttendanceEnabled }) => (
     <CTableRow
         className="d-md-none"
         style={{
@@ -102,35 +102,38 @@ const MobileEmployeeRow = ({ employee, empId, empName, isSelected, handleEmploye
                             className={employee.checkIn ? 'text-success' : 'text-muted'}
                             size="sm"
                         />
-                        <CTooltip
-                            content={hasValidImageUrl(employee.trackers, 'checkin')
-                                ? (t('LABELS.clickToViewCheckInImage') || 'Click to view check-in image')
-                                : (t('LABELS.noCheckInImageUploaded') || 'User did not upload the image for check-in')
-                            }
-                            placement="top"
-                        >
-                            <span>
-                                <CButton
-                                    size="sm"
-                                    color={hasValidImageUrl(employee.trackers, 'checkin') ? "primary" : "secondary"}
-                                    variant="outline"
-                                    style={{
-                                        fontSize: '0.6rem',
-                                        padding: '1px 4px',
-                                        opacity: hasValidImageUrl(employee.trackers, 'checkin') ? 1 : 0.6,
-                                        cursor: hasValidImageUrl(employee.trackers, 'checkin') ? 'pointer' : 'not-allowed'
-                                    }}
-                                    disabled={!hasValidImageUrl(employee.trackers, 'checkin')}
-                                    onClick={() => openImageModal(
-                                        getImageUrl(employee.trackers, 'checkin'),
-                                        empName,
-                                        'Check-in'
-                                    )}
-                                >
-                                    {t('LABELS.view') || 'View'}
-                                </CButton>
-                            </span>
-                        </CTooltip>
+                        {/* CONDITIONAL RENDERING - Only show if face attendance is enabled */}
+                        {faceAttendanceEnabled && (
+                            <CTooltip
+                                content={hasValidImageUrl(employee.trackers, 'checkin')
+                                    ? (t('LABELS.clickToViewCheckInImage') || 'Click to view check-in image')
+                                    : (t('LABELS.noCheckInImageUploaded') || 'User did not upload the image for check-in')
+                                }
+                                placement="top"
+                            >
+                                <span>
+                                    <CButton
+                                        size="sm"
+                                        color={hasValidImageUrl(employee.trackers, 'checkin') ? "primary" : "secondary"}
+                                        variant="outline"
+                                        style={{
+                                            fontSize: '0.6rem',
+                                            padding: '1px 4px',
+                                            opacity: hasValidImageUrl(employee.trackers, 'checkin') ? 1 : 0.6,
+                                            cursor: hasValidImageUrl(employee.trackers, 'checkin') ? 'pointer' : 'not-allowed'
+                                        }}
+                                        disabled={!hasValidImageUrl(employee.trackers, 'checkin')}
+                                        onClick={() => openImageModal(
+                                            getImageUrl(employee.trackers, 'checkin'),
+                                            empName,
+                                            'Check-in'
+                                        )}
+                                    >
+                                        {t('LABELS.view') || 'View'}
+                                    </CButton>
+                                </span>
+                            </CTooltip>
+                        )}
                     </div>
 
                     {/* Divider */}
@@ -144,35 +147,38 @@ const MobileEmployeeRow = ({ employee, empId, empName, isSelected, handleEmploye
                             className={employee.checkOut ? 'text-success' : 'text-muted'}
                             size="sm"
                         />
-                        <CTooltip
-                            content={hasValidImageUrl(employee.trackers, 'checkout')
-                                ? (t('LABELS.clickToViewCheckOutImage') || 'Click to view check-out image')
-                                : (t('LABELS.noCheckOutImageUploaded') || 'User did not upload the image for check-out')
-                            }
-                            placement="top"
-                        >
-                            <span>
-                                <CButton
-                                    size="sm"
-                                    color={hasValidImageUrl(employee.trackers, 'checkout') ? "primary" : "secondary"}
-                                    variant="outline"
-                                    style={{
-                                        fontSize: '0.6rem',
-                                        padding: '1px 4px',
-                                        opacity: hasValidImageUrl(employee.trackers, 'checkout') ? 1 : 0.6,
-                                        cursor: hasValidImageUrl(employee.trackers, 'checkout') ? 'pointer' : 'not-allowed'
-                                    }}
-                                    disabled={!hasValidImageUrl(employee.trackers, 'checkout')}
-                                    onClick={() => openImageModal(
-                                        getImageUrl(employee.trackers, 'checkout'),
-                                        empName,
-                                        'Check-out'
-                                    )}
-                                >
-                                    {t('LABELS.view') || 'View'}
-                                </CButton>
-                            </span>
-                        </CTooltip>
+                        {/* CONDITIONAL RENDERING - Only show if face attendance is enabled */}
+                        {faceAttendanceEnabled && (
+                            <CTooltip
+                                content={hasValidImageUrl(employee.trackers, 'checkout')
+                                    ? (t('LABELS.clickToViewCheckOutImage') || 'Click to view check-out image')
+                                    : (t('LABELS.noCheckOutImageUploaded') || 'User did not upload the image for check-out')
+                                }
+                                placement="top"
+                            >
+                                <span>
+                                    <CButton
+                                        size="sm"
+                                        color={hasValidImageUrl(employee.trackers, 'checkout') ? "primary" : "secondary"}
+                                        variant="outline"
+                                        style={{
+                                            fontSize: '0.6rem',
+                                            padding: '1px 4px',
+                                            opacity: hasValidImageUrl(employee.trackers, 'checkout') ? 1 : 0.6,
+                                            cursor: hasValidImageUrl(employee.trackers, 'checkout') ? 'pointer' : 'not-allowed'
+                                        }}
+                                        disabled={!hasValidImageUrl(employee.trackers, 'checkout')}
+                                        onClick={() => openImageModal(
+                                            getImageUrl(employee.trackers, 'checkout'),
+                                            empName,
+                                            'Check-out'
+                                        )}
+                                    >
+                                        {t('LABELS.view') || 'View'}
+                                    </CButton>
+                                </span>
+                            </CTooltip>
+                        )}
                     </div>
                 </div>
             </div>
@@ -312,6 +318,7 @@ function BulkEmployeeCheckInOut() {
     const [notification, setNotification] = useState({ show: false, type: '', message: '' });
     const [selectAll, setSelectAll] = useState(false);
     const [imageModal, setImageModal] = useState({isOpen: false,imageUrl: '',title: '',employeeName: '',imageType: ''});
+    const [faceAttendanceEnabled, setFaceAttendanceEnabled] = useState(false);
 
 
     useEffect(() => {
@@ -324,6 +331,24 @@ function BulkEmployeeCheckInOut() {
         // Cleanup
         document.head.removeChild(styleElement);
     };
+}, []);
+
+    const fetchFaceAttendanceStatus = useCallback(async () => {
+    try {
+        const response = await getAPICall('/api/isface-attendance');
+        console.log('Face attendance response:', response); // Debug log
+
+        if (response && typeof response.face_attendance === 'boolean') {
+            setFaceAttendanceEnabled(response.face_attendance);
+        } else {
+            // Default to false if API response is invalid
+            setFaceAttendanceEnabled(false);
+        }
+    } catch (error) {
+        console.error('Error fetching face attendance status:', error);
+        // Default to false on error
+        setFaceAttendanceEnabled(false);
+    }
 }, []);
 
     // Memoized helper function for showing notifications
@@ -404,8 +429,10 @@ function BulkEmployeeCheckInOut() {
 
     // Fetch employees on component mount
     useEffect(() => {
-        fetchEmployees();
-    }, [fetchEmployees]);
+    // Call both functions on component mount
+    fetchFaceAttendanceStatus();
+    fetchEmployees();
+}, [fetchFaceAttendanceStatus, fetchEmployees]);
 
     // Handle individual employee selection
     const handleEmployeeSelection = useCallback((employeeId, isSelected) => {
@@ -909,16 +936,17 @@ const hasValidImageUrl = useCallback((trackers, imageType) => {
                                             <React.Fragment key={empId}>
                                                 {/* Mobile View - Only 3 columns */}
                                                 <MobileEmployeeRow
-                                                    employee={employee}
-                                                    empId={empId}
-                                                    empName={empName}
-                                                    isSelected={isSelected}
-                                                    handleEmployeeSelection={handleEmployeeSelection}
-                                                    openImageModal={openImageModal}
-                                                    getImageUrl={getImageUrl}
-                                                    hasValidImageUrl={hasValidImageUrl}
-                                                    navigate={navigate}
-                                                    t={t}
+                                                employee={employee}
+                                                empId={empId}
+                                                empName={empName}
+                                                isSelected={isSelected}
+                                                handleEmployeeSelection={handleEmployeeSelection}
+                                                openImageModal={openImageModal}
+                                                getImageUrl={getImageUrl}
+                                                hasValidImageUrl={hasValidImageUrl}
+                                                navigate={navigate}
+                                                t={t}
+                                                faceAttendanceEnabled={faceAttendanceEnabled}
                                                 />
 
                                                 {/* Desktop View - All 7 columns */}
@@ -1004,42 +1032,44 @@ const hasValidImageUrl = useCallback((trackers, imageType) => {
                                                                 className={employee.checkIn ? 'text-success' : 'text-muted'}
                                                                 size="lg"
                                                             />
-                                                            <CTooltip
-                                                                content={hasValidImageUrl(employee.trackers, 'checkin')
-                                                                    ? (t('LABELS.clickToViewCheckInImage') || 'Click to view check-in image')
-                                                                    : (t('LABELS.noCheckInImageUploaded') || 'User did not upload the image for check-in')
-                                                                }
-                                                                placement="top"
-                                                                trigger="hover"
-                                                            >
-                                                                <span>
-                                                                    <CButton
-                                                                        size="sm"
-                                                                        color={hasValidImageUrl(employee.trackers, 'checkin') ? "primary" : "secondary"}
-                                                                        variant="outline"
-                                                                        style={{
-                                                                            fontSize: '0.7rem',
-                                                                            padding: '2px 6px',
-                                                                            opacity: hasValidImageUrl(employee.trackers, 'checkin') ? 1 : 0.6,
-                                                                            cursor: hasValidImageUrl(employee.trackers, 'checkin') ? 'pointer' : 'not-allowed',
-                                                                            backgroundColor: hasValidImageUrl(employee.trackers, 'checkin') ? 'transparent' : '#f8f9fa',
-                                                                            borderColor: hasValidImageUrl(employee.trackers, 'checkin') ? '' : '#6c757d',
-                                                                            color: hasValidImageUrl(employee.trackers, 'checkin') ? '' : '#6c757d'
-                                                                        }}
-                                                                        disabled={!hasValidImageUrl(employee.trackers, 'checkin')}
-                                                                        onClick={() => openImageModal(
-                                                                            getImageUrl(employee.trackers, 'checkin'),
-                                                                            empName,
-                                                                            'Check-in'
-                                                                        )}
-                                                                    >
-                                                                        {t('LABELS.view') || 'View'}
-                                                                    </CButton>
-                                                                </span>
-                                                            </CTooltip>
+                                                            {/* CONDITIONAL RENDERING - Only show if face attendance is enabled */}
+                                                            {faceAttendanceEnabled && (
+                                                                <CTooltip
+                                                                    content={hasValidImageUrl(employee.trackers, 'checkin')
+                                                                        ? (t('LABELS.clickToViewCheckInImage') || 'Click to view check-in image')
+                                                                        : (t('LABELS.noCheckInImageUploaded') || 'User did not upload the image for check-in')
+                                                                    }
+                                                                    placement="top"
+                                                                    trigger="hover"
+                                                                >
+                                                                    <span>
+                                                                        <CButton
+                                                                            size="sm"
+                                                                            color={hasValidImageUrl(employee.trackers, 'checkin') ? "primary" : "secondary"}
+                                                                            variant="outline"
+                                                                            style={{
+                                                                                fontSize: '0.7rem',
+                                                                                padding: '2px 6px',
+                                                                                opacity: hasValidImageUrl(employee.trackers, 'checkin') ? 1 : 0.6,
+                                                                                cursor: hasValidImageUrl(employee.trackers, 'checkin') ? 'pointer' : 'not-allowed',
+                                                                                backgroundColor: hasValidImageUrl(employee.trackers, 'checkin') ? 'transparent' : '#f8f9fa',
+                                                                                borderColor: hasValidImageUrl(employee.trackers, 'checkin') ? '' : '#6c757d',
+                                                                                color: hasValidImageUrl(employee.trackers, 'checkin') ? '' : '#6c757d'
+                                                                            }}
+                                                                            disabled={!hasValidImageUrl(employee.trackers, 'checkin')}
+                                                                            onClick={() => openImageModal(
+                                                                                getImageUrl(employee.trackers, 'checkin'),
+                                                                                empName,
+                                                                                'Check-in'
+                                                                            )}
+                                                                        >
+                                                                            {t('LABELS.view') || 'View'}
+                                                                        </CButton>
+                                                                    </span>
+                                                                </CTooltip>
+                                                            )}
                                                         </div>
                                                     </CTableDataCell>
-
                                                     {/* Column 5: Check Out with View Button */}
                                                     <CTableDataCell
                                                         className="text-center"
@@ -1051,39 +1081,42 @@ const hasValidImageUrl = useCallback((trackers, imageType) => {
                                                                 className={employee.checkOut ? 'text-success' : 'text-muted'}
                                                                 size="lg"
                                                             />
-                                                            <CTooltip
-                                                                content={hasValidImageUrl(employee.trackers, 'checkout')
-                                                                    ? (t('LABELS.clickToViewCheckOutImage') || 'Click to view check-out image')
-                                                                    : (t('LABELS.noCheckOutImageUploaded') || 'User did not upload the image for check-out')
-                                                                }
-                                                                placement="top"
-                                                                trigger="hover"
-                                                            >
-                                                                <span>
-                                                                    <CButton
-                                                                        size="sm"
-                                                                        color={hasValidImageUrl(employee.trackers, 'checkout') ? "primary" : "secondary"}
-                                                                        variant="outline"
-                                                                        style={{
-                                                                            fontSize: '0.7rem',
-                                                                            padding: '2px 6px',
-                                                                            opacity: hasValidImageUrl(employee.trackers, 'checkout') ? 1 : 0.6,
-                                                                            cursor: hasValidImageUrl(employee.trackers, 'checkout') ? 'pointer' : 'not-allowed',
-                                                                            backgroundColor: hasValidImageUrl(employee.trackers, 'checkout') ? 'transparent' : '#f8f9fa',
-                                                                            borderColor: hasValidImageUrl(employee.trackers, 'checkout') ? '' : '#6c757d',
-                                                                            color: hasValidImageUrl(employee.trackers, 'checkout') ? '' : '#6c757d'
-                                                                        }}
-                                                                        disabled={!hasValidImageUrl(employee.trackers, 'checkout')}
-                                                                        onClick={() => openImageModal(
-                                                                            getImageUrl(employee.trackers, 'checkout'),
-                                                                            empName,
-                                                                            'Check-out'
-                                                                        )}
-                                                                    >
-                                                                        {t('LABELS.view') || 'View'}
-                                                                    </CButton>
-                                                                </span>
-                                                            </CTooltip>
+                                                            {/* CONDITIONAL RENDERING - Only show if face attendance is enabled */}
+                                                            {faceAttendanceEnabled && (
+                                                                <CTooltip
+                                                                    content={hasValidImageUrl(employee.trackers, 'checkout')
+                                                                        ? (t('LABELS.clickToViewCheckOutImage') || 'Click to view check-out image')
+                                                                        : (t('LABELS.noCheckOutImageUploaded') || 'User did not upload the image for check-out')
+                                                                    }
+                                                                    placement="top"
+                                                                    trigger="hover"
+                                                                >
+                                                                    <span>
+                                                                        <CButton
+                                                                            size="sm"
+                                                                            color={hasValidImageUrl(employee.trackers, 'checkout') ? "primary" : "secondary"}
+                                                                            variant="outline"
+                                                                            style={{
+                                                                                fontSize: '0.7rem',
+                                                                                padding: '2px 6px',
+                                                                                opacity: hasValidImageUrl(employee.trackers, 'checkout') ? 1 : 0.6,
+                                                                                cursor: hasValidImageUrl(employee.trackers, 'checkout') ? 'pointer' : 'not-allowed',
+                                                                                backgroundColor: hasValidImageUrl(employee.trackers, 'checkout') ? 'transparent' : '#f8f9fa',
+                                                                                borderColor: hasValidImageUrl(employee.trackers, 'checkout') ? '' : '#6c757d',
+                                                                                color: hasValidImageUrl(employee.trackers, 'checkout') ? '' : '#6c757d'
+                                                                            }}
+                                                                            disabled={!hasValidImageUrl(employee.trackers, 'checkout')}
+                                                                            onClick={() => openImageModal(
+                                                                                getImageUrl(employee.trackers, 'checkout'),
+                                                                                empName,
+                                                                                'Check-out'
+                                                                            )}
+                                                                        >
+                                                                            {t('LABELS.view') || 'View'}
+                                                                        </CButton>
+                                                                    </span>
+                                                                </CTooltip>
+                                                            )}
                                                         </div>
                                                     </CTableDataCell>
 

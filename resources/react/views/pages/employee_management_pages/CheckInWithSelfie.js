@@ -1,56 +1,76 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-    CButton,
     CCard,
     CCardBody,
     CCardHeader,
     CCol,
     CRow,
+    CButton,
     CSpinner,
     CAlert,
+    CBadge,
+    CContainer,
     CModal,
     CModalBody,
     CModalHeader,
     CModalTitle,
-    CModalFooter,
-    CFormInput,
-    CFormLabel,
-    CContainer,
-    CBadge
+    CModalFooter
 } from '@coreui/react';
+import CIcon from '@coreui/icons-react';
+import { cilClock, cilLocationPin, cilCheckCircle, cilXCircle } from '@coreui/icons';
+import { getAPICall, postFormData, put } from '../../../util/api';
 import { useTranslation } from 'react-i18next';
-import { postFormData, getAPICall } from '../../../util/api';
 
-function CheckInCheckOut() {
-    // Add translation hook
+function CheckInWithSelfie() {
     const { t } = useTranslation("global");
 
-    const [loading, setLoading] = useState(false);
-    const [statusLoading, setStatusLoading] = useState(true);
+    // State management
+    const [status, setStatus] = useState({ checkIn: false, checkOut: false });
+    const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+    const [locationLoading, setLocationLoading] = useState(false);
+    const [showCompletedPopup, setShowCompletedPopup] = useState(false);
     const [notification, setNotification] = useState({ show: false, type: '', message: '' });
+    const [trackerId, setTrackerId] = useState(null);
+    const [actionType, setActionType] = useState('');
     const [cameraModal, setCameraModal] = useState(false);
     const [capturedImage, setCapturedImage] = useState(null);
     const [compressedImage, setCompressedImage] = useState(null);
-    const [actionType, setActionType] = useState(''); // 'checkin' or 'checkout'
-    const [employeeStatus, setEmployeeStatus] = useState({ checkIn: false, checkout: false });
     const [gpsCoordinates, setGpsCoordinates] = useState(null);
-    const [gpsLoading, setGpsLoading] = useState(false);
-    const [trackerId, setTrackerId] = useState(null);
-    const [completionModal, setCompletionModal] = useState(false);
 
+    // Camera refs
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const streamRef = useRef(null);
 
-    // Memoized helper function for showing notifications
+    // Notification helper
     const showNotification = useCallback((type, message) => {
         setNotification({ show: true, type, message });
         if (type === 'success') {
-            setTimeout(() => {
-                setNotification({ show: false, type: '', message: '' });
-            }, 3000);
+            setTimeout(() => setNotification({ show: false, type: '', message: '' }), 3000);
         }
     }, []);
+
+    // Fetch employee status
+    const fetchEmployeeStatus = useCallback(async () => {
+        try {
+            setLoading(true);
+            const response = await getAPICall('/api/employee-tracker/status');
+            if (response) {
+                setStatus(response);
+                const id = response.id || response.tracker_id || response.trackerId;
+                if (id) setTrackerId(id);
+                if (response.checkIn && response.checkOut) {
+                    setShowCompletedPopup(true);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching employee status:', error);
+            showNotification('warning', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
+        } finally {
+            setLoading(false);
+        }
+    }, [showNotification, t]);
 
     // Get GPS coordinates
     const getCurrentLocation = useCallback(() => {
@@ -60,7 +80,7 @@ function CheckInCheckOut() {
                 return;
             }
 
-            setGpsLoading(true);
+            setLocationLoading(true);
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     const coords = {
@@ -68,11 +88,11 @@ function CheckInCheckOut() {
                         longitude: position.coords.longitude
                     };
                     setGpsCoordinates(coords);
-                    setGpsLoading(false);
+                    setLocationLoading(false);
                     resolve(coords);
                 },
                 (error) => {
-                    setGpsLoading(false);
+                    setLocationLoading(false);
                     reject(error);
                 },
                 {
@@ -84,34 +104,7 @@ function CheckInCheckOut() {
         });
     }, []);
 
-    // Fetch employee status
-    const fetchEmployeeStatus = useCallback(async () => {
-        try {
-            setStatusLoading(true);
-            const response = await getAPICall('/api/employee-tracker/status');
-            if (response && typeof response.checkIn !== 'undefined' && typeof response.checkOut !== 'undefined') {
-                setEmployeeStatus({
-                    checkIn: response.checkIn,
-                    checkout: response.checkOut
-                });
-                if(response.tracker_id){
-                    setTrackerId(response.tracker_id);
-                }
-                
-                // Check for completion scenario after setting status
-                if (response.checkIn && response.checkOut) {
-                    setCompletionModal(true);
-                }
-            }
-        } catch (error) {
-            console.error('Error fetching employee status:', error);
-            showNotification('danger', t('MSG.errorFetchingStatus') || 'Error fetching status');
-        } finally {
-            setStatusLoading(false);
-        }
-    }, [showNotification, t]);
-
-    // Image compression function - Modified to return File object
+    // Image compression
     const compressImage = useCallback((file, quality = 0.7, maxWidth = 800, maxHeight = 600) => {
         return new Promise((resolve) => {
             const canvas = document.createElement('canvas');
@@ -119,7 +112,6 @@ function CheckInCheckOut() {
             const img = new Image();
 
             img.onload = () => {
-                // Calculate new dimensions
                 let { width, height } = img;
                 if (width > maxWidth || height > maxHeight) {
                     const ratio = Math.min(maxWidth / width, maxHeight / height);
@@ -129,11 +121,8 @@ function CheckInCheckOut() {
 
                 canvas.width = width;
                 canvas.height = height;
-
-                // Draw and compress
                 ctx.drawImage(img, 0, 0, width, height);
                 canvas.toBlob((blob) => {
-                    // Convert blob to File object with JPEG type
                     const compressedFile = new File([blob], 'selfie.jpg', {
                         type: 'image/jpeg',
                         lastModified: Date.now()
@@ -146,17 +135,12 @@ function CheckInCheckOut() {
         });
     }, []);
 
-    // Start camera function
+    // Camera functions
     const startCamera = useCallback(async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    facingMode: 'user', // Front camera preferred
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
-                }
+                video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
             });
-
             streamRef.current = stream;
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
@@ -167,7 +151,6 @@ function CheckInCheckOut() {
         }
     }, [showNotification, t]);
 
-    // Stop camera function
     const stopCamera = useCallback(() => {
         if (streamRef.current) {
             streamRef.current.getTracks().forEach(track => track.stop());
@@ -175,7 +158,6 @@ function CheckInCheckOut() {
         }
     }, []);
 
-    // Capture photo function
     const capturePhoto = useCallback(async () => {
         if (!videoRef.current || !canvasRef.current) return;
 
@@ -190,53 +172,22 @@ function CheckInCheckOut() {
         canvas.toBlob(async (blob) => {
             if (blob) {
                 setCapturedImage(URL.createObjectURL(blob));
-
-                // Compress the image and convert to File
                 const compressedFile = await compressImage(blob);
                 setCompressedImage(compressedFile);
-
                 showNotification('success', t('MSG.photoCapturepd') || 'Photo captured successfully');
             }
         }, 'image/jpeg', 0.8);
     }, [compressImage, showNotification, t]);
 
-    // Handle file upload (fallback for devices without camera)
-    const handleFileUpload = useCallback(async (event) => {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        // Validate file type
-        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/bmp'];
-        if (!allowedTypes.includes(file.type)) {
-            showNotification('danger', t('MSG.invalidFileType') || 'Please upload a valid image file');
-            return;
-        }
-
-        // Validate file size (max 10MB)
-        if (file.size > 10 * 1024 * 1024) {
-            showNotification('danger', t('MSG.fileTooLarge') || 'File size should be less than 10MB');
-            return;
-        }
-
-        setCapturedImage(URL.createObjectURL(file));
-
-        // Compress the image and convert to File
-        const compressedFile = await compressImage(file);
-        setCompressedImage(compressedFile);
-
-        showNotification('success', t('MSG.imageUploaded') || 'Image uploaded successfully');
-    }, [compressImage, showNotification, t]);
-
-    // Submit check-in/check-out - Updated to handle the new response structure
+    // Handle check-in/check-out submission
     const handleSubmit = useCallback(async () => {
         if (!compressedImage) {
             showNotification('warning', t('MSG.pleaseUploadImage') || 'Please capture or upload an image');
             return;
         }
 
-        setLoading(true);
+        setSubmitting(true);
         try {
-            // Get current GPS coordinates
             let currentCoords = gpsCoordinates;
             if (!currentCoords) {
                 try {
@@ -244,97 +195,67 @@ function CheckInCheckOut() {
                 } catch (gpsError) {
                     console.error('GPS Error:', gpsError);
                     showNotification('warning', 'Could not get GPS coordinates. Using default location.');
-                    // Use default coordinates if GPS fails
                     currentCoords = { latitude: 18.5597952, longitude: 73.8033664 };
                 }
             }
 
             const formData = new FormData();
-            
-            // Send GPS coordinates as combined string with correct field name based on action type
+            const gpsString = `${currentCoords.latitude},${currentCoords.longitude}`;
+
             if (actionType === 'checkin') {
-                formData.append('check_in_gps', `${currentCoords.latitude},${currentCoords.longitude}`);
+                formData.append('check_in_gps', gpsString);
                 formData.append('checkin_img', compressedImage);
             } else {
-                formData.append('check_out_gps', `${currentCoords.latitude},${currentCoords.longitude}`);
+                formData.append('check_out_gps', gpsString);
                 formData.append('checkout_img', compressedImage);
             }
 
-            let endpoint;
-            if (actionType === 'checkin') {
-                endpoint = '/api/employee-tracker';
-            } else {
-                // For checkout, use the tracker_id in the endpoint
-                endpoint = `/api/employee-tracker/${trackerId}`;
-            }
-
+            const endpoint = actionType === 'checkin' ? '/api/employee-tracker' : `/api/employee-tracker/${trackerId}`;
             const response = await postFormData(endpoint, formData);
 
-            // Updated response handling to match the new structure
-            // Check if response has tracker and message (successful response structure)
             if (response && (response.tracker || response.message)) {
-                // Show success notification with the message from response
                 const successMessage = response.message || 
-                    (actionType === 'checkin' 
-                        ? t('MSG.checkinSuccess') || 'Check-in successful'
-                        : t('MSG.checkoutSuccess') || 'Check-out successful');
+                    (actionType === 'checkin' ? t('MSG.checkinSuccess') || 'Check-in successful' : t('MSG.checkoutSuccess') || 'Check-out successful');
 
                 showNotification('success', successMessage);
-
-                // Reset form state
-                setCapturedImage(null);
-                setCompressedImage(null);
-                setGpsCoordinates(null);
-
-                // Stop camera immediately after successful submission
-                stopCamera();
-
-                // Close modal immediately after successful submission
-                setCameraModal(false);
-
-                // Update tracker ID if received in response
+                
                 if (response.tracker && response.tracker.id) {
                     setTrackerId(response.tracker.id);
                 }
 
-                // Refresh employee status after a short delay to ensure UI updates properly
-                setTimeout(async () => {
-                    await fetchEmployeeStatus();
-                }, 500);
+                resetCameraState();
+                setTimeout(() => fetchEmployeeStatus(), 500);
             } else {
-                // Handle error response
-                const errorMessage = response?.message || 
-                    response?.error || 
-                    t('MSG.operationFailed') || 
-                    'Operation failed';
+                const errorMessage = response?.message || response?.error || t('MSG.operationFailed') || 'Operation failed';
                 showNotification('danger', errorMessage);
             }
         } catch (error) {
             console.error('Error submitting:', error);
-            
-            // Handle different types of errors
             let errorMessage = t('MSG.error') || 'Error';
-            
             if (error.response && error.response.data) {
-                // If it's an API error with response data
-                errorMessage = error.response.data.message || 
-                    error.response.data.error || 
-                    `${errorMessage}: ${error.message}`;
+                errorMessage = error.response.data.message || error.response.data.error || `${errorMessage}: ${error.message}`;
             } else if (error.message) {
                 errorMessage = `${errorMessage}: ${error.message}`;
             }
-            
             showNotification('danger', errorMessage);
         } finally {
-            setLoading(false);
+            setSubmitting(false);
         }
-    }, [compressedImage, actionType, gpsCoordinates, getCurrentLocation, showNotification, t, stopCamera, fetchEmployeeStatus, trackerId]);
+    }, [compressedImage, actionType, gpsCoordinates, getCurrentLocation, showNotification, t, fetchEmployeeStatus, trackerId]);
 
-    // Open camera modal with validation
+    // Reset camera state
+    const resetCameraState = useCallback(() => {
+        setCapturedImage(null);
+        setCompressedImage(null);
+        setGpsCoordinates(null);
+        stopCamera();
+        setCameraModal(false);
+    }, [stopCamera]);
+
+    // Open camera modal
     const openCameraModal = useCallback((type) => {
-        const { checkIn, checkout } = employeeStatus;
+        const { checkIn, checkOut } = status;
         
-        // Validation logic for opening camera modal
         if (type === 'checkin' && checkIn) {
             showNotification('warning', t('MSG.alreadyCheckedIn') || 'You have already checked in today');
             return;
@@ -345,7 +266,7 @@ function CheckInCheckOut() {
             return;
         }
         
-        if (type === 'checkout' && checkout) {
+        if (type === 'checkout' && checkOut) {
             showNotification('warning', t('MSG.alreadyCheckedOut') || 'You have already checked out today');
             return;
         }
@@ -355,23 +276,18 @@ function CheckInCheckOut() {
         setCapturedImage(null);
         setCompressedImage(null);
         setGpsCoordinates(null);
-        // Get GPS coordinates when modal opens
+        
         getCurrentLocation().catch(error => {
             console.error('Error getting GPS:', error);
             showNotification('warning', 'Could not get GPS coordinates. Will use default location.');
         });
-    }, [employeeStatus, getCurrentLocation, showNotification, t]);
+    }, [status, getCurrentLocation, showNotification, t]);
 
-    // Close camera modal
-    const closeCameraModal = useCallback(() => {
-        setCameraModal(false);
-        stopCamera();
-        setCapturedImage(null);
-        setCompressedImage(null);
-        setGpsCoordinates(null);
-    }, [stopCamera]);
+    // Effects
+    useEffect(() => {
+        fetchEmployeeStatus();
+    }, [fetchEmployeeStatus]);
 
-    // Effect for starting camera when modal opens
     useEffect(() => {
         if (cameraModal) {
             startCamera();
@@ -383,223 +299,250 @@ function CheckInCheckOut() {
         };
     }, [cameraModal, startCamera, stopCamera]);
 
-    // Effect for fetching employee status on component mount
-    useEffect(() => {
-        fetchEmployeeStatus();
-    }, [fetchEmployeeStatus]);
+    // Action Buttons Component
+    const ActionButtons = () => (
+        <div className="row g-2 g-sm-3 g-md-4 mb-3 mb-sm-4">
+            <div className="col-12 col-sm-6">
+                <CButton
+                    color="primary"
+                    className="w-100 py-3 py-sm-3"
+                    onClick={() => openCameraModal('checkin')}
+                    disabled={status.checkIn || submitting || locationLoading}
+                    style={{ fontSize: '1rem', fontWeight: 'bold' }}
+                >
+                    {submitting && actionType === 'checkin' ? (
+                        <>
+                            <CSpinner size="sm" className="me-2" />
+                            <span className="d-none d-sm-inline">{t('LABELS.processing')}</span>
+                            <span className="d-inline d-sm-none">...</span>
+                        </>
+                    ) : (
+                        <>{t('LABELS.checkIn')}</>
+                    )}
+                </CButton>
+            </div>
+            <div className="col-12 col-sm-6">
+                <CButton
+                    color="success"
+                    className="w-100 py-3 py-sm-3"
+                    onClick={() => openCameraModal('checkout')}
+                    disabled={!status.checkIn || status.checkOut || submitting || locationLoading}
+                    style={{ fontSize: '1rem', fontWeight: 'bold' }}
+                >
+                    {submitting && actionType === 'checkout' ? (
+                        <>
+                            <CSpinner size="sm" className="me-2" />
+                            <span className="d-none d-sm-inline">{t('LABELS.processing')}</span>
+                            <span className="d-inline d-sm-none">...</span>
+                        </>
+                    ) : (
+                        <>{t('LABELS.checkOut')}</>
+                    )}
+                </CButton>
+            </div>
+        </div>
+    );
 
-    // Get current time
-    const getCurrentTime = () => {
-        return new Date().toLocaleString();
-    };
-
-    // Get button states based on employee status - Enhanced validation
-    const getButtonStates = () => {
-        const { checkIn, checkout } = employeeStatus;
-
-        return {
-            // Scenario 1: Both false - only check-in active
-            checkInDisabled: checkIn, // Disabled if already checked in
-            checkInActive: !checkIn, // Active only if not checked in
-            
-            // Scenario 2: checkIn true, checkout false - only check-out active
-            checkOutDisabled: !checkIn || checkout, // Disabled if not checked in or already checked out
-            checkOutActive: checkIn && !checkout, // Active only if checked in but not checked out
-            
-            // Scenario 3: Both true - show completion message
-            bothCompleted: checkIn && checkout
-        };
-    };
-
-    const buttonStates = getButtonStates();
+    if (loading) {
+        return (
+            <div className="d-flex justify-content-center align-items-center vh-100">
+                <CSpinner color="primary" size="lg" />
+            </div>
+        );
+    }
 
     return (
-        <CContainer fluid className="py-4">
-            <CRow className="justify-content-center">
-                <CCol xs={12} md={8} lg={6}>
-                    <CCard className="mb-4 shadow-sm">
-                        <CCardHeader style={{ backgroundColor: "#E6E6FA" }}>
-                            <div className="d-flex justify-content-between align-items-center flex-wrap">
-                                <strong>{t('LABELS.checkInCheckOut') || 'Check-In / Check-Out'}</strong>
-                                <CBadge color="info">{getCurrentTime()}</CBadge>
-                            </div>
-                        </CCardHeader>
-
-                        {/* Notifications - Fixed to use proper CoreUI alert colors */}
-                        {notification.show && (
-                            <CAlert
-                                color={notification.type === 'success' ? 'success' : notification.type}
-                                dismissible
-                                onClose={() => setNotification({ show: false, type: '', message: '' })}
-                            >
-                                {notification.message}
-                            </CAlert>
-                        )}
-
-                        <CCardBody>
-                            {statusLoading ? (
-                                <div className="text-center py-4">
-                                    <CSpinner color="primary" />
-                                    <p className="mt-2">{t('MSG.loadingStatus') || 'Loading status...'}</p>
-                                </div>
-                            ) : (
-                                <>
-                                    {/* Status Display */}
-                                    <div className="mb-4 p-3 bg-light rounded">
-                                        <h6 className="mb-2">{t('LABELS.currentStatus') || 'Current Status'}:</h6>
-                                        <div className="d-flex gap-2 flex-wrap">
-                                            <CBadge
-                                                color={employeeStatus.checkIn ? 'success' : 'secondary'}
-                                                className="py-1 px-2"
-                                            >
-                                                {t('LABELS.checkIn') || 'Check-In'}: {employeeStatus.checkIn ?
-                                                    (t('LABELS.completed') || 'Completed') :
-                                                    (t('LABELS.pending') || 'Pending')
-                                                }
-                                            </CBadge>
-                                            <CBadge
-                                                color={employeeStatus.checkout ? 'success' : 'secondary'}
-                                                className="py-1 px-2"
-                                            >
-                                                {t('LABELS.checkOut') || 'Check-Out'}: {employeeStatus.checkout ?
-                                                    (t('LABELS.completed') || 'Completed') :
-                                                    (t('LABELS.pending') || 'Pending')
-                                                }
-                                            </CBadge>
+        <div className="min-vh-100 d-flex flex-column" style={{ backgroundColor: '#f8f9fa' }}>
+            <CContainer fluid className="flex-grow-1 d-flex align-items-center justify-content-center py-2 py-sm-3 py-md-4">
+                <CRow className="w-100 h-100">
+                    <CCol xs={12} sm={11} md={10} lg={8} xl={6} xxl={5} className="mx-auto d-flex align-items-center">
+                        <div className="w-100">
+                            {/* Notifications */}
+                            {notification.show && (
+                                <CAlert
+                                    color={notification.type}
+                                    dismissible
+                                    onClose={() => setNotification({ show: false, type: '', message: '' })}
+                                    className="mb-2 mb-sm-3"
+                                >
+                                    <div className="d-flex align-items-center">
+                                        <div className="flex-grow-1" style={{ fontSize: '0.9rem' }}>
+                                            {notification.message}
                                         </div>
-                                        {trackerId && (
-                                            <div className="mt-2">
-                                                <CBadge color="primary" className="py-1 px-2">
-                                                    Tracker ID: {trackerId}
-                                                </CBadge>
-                                            </div>
-                                        )}
                                     </div>
-
-                                    {/* Complete Status Message - Scenario 3 */}
-                                    {buttonStates.bothCompleted && (
-                                        <div className="mb-4 p-3 bg-success bg-opacity-10 rounded border border-success">
-                                            <div className="text-success text-center">
-                                                <h6 className="mb-0">
-                                                    ✅ {t('MSG.dailyCheckInCheckOutCompleted') || 'Today\'s check-in and check-out already completed. Thank you!'}
-                                                </h6>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Action Buttons - Scenarios 1 & 2 */}
-                                    {!buttonStates.bothCompleted && (
-                                        <div className="d-grid gap-3">
-                                            {/* Check-In Button - Active in Scenario 1 */}
-                                            <CButton
-                                                color={buttonStates.checkInActive ? "success" : "secondary"}
-                                                size="lg"
-                                                onClick={() => openCameraModal('checkin')}
-                                                disabled={loading || buttonStates.checkInDisabled}
-                                                className="py-3"
-                                            >
-                                                {loading && actionType === 'checkin' && <CSpinner size="sm" className="me-2" />}
-                                                📸 {t('LABELS.checkIn') || 'Check In'}
-                                                {buttonStates.checkInDisabled && (
-                                                    <small className="d-block mt-1 opacity-75">
-                                                        {t('MSG.alreadyCheckedIn') || 'Already checked in'}
-                                                    </small>
-                                                )}
-                                            </CButton>
-
-                                            {/* Check-Out Button - Active in Scenario 2 */}
-                                            <CButton
-                                                color={buttonStates.checkOutActive ? "danger" : "secondary"}
-                                                size="lg"
-                                                onClick={() => openCameraModal('checkout')}
-                                                disabled={loading || buttonStates.checkOutDisabled}
-                                                className="py-3"
-                                            >
-                                                {loading && actionType === 'checkout' && <CSpinner size="sm" className="me-2" />}
-                                                📸 {t('LABELS.checkOut') || 'Check Out'}
-                                                {buttonStates.checkOutDisabled && (
-                                                    <small className="d-block mt-1 opacity-75">
-                                                        {!employeeStatus.checkIn ?
-                                                            (t('MSG.checkInFirst') || 'Check in first') :
-                                                            (t('MSG.alreadyCheckedOut') || 'Already checked out')
-                                                        }
-                                                    </small>
-                                                )}
-                                            </CButton>
-                                        </div>
-                                    )}
-
-                                    {/* Current Scenario Information */}
-                                    <div className="mt-4 p-3 bg-warning bg-opacity-10 rounded">
-                                        <h6 className="text-warning mb-2">
-                                            {t('LABELS.currentScenario') || 'Current Scenario'}:
-                                        </h6>
-                                        <p className="mb-0 small">
-                                            {!employeeStatus.checkIn && !employeeStatus.checkout && 
-                                                (t('MSG.scenario1') || 'Scenario 1: Ready for check-in')
-                                            }
-                                            {employeeStatus.checkIn && !employeeStatus.checkout && 
-                                                (t('MSG.scenario2') || 'Scenario 2: Checked in, ready for check-out')
-                                            }
-                                            {employeeStatus.checkIn && employeeStatus.checkout && 
-                                                (t('MSG.scenario3') || 'Scenario 3: Both check-in and check-out completed')
-                                            }
-                                        </p>
-                                    </div>
-
-                                    {/* Instructions */}
-                                    <div className="mt-4 p-3 bg-info bg-opacity-10 rounded">
-                                        <h6 className="text-info mb-2">
-                                            {t('LABELS.instructions') || 'Instructions'}:
-                                        </h6>
-                                        <ul className="mb-0 small">
-                                            <li>{t('MSG.takeSelfieCameraOnly') || 'Take a selfie using your camera only'}</li>
-                                            <li>{t('MSG.ensureGoodLighting') || 'Ensure good lighting for clear photo'}</li>
-                                            <li>{t('MSG.imageAutoCompressed') || 'Image will be automatically compressed'}</li>
-                                            <li>{t('MSG.cameraAccessRequired') || 'Camera access is required for this feature'}</li>
-                                            <li>{t('MSG.cameraAccessReleased') || 'Camera access will be released after photo submission'}</li>
-                                            <li>GPS location will be automatically captured for attendance</li>
-                                        </ul>
-                                    </div>
-                                </>
+                                </CAlert>
                             )}
-                        </CCardBody>
-                    </CCard>
-                </CCol>
-            </CRow>
+
+                            {/* Main Card */}
+                            <CCard className="shadow-lg border-0">
+                                <CCardHeader
+                                    className="py-3 py-sm-4"
+                                    style={{ backgroundColor: "#E6E6FA", borderBottom: '3px solid #6c757d' }}
+                                >
+                                    <div className="d-flex align-items-center">
+                                        <CIcon icon={cilClock} className="me-2 me-sm-3" size="lg" />
+                                        <div>
+                                            <h4 className="mb-1 fw-bold fs-5 fs-sm-4">{t('LABELS.checkInCheckOut') || 'Check-In / Check-Out'}</h4>
+                                            <p className="text-muted mb-0 d-none d-sm-block small">{t('LABELS.checkInOutSecurely')}</p>
+                                        </div>
+                                    </div>
+                                </CCardHeader>
+
+                                <CCardBody className="p-3 p-sm-4">
+                                    {/* Layout for Large Screens */}
+                                    <div className="d-none d-md-block">
+                                        {/* Current Status */}
+                                        <div className="mb-4 mb-sm-5">
+                                            <h5 className="mb-3 mb-sm-4 text-muted fw-bold fs-6">{t('LABELS.currentStatus')}</h5>
+                                            <div className="border-start border-primary border-4 ps-3 ps-sm-4 py-3" style={{ backgroundColor: '#f8f9fa' }}>
+                                                <div className="d-flex align-items-center justify-content-between mb-3 mb-sm-4">
+                                                    <div className="d-flex align-items-center flex-grow-1">
+                                                        <CIcon
+                                                            icon={status.checkIn ? cilCheckCircle : cilXCircle}
+                                                            className={`me-2 me-sm-3 ${status.checkIn ? 'text-success' : 'text-muted'}`}
+                                                            size="lg"
+                                                        />
+                                                        <h6 className="mb-0 fs-6">{t('LABELS.checkIn')}</h6>
+                                                    </div>
+                                                    <CBadge
+                                                        color={status.checkIn ? 'success' : 'secondary'}
+                                                        className="px-2 px-sm-3 py-1 py-sm-2"
+                                                    >
+                                                        {status.checkIn ? t('LABELS.completed') : t('LABELS.pending')}
+                                                    </CBadge>
+                                                </div>
+                                                <div className="d-flex align-items-center justify-content-between">
+                                                    <div className="d-flex align-items-center flex-grow-1">
+                                                        <CIcon
+                                                            icon={status.checkOut ? cilCheckCircle : cilXCircle}
+                                                            className={`me-2 me-sm-3 ${status.checkOut ? 'text-success' : 'text-muted'}`}
+                                                            size="lg"
+                                                        />
+                                                        <h6 className="mb-0 fs-6">{t('LABELS.checkOut')}</h6>
+                                                    </div>
+                                                    <CBadge
+                                                        color={status.checkOut ? 'success' : 'secondary'}
+                                                        className="px-2 px-sm-3 py-1 py-sm-2"
+                                                    >
+                                                        {status.checkOut ? t('LABELS.completed') : t('LABELS.pending')}
+                                                    </CBadge>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Action Buttons */}
+                                        <div className="mb-4 mb-sm-5">
+                                            <h5 className="mb-3 mb-sm-4 text-muted fw-bold fs-6">{t('LABELS.quickActions')}</h5>
+                                            <ActionButtons />
+                                        </div>
+
+                                        {/* Actions Section */}
+                                        <div className="mb-4 mb-sm-5">
+                                            <h5 className="mb-3 mb-sm-4 text-muted fw-bold fs-6">{t('LABELS.actions')}</h5>
+                                            <div className="mb-3 mb-sm-4 p-3 p-sm-4 rounded-3 border-start border-info border-4" style={{ backgroundColor: '#e7f3ff' }}>
+                                                <div className="d-flex align-items-center">
+                                                    <CIcon icon={cilLocationPin} className="me-2 me-sm-3 text-primary" size="lg" />
+                                                    <div className="flex-grow-1">
+                                                        <h6 className="mb-1 fs-6">
+                                                            {locationLoading ? t('MSG.gettingLocation') : t('MSG.locationVerificationRequired')}
+                                                        </h6>
+                                                        {locationLoading && (
+                                                            <div className="d-flex align-items-center">
+                                                                <CSpinner size="sm" className="text-primary me-2" />
+                                                                <small className="text-muted">Please wait...</small>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Layout for Mobile */}
+                                    <div className="d-block d-md-none">
+                                        <div className="mb-4 mb-sm-5">
+                                            <h5 className="mb-3 mb-sm-4 text-muted fw-bold fs-6">{t('LABELS.currentStatus')}</h5>
+                                            <div className="border-start border-primary border-4 ps-3 ps-sm-4 py-3" style={{ backgroundColor: '#f8f9fa' }}>
+                                                <div className="d-flex align-items-center justify-content-between mb-3 mb-sm-4">
+                                                    <div className="d-flex align-items-center flex-grow-1">
+                                                        <CIcon
+                                                            icon={status.checkIn ? cilCheckCircle : cilXCircle}
+                                                            className={`me-2 me-sm-3 ${status.checkIn ? 'text-success' : 'text-muted'}`}
+                                                            size="lg"
+                                                        />
+                                                        <h6 className="mb-0 fs-6">{t('LABELS.checkIn')}</h6>
+                                                    </div>
+                                                    <CBadge
+                                                        color={status.checkIn ? 'success' : 'secondary'}
+                                                        className="px-2 px-sm-3 py-1 py-sm-2"
+                                                    >
+                                                        {status.checkIn ? t('LABELS.completed') : t('LABELS.pending')}
+                                                    </CBadge>
+                                                </div>
+                                                <div className="d-flex align-items-center justify-content-between">
+                                                    <div className="d-flex align-items-center flex-grow-1">
+                                                        <CIcon
+                                                            icon={status.checkOut ? cilCheckCircle : cilXCircle}
+                                                            className={`me-2 me-sm-3 ${status.checkOut ? 'text-success' : 'text-muted'}`}
+                                                            size="lg"
+                                                        />
+                                                        <h6 className="mb-0 fs-6">{t('LABELS.checkOut')}</h6>
+                                                    </div>
+                                                    <CBadge
+                                                        color={status.checkOut ? 'success' : 'secondary'}
+                                                        className="px-2 px-sm-3 py-1 py-sm-2"
+                                                    >
+                                                        {status.checkOut ? t('LABELS.completed') : t('LABELS.pending')}
+                                                    </CBadge>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <hr className="my-3 my-sm-4" style={{ borderTop: '2px solid #dee2e6' }} />
+
+                                        <h5 className="mb-3 mb-sm-4 text-muted fw-bold fs-6">{t('LABELS.actions')}</h5>
+                                        <div className="mb-3 mb-sm-4 p-3 p-sm-4 rounded-3 border-start border-info border-4" style={{ backgroundColor: '#e7f3ff' }}>
+                                            <div className="d-flex align-items-center">
+                                                <CIcon icon={cilLocationPin} className="me-2 me-sm-3 text-primary" size="lg" />
+                                                <div className="flex-grow-1">
+                                                    <h6 className="mb-1 fs-6">
+                                                        {locationLoading ? t('MSG.gettingLocation') : t('MSG.locationVerificationRequired')}
+                                                    </h6>
+                                                    {locationLoading && (
+                                                        <div className="d-flex align-items-center">
+                                                            <CSpinner size="sm" className="text-primary me-2" />
+                                                            <small className="text-muted">Please wait...</small>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <ActionButtons />
+                                    </div>
+                                </CCardBody>
+                            </CCard>
+                        </div>
+                    </CCol>
+                </CRow>
+            </CContainer>
 
             {/* Camera Modal */}
-            <CModal
-                visible={cameraModal}
-                onClose={closeCameraModal}
-                size="lg"
-                alignment="center"
-            >
+            <CModal visible={cameraModal} onClose={resetCameraState} size="lg" alignment="center">
                 <CModalHeader>
                     <CModalTitle>
-                        {actionType === 'checkin'
-                            ? t('LABELS.checkInPhoto') || 'Check-In Photo'
-                            : t('LABELS.checkOutPhoto') || 'Check-Out Photo'
-                        }
+                        {actionType === 'checkin' ? t('LABELS.checkInPhoto') || 'Check-In Photo' : t('LABELS.checkOutPhoto') || 'Check-Out Photo'}
                     </CModalTitle>
                 </CModalHeader>
                 <CModalBody>
                     <div className="text-center">
-                        {/* GPS Status */}
-                        {gpsLoading && (
-                            <div className="mb-2">
-                                <CSpinner size="sm" /> Getting GPS coordinates...
-                            </div>
-                        )}
-                        {gpsCoordinates && (
+                        {/* {gpsCoordinates && (
                             <div className="mb-2 text-success small">
                                 📍 Location: {gpsCoordinates.latitude.toFixed(6)}, {gpsCoordinates.longitude.toFixed(6)}
                             </div>
-                        )}
+                        )} */}
 
                         {!capturedImage ? (
                             <div>
-                                {/* Camera View */}
                                 <div className="position-relative mb-3">
                                     <video
                                         ref={videoRef}
@@ -611,20 +554,12 @@ function CheckInCheckOut() {
                                     />
                                     <canvas ref={canvasRef} style={{ display: 'none' }} />
                                 </div>
-
-                                {/* Capture Button */}
-                                <CButton
-                                    color="primary"
-                                    size="lg"
-                                    onClick={capturePhoto}
-                                    className="mb-3"
-                                >
+                                <CButton color="primary" size="lg" onClick={capturePhoto} className="mb-3">
                                     📷 {t('LABELS.capturePhoto') || 'Capture Photo'}
                                 </CButton>
                             </div>
                         ) : (
                             <div>
-                                {/* Preview Captured Image */}
                                 <div className="mb-3">
                                     <img
                                         src={capturedImage}
@@ -633,8 +568,6 @@ function CheckInCheckOut() {
                                         style={{ maxHeight: '400px', objectFit: 'cover' }}
                                     />
                                 </div>
-
-                                {/* Action Buttons */}
                                 <div className="d-flex gap-2 justify-content-center">
                                     <CButton
                                         color="secondary"
@@ -646,16 +579,9 @@ function CheckInCheckOut() {
                                     >
                                         {t('LABELS.retake') || 'Retake'}
                                     </CButton>
-                                    <CButton
-                                        color="success"
-                                        onClick={handleSubmit}
-                                        disabled={loading}
-                                    >
-                                        {loading && <CSpinner size="sm" className="me-2" />}
-                                        {actionType === 'checkin'
-                                            ? t('LABELS.submitCheckIn') || 'Submit Check-In'
-                                            : t('LABELS.submitCheckOut') || 'Submit Check-Out'
-                                        }
+                                    <CButton color="success" onClick={handleSubmit} disabled={submitting}>
+                                        {submitting && <CSpinner size="sm" className="me-2" />}
+                                        {actionType === 'checkin' ? t('LABELS.submitCheckIn') || 'Submit Check-In' : t('LABELS.submitCheckOut') || 'Submit Check-Out'}
                                     </CButton>
                                 </div>
                             </div>
@@ -663,54 +589,36 @@ function CheckInCheckOut() {
                     </div>
                 </CModalBody>
                 <CModalFooter>
-                    <CButton color="secondary" onClick={closeCameraModal}>
+                    <CButton color="secondary" onClick={resetCameraState}>
                         {t('LABELS.cancel') || 'Cancel'}
                     </CButton>
                 </CModalFooter>
             </CModal>
 
-            {/* Completion Modal for Scenario 3 */}
-            <CModal
-                visible={completionModal}
-                onClose={() => setCompletionModal(false)}
-                size="md"
-                alignment="center"
-            >
-                <CModalHeader>
-                    <CModalTitle>
-                        ✅ {t('LABELS.attendanceComplete') || 'Attendance Complete'}
-                    </CModalTitle>
-                </CModalHeader>
-                <CModalBody>
-                    <div className="text-center">
-                        <div className="mb-3">
-                            <div className="text-success" style={{ fontSize: '3rem' }}>
-                                ✅
+            {/* Completed Popup */}
+            {showCompletedPopup && (
+                <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} tabIndex="-1">
+                    <div className="modal-dialog modal-dialog-centered mx-3 mx-sm-auto">
+                        <div className="modal-content">
+                            <div className="modal-body text-center p-4 p-sm-5">
+                                <CIcon icon={cilCheckCircle} className="text-success mb-3 mb-sm-4" style={{ fontSize: '3rem' }} />
+                                <h4 className="mb-2 mb-sm-3 fw-bold fs-5 fs-sm-4">{t('LABELS.allSet')}</h4>
+                                <p className="text-muted mb-3 mb-sm-4 fs-6">{t('MSG.dailyCheckInCheckOutCompleted')}</p>
+                                <CButton
+                                    color="primary"
+                                    onClick={() => setShowCompletedPopup(false)}
+                                    className="w-100 py-3"
+                                    style={{ fontSize: '1rem', fontWeight: 'bold' }}
+                                >
+                                    {t('LABELS.ok')}
+                                </CButton>
                             </div>
                         </div>
-                        <h5 className="text-success mb-3">
-                            {t('MSG.todaysAttendanceComplete') || 'Today\'s Check-in and Check-out Already Completed'}
-                        </h5>
-                        <p className="text-muted">
-                            {t('MSG.thankYouMessage') || 'Thank you for maintaining your attendance record!'}
-                        </p>
-                        {trackerId && (
-                            <div className="mt-3">
-                                <CBadge color="primary" className="py-2 px-3">
-                                    Tracker ID: {trackerId}
-                                </CBadge>
-                            </div>
-                        )}
                     </div>
-                </CModalBody>
-                <CModalFooter>
-                    <CButton color="primary" onClick={() => setCompletionModal(false)}>
-                        {t('LABELS.ok') || 'OK'}
-                    </CButton>
-                </CModalFooter>
-            </CModal>
-        </CContainer>
+                </div>
+            )}
+        </div>
     );
 }
 
-export default CheckInCheckOut;
+export default CheckInWithSelfie;

@@ -67,9 +67,10 @@ const Login = () => {
 const getEmployeePath = (type) => {
   switch (type) {
     case 'face_attendance':
+       case 'both':
       return '/checkInWithSelfie';
 
-    case 'both':
+   
     case 'location':
       return '/employee_tracker';
 

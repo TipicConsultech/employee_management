@@ -133,32 +133,71 @@ const handleSubmit = async () => {
   }
 };
 
- const HandleViewDocuments = async() =>{
-    console.log("xyz");
-    // setViewDocuments(true);
-    setViewDocuments(prev => !prev); 
+//  const HandleViewDocuments = async() =>{
+//     console.log("xyz");
+//     // setViewDocuments(true);
+//     setViewDocuments(prev => !prev); 
     
- }
+//  }
 
 //  _____________________________________________________________________________ 
 
 
+// const fetchDocuments = async () => {
+//   try {
+//     const res = await getAPICall(`/api/documents/${id}`);
+//     const data = await res; // ✅ make sure to parse JSON
+//     // console.log("res",res);
+    
+
+//     return data.map((doc) => ({
+//       name: doc.document_type_name,
+//       url: `data:image/png;base64,${doc.document_link}`, // ✅ Image instead of PDF
+//     }));
+//   } catch (error) {
+//     console.error('Error fetching documents:', error);
+//     return [];
+//   }
+// };
 const fetchDocuments = async () => {
   try {
     const res = await getAPICall(`/api/documents/${id}`);
-    const data = await res; // ✅ make sure to parse JSON
-    // console.log("res",res);
-    
 
-    return data.map((doc) => ({
-      name: doc.document_type_name,
-      url: `data:image/png;base64,${doc.document_link}`, // ✅ Image instead of PDF
-    }));
+    return res.map((doc) => {
+      const isPdf = doc.document_link.startsWith('JVBER'); // Base64-encoded PDF always starts with 'JVBER'
+
+      if (isPdf) {
+        // Convert base64 string to Blob and create object URL
+        const byteCharacters = atob(doc.document_link);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+
+        return {
+          name: doc.document_type_name,
+          type: 'pdf',
+          url,
+        };
+      } else {
+        // Assume image
+        return {
+          name: doc.document_type_name,
+          type: 'image',
+          url: `data:image/jpeg;base64,${doc.document_link}`,
+        };
+      }
+    });
   } catch (error) {
     console.error('Error fetching documents:', error);
     return [];
   }
 };
+
+
 
 
 
@@ -176,26 +215,53 @@ const fetchDocuments = async () => {
     }
   };
 
+  // const handleOpenDocument = (doc) => {
+  //   setSelectedDocument(doc);
+  //   setModalVisible(true);
+  // };
   const handleOpenDocument = (doc) => {
+  const isMobile = window.innerWidth <= 768;
+
+  if (doc.type === 'pdf' && isMobile) {
+    // Open PDF in new tab for mobile
+    window.open(doc.url, '_blank');
+  } else {
+    // Use modal for image or desktop PDF
     setSelectedDocument(doc);
     setModalVisible(true);
-  };
+  }
+};
 
-  const handleDownload = () => {
+
+//   const handleDownload = () => {
+//   if (selectedDocument && selectedDocument.url) {
+//     const link = document.createElement('a');
+//     link.href = selectedDocument.url;
+
+//     // 👇 Customize download file name
+//     const employeeName = employee?.name || 'Document';
+//     const docName = selectedDocument.name || 'file';
+//     link.download = `${employeeName} - ${docName}`;
+
+//     document.body.appendChild(link);
+//     link.click();
+//     document.body.removeChild(link);
+//   }
+// };
+const handleDownload = () => {
   if (selectedDocument && selectedDocument.url) {
     const link = document.createElement('a');
     link.href = selectedDocument.url;
-
-    // 👇 Customize download file name
-    const employeeName = employee?.name || 'Document';
-    const docName = selectedDocument.name || 'file';
-    link.download = `${employeeName} - ${docName}`;
-
+    const extension = selectedDocument.type === 'pdf' ? 'pdf' : 'png';
+    const employeeName = employee?.name?.replace(/\s+/g, '_') || 'Document';
+    const docName = selectedDocument.name?.replace(/\s+/g, '_') || 'file';
+    link.download = `${employeeName}-${docName}.${extension}`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   }
 };
+
 
   // Helper function to format currency
   const formatCurrency = (amount) => {
@@ -427,24 +493,35 @@ const fetchDocuments = async () => {
           </CModalTitle>
         </CModalHeader>
 
-        <CModalBody style={{ height: '75vh', padding: '1rem' }}>
-          {selectedDocument?.url ? (
-            <div className="h-100 rounded-3 overflow-hidden shadow-sm">
-              <iframe
-                src={selectedDocument.url}
-                title={selectedDocument.document_type_name}
-                width="100%"
-                height="100%"
-                style={{ border: 'none' }}
-              />
-            </div>
-          ) : (
-            <div className="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
-              <i className="fas fa-file-alt" style={{ fontSize: '4rem' }}></i>
-              <p className="mt-3">{t('LABELS.documentPreview')}</p>
-            </div>
-          )}
-        </CModalBody>
+  <CModalBody style={{ height: '75vh', padding: '1rem' }}>
+  {selectedDocument?.url ? (
+    selectedDocument?.type === 'pdf' ? (
+      <iframe
+        src={selectedDocument.url}
+        title={selectedDocument?.name}
+        width="100%"
+        height="100%"
+        style={{ border: 'none', minHeight: '400px' }}
+      />
+    ) : (
+      <div className="d-flex justify-content-center align-items-center h-100">
+        <img
+          src={selectedDocument.url}
+          alt={selectedDocument?.name}
+          className="img-fluid rounded shadow-sm"
+          style={{ maxHeight: '100%', maxWidth: '100%' }}
+        />
+      </div>
+    )
+  ) : (
+    <div className="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
+      <i className="fas fa-file-alt" style={{ fontSize: '4rem' }}></i>
+      <p className="mt-3">{t('LABELS.documentPreview')}</p>
+    </div>
+  )}
+</CModalBody>
+
+
 
         <CModalFooter className="border-0 pt-0">
           <CButton 
