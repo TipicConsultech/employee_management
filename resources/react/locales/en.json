@@ -655,8 +655,9 @@
       "status": "Status",
       "actions": "Actions",
       "details": "Details",
-
-
+    
+    "checkInMobile":"In",
+    "checkOutMobile":"Out",
 
 "viewDocuments": "View Documents",
 "hideDocuments": "Hide Documents",
@@ -796,6 +797,7 @@
 
 
     "MSG": {
+        "clickToCheckOut":"Click to check-out selected employees",
         "productNotFound": "Product not found",
         "order_is_delivered_msg": "Order is delivered.",
         "error_occured_msg": "Error occured",

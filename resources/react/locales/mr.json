@@ -792,7 +792,7 @@
 
 
     "MSG": {
-
+     "clickToCheckOut":"निवडलेल्या कर्मचाऱ्यांचे चेक-आउट करण्यासाठी क्लिक करा",
       "productNotFound": "उत्पादन सापडले नाही",
         "order_is_delivered_msg": "ऑर्डर डिलिव्हर झाली",
         "error_occured_msg": "त्रुटी आली",
