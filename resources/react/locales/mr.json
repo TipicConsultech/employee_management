@@ -773,7 +773,8 @@
     "halfDayRate": "अर्धा दिवसाचा दर",
     "paidAmount": "भरलेली रक्कम",
     "overTime": "ओव्हर टाइम",
-    "payrollAndAttendanceReport": "पगार आणि उपस्थिती अहवाल"
+    "payrollAndAttendanceReport": "पगार आणि उपस्थिती अहवाल",
+    "saveUpdatedDetails":"अपडेट केलेली माहिती जतन करा"
 
     },
 
@@ -1001,6 +1002,7 @@
   "unauthorizedAccess": "अनधिकृत प्रवेश",
   "accessForbidden": "प्रवेश निषिद्ध",
   "employeeNotFound": "कर्मचारी सापडला नाही",
+
   "fileTooLarge": "फाइल खूप मोठी आहे",
   "unsupportedFileType": "असमर्थित फाइल प्रकार",
   "validationError": "वैधीकरण त्रुटी",

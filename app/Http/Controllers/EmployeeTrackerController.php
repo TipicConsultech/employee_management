@@ -27,6 +27,42 @@ class EmployeeTrackerController extends Controller
         return response()->json(EmployeeTracker::latest()->paginate(15));
     }
 
+    public function updateTraker(Request $request, $id)
+{
+    // Validate only the fields that match your DB structure
+    $validatedData = $request->validate([
+        'product_id'      => 'nullable|integer',
+        'employee_id'     => 'nullable|integer',
+        'company_id'      => 'nullable|integer',
+        'check_in'        => 'nullable|in:0,1',
+        'check_out'       => 'nullable|in:0,1',
+        'payment_status'  => 'nullable|in:0,1',
+        'check_in_gps'    => 'nullable|string|max:255',
+        'check_out_gps'   => 'nullable|string|max:255',
+        'check_out_time'  => 'nullable|date',
+        'half_day'        => 'nullable|in:0,1',
+        'status'          => 'nullable|in:CL,PL,SL,NA,H',
+    ]);
+ 
+    // Fetch the tracker record
+    $tracker = EmployeeTracker::findOrFail($id);
+ 
+    // Apply only the provided fields
+    foreach ($validatedData as $key => $value) {
+        if ($request->has($key)) {
+            $tracker->$key = $value;
+        }
+    }
+ 
+    // Save changes
+    $tracker->save();
+ 
+    return response()->json([
+        'message' => 'Employee tracker updated successfully.',
+        'data' => $tracker
+    ], 200);
+}
+
     /* POST /api/employee-tracker */
     //     public function store(Request $request)
 // {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams,useNavigate } from 'react-router-dom';
 import {
   CContainer, CCard, CCardBody, CCardHeader, CRow, CCol, CTable, CTableHead,
   CTableRow, CTableHeaderCell, CTableBody, CTableDataCell, CSpinner,
@@ -26,6 +26,7 @@ import Contract from './ShowingDataPage/contract';
 const EmployeeDetailsPage = () => {
 const { t, i18n } = useTranslation("global");
   const { id } = useParams();
+    const navigate = useNavigate();
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -262,6 +263,16 @@ const handleDownload = () => {
   }
 };
 
+// Handle edit employee details
+  const handleEditEmployee = () => {
+    // Navigate to Employee_Registration with employee data
+    navigate(`/editEmployeeDetails/${id}`, {
+      state: {
+        employeeData: employee,
+        isEdit: true
+      }
+    });
+  };
 
   // Helper function to format currency
   const formatCurrency = (amount) => {
@@ -302,16 +313,33 @@ const handleDownload = () => {
             <small className="text-muted">ID: {employee.id}</small>
           </div>
         </div>
-        <CButton 
-          color="primary" 
-          variant="outline"
-          onClick={handleViewDocuments}
-          className="d-flex align-items-center gap-2 d-md-flex d-none"
-        >
-          <i className="fas fa-file-alt"></i>
-          {viewDocuments ? t('LABELS.hideDocuments') : t('LABELS.viewDocuments')}
-        </CButton>
+
+        
+        <div className="d-flex gap-2 d-md-flex d-none">
+          <CButton
+            color="warning"
+            variant="outline"
+            onClick={handleEditEmployee}
+            className="d-flex align-items-center gap-2"
+          >
+            {/* <i className="fas fa-edit"></i> */}
+            Edit Employee Details
+          </CButton>
+          <CButton
+            color="primary"
+            variant="outline"
+            onClick={handleViewDocuments}
+            className="d-flex align-items-center gap-2"
+          >
+            <i className="fas fa-file-alt"></i>
+            {viewDocuments ? t('LABELS.hideDocuments') : t('LABELS.viewDocuments')}
+          </CButton>
+        </div>
       </div>
+
+    
+     
+    
 
       {/* Employee Information Cards */}
       <CRow className="g-2 g-md-3 mb-3">
@@ -416,15 +444,33 @@ const handleDownload = () => {
 
       {/* Mobile Documents Button */}
       <div className="d-md-none mb-3">
-        <CButton 
-          color="primary" 
-          variant="outline"
-          onClick={handleViewDocuments}
-          className="w-100 d-flex align-items-center justify-content-center gap-2"
-        >
-          <i className="fas fa-file-alt"></i>
-          {viewDocuments ? t('LABELS.hideDocuments') : t('LABELS.viewDocuments')}
-        </CButton>
+       <div className="d-md-none mb-3">
+        <CRow className="g-2">
+          <CCol xs={12}>
+            <CButton
+              color="warning"
+              variant="outline"
+              onClick={handleEditEmployee}
+              className="w-100 d-flex align-items-center justify-content-center gap-2"
+            >
+              <i className="fas fa-edit"></i>
+              Edit Employee Details
+            </CButton>
+          </CCol>
+          <CCol xs={12}>
+            <CButton
+              color="primary"
+              variant="outline"
+              onClick={handleViewDocuments}
+              className="w-100 d-flex align-items-center justify-content-center gap-2"
+            >
+              <i className="fas fa-file-alt"></i>
+              {viewDocuments ? t('LABELS.hideDocuments') : t('LABELS.viewDocuments')}
+            </CButton>
+          </CCol>
+        </CRow>
+      </div>
+
       </div>
 
       {/* Collapsible Document Section */}

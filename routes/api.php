@@ -66,6 +66,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get ('/employeeDtailsForDashboard',[EmployeeController::class, 'employeeDtailsForDashboard']);
     Route::get('/employee/{id}', [EmployeeController::class, 'showEmployeesDetails']);
  Route::put('/employees/{employee}', [EmployeeController::class, 'update']);
+ Route::put('/employeetracker/{id}', [EmployeeTrackerController::class, 'updateTraker']);
 
     /* ---------- AuthController ---------- */
     Route::post('/changePassword', [AuthController::class, 'changePassword']);

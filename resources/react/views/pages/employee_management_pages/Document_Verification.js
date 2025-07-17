@@ -42,6 +42,13 @@ function EmployeeDocumentUpload() {
     const [documentTypesLoading, setDocumentTypesLoading] = useState(true);
     const [notification, setNotification] = useState({ show: false, type: '', message: '' });
     const [uploading, setUploading] = useState(false);
+    const [otherDocument, setOtherDocument] = useState({
+  name: '',
+  file: null,
+  fileName: '',
+  previewUrl: null
+});
+
 
     // Modal state for document preview
     const [previewModal, setPreviewModal] = useState({
@@ -314,78 +321,140 @@ function EmployeeDocumentUpload() {
     };
 
     // Enhanced upload documents function
-    const uploadDocuments = async () => {
-        if (!selectedEmployee) {
-            showNotification('warning', 'Please select an employee');
-            return;
+    // const uploadDocuments = async () => {
+    //     if (!selectedEmployee) {
+    //         showNotification('warning', 'Please select an employee');
+    //         return;
+    //     }
+
+    //     if (documentUploads.length === 0) {
+    //         showNotification('warning', 'Please add at least one document');
+    //         return;
+    //     }
+
+    //     // Validate all documents - only check if at least one file is uploaded
+    //     const uploadedFiles = documentUploads.filter(doc => doc.file);
+    //     if (uploadedFiles.length === 0) {
+    //         showNotification('warning', 'Please upload at least one document');
+    //         return;
+    //     }
+
+    //     try {
+    //         setUploading(true);
+
+    //         // Create FormData for file upload with document type IDs as keys
+    //         const formData = new FormData();
+    //         formData.append('employee_id', selectedEmployee);
+
+    //         // Only include documents that have files uploaded
+    //         const documentsToUpload = documentUploads.filter(doc => doc.file);
+    //         documentsToUpload.forEach((doc) => {
+    //             // Use actual document type ID as key
+    //             formData.append(doc.documentType.toString(), doc.file);
+    //         });
+
+    //         console.log('Uploading documents for employee:', selectedEmployee);
+    //         console.log('Documents to upload:', documentsToUpload.length);
+
+    //         const response = await postFormData('/api/employee-details', formData);
+    //         console.log('Upload API Response:', response); // Debug log
+
+    //         // Handle response with proper status code checking
+    //         if (handleAPIResponse(response, `${documentsToUpload.length} documents uploaded successfully`)) {
+    //             // Reset form on success
+    //             setSelectedEmployee('');
+    //             setDocumentUploads(documentUploads.map(doc => ({
+    //                 ...doc,
+    //                 file: null,
+    //                 fileName: '',
+    //                 previewUrl: null
+    //             })));
+
+    //             // Clear file inputs
+    //             const fileInputs = document.querySelectorAll('input[type="file"]');
+    //             fileInputs.forEach(input => input.value = '');
+    //         }
+    //     } catch (error) {
+    //         console.error('Error uploading documents:', error);
+
+    //         // More specific error handling
+    //         if (error.response) {
+    //             // Server responded with error status
+    //             const errorMessage = getStatusMessage(error.response.status, error.response.data);
+    //             showNotification('danger', errorMessage);
+    //         } else if (error.request) {
+    //             // Network error
+    //             showNotification('danger', 'Network error. Please check your connection and try again');
+    //         } else {
+    //             // Other error
+    //             showNotification('danger', `Error uploading documents: ${error.message}`);
+    //         }
+    //     } finally {
+    //         setUploading(false);
+    //     }
+    // };
+ const uploadDocuments = async () => {
+    if (!selectedEmployee) {
+        showNotification('warning', 'Please select an employee');
+        return;
+    }
+
+    const uploadedDocs = documentUploads.filter(doc => doc.file);
+    const hasOtherDoc = otherDocument.file && otherDocument.name.trim();
+
+    if (uploadedDocs.length === 0 && !hasOtherDoc) {
+        showNotification('warning', 'Please upload at least one document');
+        return;
+    }
+
+    try {
+        setUploading(true);
+        const formData = new FormData();
+        formData.append('employee_id', selectedEmployee);
+
+        uploadedDocs.forEach(doc => {
+            formData.append(doc.documentType.toString(), doc.file);
+        });
+
+        if (hasOtherDoc) {
+            formData.append('custom_document_name', otherDocument.name.trim());
+            formData.append('custom_document_file', otherDocument.file);
         }
 
-        if (documentUploads.length === 0) {
-            showNotification('warning', 'Please add at least one document');
-            return;
-        }
+        const response = await postFormData('/api/employee-details', formData);
 
-        // Validate all documents - only check if at least one file is uploaded
-        const uploadedFiles = documentUploads.filter(doc => doc.file);
-        if (uploadedFiles.length === 0) {
-            showNotification('warning', 'Please upload at least one document');
-            return;
-        }
-
-        try {
-            setUploading(true);
-
-            // Create FormData for file upload with document type IDs as keys
-            const formData = new FormData();
-            formData.append('employee_id', selectedEmployee);
-
-            // Only include documents that have files uploaded
-            const documentsToUpload = documentUploads.filter(doc => doc.file);
-            documentsToUpload.forEach((doc) => {
-                // Use actual document type ID as key
-                formData.append(doc.documentType.toString(), doc.file);
+        if (handleAPIResponse(response, `${uploadedDocs.length + (hasOtherDoc ? 1 : 0)} document(s) uploaded successfully`)) {
+            setSelectedEmployee('');
+            setDocumentUploads(documentUploads.map(doc => ({
+                ...doc,
+                file: null,
+                fileName: '',
+                previewUrl: null
+            })));
+            setOtherDocument({
+                name: '',
+                file: null,
+                fileName: '',
+                previewUrl: null
             });
 
-            console.log('Uploading documents for employee:', selectedEmployee);
-            console.log('Documents to upload:', documentsToUpload.length);
-
-            const response = await postFormData('/api/employee-details', formData);
-            console.log('Upload API Response:', response); // Debug log
-
-            // Handle response with proper status code checking
-            if (handleAPIResponse(response, `${documentsToUpload.length} documents uploaded successfully`)) {
-                // Reset form on success
-                setSelectedEmployee('');
-                setDocumentUploads(documentUploads.map(doc => ({
-                    ...doc,
-                    file: null,
-                    fileName: '',
-                    previewUrl: null
-                })));
-
-                // Clear file inputs
-                const fileInputs = document.querySelectorAll('input[type="file"]');
-                fileInputs.forEach(input => input.value = '');
-            }
-        } catch (error) {
-            console.error('Error uploading documents:', error);
-
-            // More specific error handling
-            if (error.response) {
-                // Server responded with error status
-                const errorMessage = getStatusMessage(error.response.status, error.response.data);
-                showNotification('danger', errorMessage);
-            } else if (error.request) {
-                // Network error
-                showNotification('danger', 'Network error. Please check your connection and try again');
-            } else {
-                // Other error
-                showNotification('danger', `Error uploading documents: ${error.message}`);
-            }
-        } finally {
-            setUploading(false);
+            const fileInputs = document.querySelectorAll('input[type="file"]');
+            fileInputs.forEach(input => input.value = '');
         }
-    };
+    } catch (error) {
+        console.error('Error uploading documents:', error);
+        const msg = error.response
+            ? getStatusMessage(error.response.status, error.response.data)
+            : (error.request
+                ? 'Network error. Please check your connection and try again'
+                : `Error uploading documents: ${error.message}`);
+        showNotification('danger', msg);
+    } finally {
+        setUploading(false);
+    }
+};
+
+
 
     // Cancel and reset form
     const cancelUpload = () => {
@@ -503,6 +572,7 @@ function EmployeeDocumentUpload() {
                                             <CTableBody>
                                                 {documentUploads.length > 0 ? (
                                                     documentUploads.map((doc) => (
+                                                        <>
                                                         <CTableRow key={doc.id}>
                                                             <CTableDataCell>
                                                                 <span className="fw-medium">{doc.documentTypeName}</span>
@@ -537,6 +607,7 @@ function EmployeeDocumentUpload() {
                                                                 </CButton>
                                                             </CTableDataCell>
                                                         </CTableRow>
+                                                    </>
                                                     ))
                                                 ) : (
                                                     <CTableRow>
@@ -549,6 +620,95 @@ function EmployeeDocumentUpload() {
                                                         </CTableDataCell>
                                                     </CTableRow>
                                                 )}
+
+                                                                                                      
+<CTableRow>
+  <CTableDataCell>
+    <CFormInput
+      type="text"
+      name="otherDocumentName"
+      placeholder="Enter document description"
+      className="mt-0"
+      value={otherDocument.name}
+      onChange={(e) =>
+        setOtherDocument((prev) => ({ ...prev, name: e.target.value }))
+      }
+    />
+    <div className="fw-medium">Other Document</div>
+  </CTableDataCell>
+
+  <CTableDataCell>
+    <CFormInput
+      type="file"
+      name="otherDocumentFile"
+      size="sm"
+      accept=".jpeg,.jpg,.png,.pdf"
+      onChange={(e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+          if (!allowedTypes.includes(file.type)) {
+            showNotification('warning', 'Invalid file type.');
+            return;
+          }
+          if (file.size > 10 * 1024 * 1024) {
+            showNotification('warning', 'File must be under 10MB.');
+            return;
+          }
+
+          const previewUrl = file.type.startsWith('image/') || file.type === 'application/pdf'
+            ? URL.createObjectURL(file)
+            : null;
+
+          setOtherDocument((prev) => ({
+            ...prev,
+            file: file,
+            fileName: file.name,
+            previewUrl: previewUrl
+          }));
+
+          showNotification('success', `Selected: ${file.name}`);
+        }
+      }}
+    />
+   {otherDocument.fileName && (
+  <small className="text-success d-block mt-1">
+    ✓ Selected: {otherDocument.fileName}
+  </small>
+)}
+
+    <small className="text-muted d-block mt-1">
+      Accepted: JPEG, JPG, PNG, PDF (Max 10MB)
+    </small>
+  </CTableDataCell>
+
+  <CTableDataCell>
+    <CButton
+      color="info"
+      variant="outline"
+      size="sm"
+      onClick={() => {
+        if (!otherDocument.file) {
+          showNotification('warning', 'Please select a file first.');
+        } else {
+          previewDocument({
+            documentTypeName: otherDocument.name || 'Other Document',
+            file: otherDocument.file,
+            fileName: otherDocument.fileName,
+            previewUrl: otherDocument.previewUrl
+          });
+        }
+      }}
+      disabled={!otherDocument.file}
+    >
+      <CIcon icon={cilZoom} className="me-1" />
+      Preview
+    </CButton>
+  </CTableDataCell>
+</CTableRow>
+
+
+
                                             </CTableBody>
                                         </CTable>
                                     </div>
