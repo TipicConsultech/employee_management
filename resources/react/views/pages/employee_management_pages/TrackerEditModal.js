@@ -131,40 +131,42 @@ const TrackerEditModal = ({ visible, onClose, trackerId, onSuccess }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
+ // In your handleSubmit function, modify the payload:
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  if (!validateForm()) {
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const payload = {
+      half_day: formData.half_day ? '1' : '0', // Convert boolean to string
+      check_in_time: formData.check_in_time ? formatDateTime(formData.check_in_time) : null,
+      check_out_time: formData.check_out_time ? formatDateTime(formData.check_out_time) : null,
+      status: formData.status || null
+    };
+
+    const result = await put(`/api/employeetracker/${trackerId}`, payload);
+
+    // Check if response has data with id (successful update)
+    if (result.data && result.data.id) {
+      onSuccess?.(result.message);
+      onClose();
+    } else {
+      throw new Error('Invalid response from server');
     }
 
-    setLoading(true);
-
-    try {
-      const payload = {
-        half_day: formData.half_day,
-        check_in_time: formData.check_in_time ? formatDateTime(formData.check_in_time) : null,
-        check_out_time: formData.check_out_time ? formatDateTime(formData.check_out_time) : null,
-        status: formData.status || null
-      };
-
-      const result = await put(`/api/employeetracker/${trackerId}`, payload);
-
-      // Check if response has data with id (successful update)
-      if (result.data && result.data.id) {
-        onSuccess?.(result.message);
-        onClose();
-      } else {
-        throw new Error('Invalid response from server');
-      }
-
-    } catch (error) {
-      console.error('Error updating tracker:', error);
-      setErrors({ submit: error.message });
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (error) {
+    console.error('Error updating tracker:', error);
+    setErrors({ submit: error.message });
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleClose = () => {
     if (!loading) {

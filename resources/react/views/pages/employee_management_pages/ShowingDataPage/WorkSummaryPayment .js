@@ -47,6 +47,26 @@ const WorkSummaryPayment = ({
   
   const totalCalculatedPayment = regularPayment + overtimePayment + halfDayPayment + holidayPayment + paidLeavePayment;
 
+  // Helper function to handle positive number input
+  const handlePositiveNumberInput = (value, fieldName) => {
+    const numValue = parseFloat(value) || 0;
+    const positiveValue = numValue < 0 ? 0 : numValue;
+    
+    if (fieldName === 'payed_amount') {
+      const pending = totalCalculatedPayment - positiveValue;
+      setWorkSummary((prev) => ({
+        ...prev,
+        payed_amount: positiveValue,
+        pending_payment: pending >= 0 ? pending : 0,
+      }));
+    } else {
+      setWorkSummary((prev) => ({
+        ...prev,
+        [fieldName]: positiveValue,
+      }));
+    }
+  };
+
   return (
     <div className="modern-work-summary">
       <style jsx>{`
@@ -136,6 +156,18 @@ const WorkSummaryPayment = ({
         .form-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          gap: 16px;
+        }
+        
+        .form-grid-two {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 16px;
+        }
+        
+        .form-grid-three {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
           gap: 16px;
         }
         
@@ -288,6 +320,21 @@ const WorkSummaryPayment = ({
             gap: 12px;
           }
           
+          .form-grid-two {
+            grid-template-columns: 1fr;
+            gap: 12px;
+          }
+          
+          .form-grid-three {
+            grid-template-columns: 1fr;
+            gap: 12px;
+          }
+          
+          .form-grid-three {
+            grid-template-columns: 1fr;
+            gap: 12px;
+          }
+          
           .payment-breakdown {
             grid-template-columns: repeat(2, 1fr);
             gap: 8px;
@@ -364,6 +411,11 @@ const WorkSummaryPayment = ({
             gap: 12px;
           }
           
+          .form-grid-two {
+            grid-template-columns: 1fr;
+            gap: 12px;
+          }
+          
           .form-input {
             padding: 10px;
             font-size: 0.8rem;
@@ -430,14 +482,10 @@ const WorkSummaryPayment = ({
               <label className="form-label">Regular Day Rate</label>
               <input
                 type="number"
+                min="0"
                 className="form-input"
                 value={regularWage || ''}
-                onChange={(e) =>
-                  setWorkSummary((prev) => ({
-                    ...prev,
-                    custom_regular_wage: parseInt(e.target.value || 0, 10),
-                  }))
-                }
+                onChange={(e) => handlePositiveNumberInput(e.target.value, 'custom_regular_wage')}
                 placeholder="Enter regular wage"
               />
             </div>
@@ -447,14 +495,10 @@ const WorkSummaryPayment = ({
               <label className="form-label">Overtime Rate /{employee.overtime_type=="hourly"?"Hour":"Day"}</label>
               <input
                 type="number"
+                min="0"
                 className="form-input"
                 value={overtimeWage || ''}
-                onChange={(e) =>
-                  setWorkSummary((prev) => ({
-                    ...prev,
-                    custom_overtime_wage: parseInt(e.target.value || 0, 10),
-                  }))
-                }
+                onChange={(e) => handlePositiveNumberInput(e.target.value, 'custom_overtime_wage')}
                 placeholder="Enter overtime wage"
               />
             </div>
@@ -464,14 +508,10 @@ const WorkSummaryPayment = ({
               <label className="form-label">Half Day Rate</label>
               <input
                 type="number"
+                min="0"
                 className="form-input"
                 value={halfDayWage || ''}
-                onChange={(e) =>
-                  setWorkSummary((prev) => ({
-                    ...prev,
-                    custom_half_day_wage: parseInt(e.target.value || 0, 10),
-                  }))
-                }
+                onChange={(e) => handlePositiveNumberInput(e.target.value, 'custom_half_day_wage')}
                 placeholder="Enter half day wage"
               />
             </div>
@@ -481,14 +521,10 @@ const WorkSummaryPayment = ({
               <label className="form-label">Holiday Rate</label>
               <input
                 type="number"
+                min="0"
                 className="form-input"
                 value={holidayWage || ''}
-                onChange={(e) =>
-                  setWorkSummary((prev) => ({
-                    ...prev,
-                    custom_holiday_wage: parseInt(e.target.value || 0, 10),
-                  }))
-                }
+                onChange={(e) => handlePositiveNumberInput(e.target.value, 'custom_holiday_wage')}
                 placeholder="Enter holiday wage"
               />
             </div>
@@ -498,14 +534,10 @@ const WorkSummaryPayment = ({
               <label className="form-label">Paid Leave Rate</label>
               <input
                 type="number"
+                min="0"
                 className="form-input"
                 value={paidLeaveWage || ''}
-                onChange={(e) =>
-                  setWorkSummary((prev) => ({
-                    ...prev,
-                    custom_paid_leave_wage: parseInt(e.target.value || 0, 10),
-                  }))
-                }
+                onChange={(e) => handlePositiveNumberInput(e.target.value, 'custom_paid_leave_wage')}
                 placeholder="Enter paid leave wage"
               />
             </div>
@@ -562,7 +594,7 @@ const WorkSummaryPayment = ({
           <span>💳</span> Payment Details
         </h3>
         <div className="payment-status">
-          <div className="form-grid">
+          <div className="form-grid-three">
             <div className="form-group">
               <label className="form-label">Payment Method</label>
               <select
@@ -581,28 +613,20 @@ const WorkSummaryPayment = ({
                 <option value="bank_transfer">🏦 Bank Transfer</option>
               </select>
             </div>
+            
             <div className="form-group">
               <label className="form-label">Actual Payment Amount</label>
               <input
                 type="number"
+                min="0"
                 className="form-input"
                 value={workSummary.payed_amount || ''}
-                onChange={(e) => {
-                  const actual = parseFloat(e.target.value || 0);
-                  const pending = totalCalculatedPayment - actual;
-                  setWorkSummary((prev) => ({
-                    ...prev,
-                    payed_amount: actual,
-                    pending_payment: pending >= 0 ? pending : 0,
-                  }));
-                }}
+                onChange={(e) => handlePositiveNumberInput(e.target.value, 'payed_amount')}
                 placeholder="Enter paid amount"
               />
             </div>
-          </div>
-          
-          {workSummary.pending_payment > 0 && (
-            <div className="form-group" style={{ marginTop: '16px' }}>
+            
+            <div className="form-group">
               <label className="form-label">Pending Amount</label>
               <input
                 type="number"
@@ -611,7 +635,7 @@ const WorkSummaryPayment = ({
                 readOnly
               />
             </div>
-          )}
+          </div>
         </div>
       </div>
 
