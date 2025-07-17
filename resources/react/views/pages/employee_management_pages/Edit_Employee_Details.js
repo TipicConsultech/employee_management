@@ -306,7 +306,7 @@ const EmployeeEditForm = () => {
     const fetchEmployeeData = async () => {
       try {
         setLoadingEmployee(true);
-        const response = await getAPICall(`/api/employee/${id}`);
+        const response = await getAPICall(`/api/employees/${id}`);
         if (response) {
           setFormData({
             ...INITIAL_FORM_DATA,
@@ -327,7 +327,7 @@ const EmployeeEditForm = () => {
             referral_by: response.refferal_by || '',
             referral_by_number: response.refferal_number || '',
             is_login: response.isActive || false,
-            email: response.email || '',
+            email: response.user?.[0]?.email || '',
             attendance_type: response.attendance_type || ''
           });
         } else {

@@ -97,6 +97,9 @@ const EmployeeRegistrationForm = () => {
   const [errors, setErrors] = useState({});
   const [faceAttendanceEnabled, setFaceAttendanceEnabled] = useState(false);
   const [loadingFaceAttendance, setLoadingFaceAttendance] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showReEnterPassword, setShowReEnterPassword] = useState(false);
+
 
   // Dynamic payment type options based on work type
 const PAYMENT_TYPE_OPTIONS = useMemo(() => {
@@ -326,6 +329,8 @@ if (
     setFormData(INITIAL_FORM_DATA);
     setErrors({});
     setShowModal(false);
+    setShowPassword(false);
+    setShowReEnterPassword(false);
     }, []);
 
   // Submit handler
@@ -359,7 +364,12 @@ if (
 
       console.log('Submitting employee data:', payload);
       const response = await post('/api/employees', payload);
-      if (response && response.employee.id) {
+      if (response.message==="Email already taken" || response.message==="Mobile number already taken"
+      ||response.message==="Aadhaar number already taken") {
+        showNotification('danger', response.message || t('MSG.employeeRegisteredSuccess'));
+
+      }
+      else if (response && response.employee.id) {
         showNotification('success', response.message || t('MSG.employeeRegisteredSuccess'));
         resetForm();
       } else {
@@ -407,6 +417,14 @@ const isFormValid = useMemo(() => {
     closeModal();
     handleSubmit();
   }, [closeModal, handleSubmit]);
+
+    const togglePasswordVisibility = useCallback(() => {
+    setShowPassword(prev => !prev);
+    }, []);
+
+    const toggleReEnterPasswordVisibility = useCallback(() => {
+    setShowReEnterPassword(prev => !prev);
+    }, []);
 
   // Fetch face attendance status on component mount
 useEffect(() => {
@@ -870,15 +888,25 @@ useEffect(() => {
                         {t('LABELS.password')}
                         <span className="text-danger ms-1">*</span>
                       </CFormLabel>
-                      <CFormInput
-                        type="password"
-                        placeholder={t('LABELS.password')}
-                        value={formData.password}
-                        onChange={(e) => handleInputChange('password', e.target.value)}
-                        invalid={!!errors.password}
-                        disabled={submitting}
-                        className="mb-1"
-                      />
+                      <CInputGroup>
+                        <CFormInput
+                          type={showPassword ? "text" : "password"}
+                          placeholder={t('LABELS.password')}
+                          value={formData.password}
+                          onChange={(e) => handleInputChange('password', e.target.value)}
+                          invalid={!!errors.password}
+                          disabled={submitting}
+                        />
+                        <CInputGroupText
+                          style={{ cursor: 'pointer' }}
+                          onClick={togglePasswordVisibility}
+                          className="bg-light border-start-0"
+                        >
+                          <span className="text-muted" style={{ fontSize: '16px' }}>
+                            {showPassword ? '🔒' : '👁️'}
+                          </span>
+                        </CInputGroupText>
+                      </CInputGroup>
                       {errors.password && <div className="text-danger small">{errors.password}</div>}
                     </CCol>
                     <CCol xs={12} md={6}>
@@ -886,19 +914,30 @@ useEffect(() => {
                         {t('LABELS.reEnterPassword')}
                         <span className="text-danger ms-1">*</span>
                       </CFormLabel>
-                      <CFormInput
-                        type="password"
-                        placeholder={t('LABELS.reEnterPassword')}
-                        value={formData.re_enter_password}
-                        onChange={(e) => handleInputChange('re_enter_password', e.target.value)}
-                        invalid={!!errors.re_enter_password}
-                        disabled={submitting}
-                        className="mb-1"
-                      />
+                      <CInputGroup>
+                        <CFormInput
+                          type={showReEnterPassword ? "text" : "password"}
+                          placeholder={t('LABELS.reEnterPassword')}
+                          value={formData.re_enter_password}
+                          onChange={(e) => handleInputChange('re_enter_password', e.target.value)}
+                          invalid={!!errors.re_enter_password}
+                          disabled={submitting}
+                        />
+                        <CInputGroupText
+                          style={{ cursor: 'pointer' }}
+                          onClick={toggleReEnterPasswordVisibility}
+                          className="bg-light border-start-0"
+                        >
+                          <span className="text-muted" style={{ fontSize: '16px' }}>
+                            {showReEnterPassword ? '🔒' : '👁️'}
+                          </span>
+                        </CInputGroupText>
+                      </CInputGroup>
                       {errors.re_enter_password && <div className="text-danger small">{errors.re_enter_password}</div>}
                     </CCol>
                   </CRow>
                 )}
+
 
                 {/* Attendance Type - Show only when Is Login is checked AND face attendance is enabled */}
                 {formData.is_login && faceAttendanceEnabled && !loadingFaceAttendance && (
@@ -980,7 +1019,7 @@ useEffect(() => {
       </CRow>
 
       {/* Confirmation Modal */}
-      <CModal visible={showModal} onClose={closeModal}>
+      <CModal visible={showModal} backdrop="static" keyboard={false}>
         <CModalHeader className="border-bottom">
           <CModalTitle className="h5 fw-semibold">
             {t('LABELS.confirmEmployeeCreation')}

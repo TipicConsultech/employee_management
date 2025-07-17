@@ -70,7 +70,7 @@ const getEmployeePath = (type) => {
        case 'both':
       return '/checkInWithSelfie';
 
-   
+
     case 'location':
       return '/employee_tracker';
 
@@ -78,7 +78,7 @@ const getEmployeePath = (type) => {
       return '/employee_tracker'; // fallback if type is unknown or undefined
   }
 };
-  
+
   const getRedirectPathByUserType = (userType,type=null) => {
     switch (userType) {
       case 0:
@@ -199,7 +199,7 @@ const getEmployeePath = (type) => {
         try {
           resp = await post('/api/mobileLogin', loginData);
           console.log(resp);
-          
+
         } catch (employeeError) {
           console.error('Employee login error:', employeeError);
           // Handle employee login specific errors
@@ -439,7 +439,7 @@ const getEmployeePath = (type) => {
                         autoComplete="off"
                         feedbackInvalid="Please provide password."
                         required
-                        style={{ paddingRight: '2.5rem' }}
+                        style={{ paddingRight: '4.5rem' }} //eye
                         disabled={isSubmitting}
                       />
                       <button
@@ -449,13 +449,14 @@ const getEmployeePath = (type) => {
                         style={{
                           position: 'absolute',
                           top: '50%',
-                          right: '10px',
+                          right: '20px',  //gave some padding to eye
                           transform: 'translateY(-50%)',
                           background: 'none',
                           border: 'none',
                           cursor: isSubmitting ? 'not-allowed' : 'pointer',
                           zIndex: 10,
                           opacity: isSubmitting ? 0.6 : 1,
+                          fontSize: '16px',
                         }}
                       >
                         {showPassword ? '🔒' : '👁️'}
