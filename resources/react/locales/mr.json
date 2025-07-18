@@ -584,7 +584,7 @@
 
     "loadingEmployees": "कर्मचारी लोड करत आहे...",
     "retry": "पुन्हा प्रयत्न करा",
-    "creditScreen": "पगार जमा करा",
+    "creditScreen": "अगाऊ पगार द्या",
     "selectEmployee": "कर्मचारी निवडा",
     "noEmployeesAvailable": "कर्मचारी उपलब्ध नाहीत",
     "chooseEmployee": "कर्मचारी निवडा",
@@ -605,7 +605,7 @@
     "documentPreview": "दस्तऐवज पूर्वावलोकन",
     "noDocumentTypesAvailable": "दस्तऐवज प्रकार उपलब्ध नाहीत",
     "docs_verification": "कागदपत्र तपासणी",
-    "creditSalaryDescription": "आपल्या कर्मचाऱ्यांना सुरक्षितपणे पगार जमा करा",
+    "creditSalaryDescription": "आपल्या कर्मचाऱ्यांना अगाऊ पगार जमा करा",
     "employeeAttendance": "कर्मचारी उपस्थिती",
     "checkInOutSecurely": "सुरक्षितपणे चेक इन आणि चेक आउट करा",
     "currentStatus": "सध्याची स्थिती",

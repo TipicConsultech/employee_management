@@ -5,7 +5,7 @@ import {
   CButton, CBadge, CAvatar
 } from '@coreui/react';
 import { ChevronDown, ChevronRight, Users, Clock, IndianRupee , TrendingUp, User, Plus, Minus } from 'lucide-react';
-import { getAPICall } from '../../../util/api';
+import { getAPICall, post } from '../../../util/api';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import BulkEmployeeCheckInOut from './BulkEmployeeTracker';
@@ -19,7 +19,7 @@ const Dashboard2 = () => {
   const navigate = useNavigate();
   
   useEffect(() => {
-    getAPICall('/api/employeeDtailsForDashboard')
+    post('/api/employeeDtailsForDashboard',{date:Date})
       .then(data => setEmployees(data))
       .catch(err => console.error('Error fetching employee data:', err));
   }, []);
