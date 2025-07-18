@@ -33,8 +33,7 @@ import { useTranslation } from 'react-i18next';
 import { getAPICall, post } from '../../../util/api';
 
 const CreditSalaryScreen = () => {
-  // Add translation hook
-  const { t, i18n } = useTranslation("global");
+  const { t } = useTranslation("global");
 
   // State management
   const [employees, setEmployees] = useState([]);
@@ -42,6 +41,7 @@ const CreditSalaryScreen = () => {
   const [error, setError] = useState(null);
   const [notification, setNotification] = useState({ show: false, type: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
   const [formData, setFormData] = useState({
     selectedEmployee: '',
     creditAmount: '',
@@ -51,7 +51,6 @@ const CreditSalaryScreen = () => {
   // Memoized helper functions to prevent recreating on every render
   const showNotification = useCallback((type, message) => {
     setNotification({ show: true, type, message });
-    // Auto hide success messages after 3 seconds
     if (type === 'success') {
       setTimeout(() => {
         setNotification({ show: false, type: '', message: '' });
@@ -59,34 +58,65 @@ const CreditSalaryScreen = () => {
     }
   }, []);
 
+  const validateForm = useCallback(() => {
+    const errors = {};
+    let isValid = true;
+
+    if (!formData.selectedEmployee) {
+      errors.selectedEmployee = true;
+      isValid = false;
+    }
+
+    if (!formData.creditAmount) {
+      errors.creditAmount = true;
+      isValid = false;
+    } else {
+      const amount = parseFloat(formData.creditAmount);
+      if (isNaN(amount) || amount <= 0) {
+        errors.creditAmount = true;
+        isValid = false;
+      }
+    }
+
+    setValidationErrors(errors);
+
+    if (!isValid) {
+      if (!formData.selectedEmployee) {
+        showNotification('warning', t('MSG.pleaseSelectEmployee') || 'Please select an employee');
+      } else if (!formData.creditAmount) {
+        showNotification('warning', t('MSG.pleaseEnterCreditAmount') || 'Please enter credit amount');
+      } else {
+        const amount = parseFloat(formData.creditAmount);
+        if (isNaN(amount)) {
+          showNotification('warning', t('MSG.pleaseEnterValidNumber') || 'Please enter a valid number');
+        } else if (amount <= 0) {
+          showNotification('warning', t('MSG.amountMustBeGreaterThanZero') || 'Amount must be greater than zero');
+        }
+      }
+    }
+
+    return isValid;
+  }, [formData, showNotification, t]);
+
   const fetchEmployees = useCallback(async () => {
     try {
       console.log('Fetching employees...');
       const response = await getAPICall('/api/employees');
-
-      // Debug: Log the entire response
       console.log('API Response:', response);
 
-      // Check different possible response structures
       let employeeData = [];
-
       if (response && response.success && response.data) {
-        // Case 1: Response has success flag and data property
         employeeData = Array.isArray(response.data) ? response.data : [];
       } else if (response && Array.isArray(response)) {
-        // Case 2: Response is directly an array
         employeeData = response;
       } else if (response && response.employees) {
-        // Case 3: Response has employees property
         employeeData = Array.isArray(response.employees) ? response.employees : [];
       } else if (response && response.data && Array.isArray(response.data)) {
-        // Case 4: Response has data property that's an array
         employeeData = response.data;
       }
 
       console.log('Processed employee data:', employeeData);
 
-      // Filter only active employees if isActive field exists
       const activeEmployees = employeeData.filter(emp =>
         emp && (emp.isActive === undefined || emp.isActive === 1 || emp.isActive === true)
       );
@@ -136,7 +166,9 @@ const CreditSalaryScreen = () => {
       ...prev,
       [field]: value
     }));
-  }, []);
+    // Trigger validation on input change
+    validateForm();
+  }, [validateForm]);
 
   const resetForm = useCallback(() => {
     setFormData({
@@ -144,32 +176,8 @@ const CreditSalaryScreen = () => {
       creditAmount: '',
       paymentType: 'cash'
     });
+    setValidationErrors({});
   }, []);
-
-  const validateForm = useCallback(() => {
-    if (!formData.selectedEmployee) {
-      showNotification('warning', t('MSG.pleaseSelectEmployee') || 'Please select an employee');
-      return false;
-    }
-
-    if (!formData.creditAmount) {
-      showNotification('warning', t('MSG.pleaseEnterCreditAmount') || 'Please enter credit amount');
-      return false;
-    }
-
-    const amount = parseFloat(formData.creditAmount);
-    if (isNaN(amount)) {
-      showNotification('warning', t('MSG.pleaseEnterValidNumber') || 'Please enter a valid number');
-      return false;
-    }
-
-    if (amount <= 0) {
-      showNotification('warning', t('MSG.amountMustBeGreaterThanZero') || 'Amount must be greater than zero');
-      return false;
-    }
-
-    return true;
-  }, [formData, showNotification, t]);
 
   const handleSubmitCreditSalary = useCallback(async () => {
     if (!validateForm()) return;
@@ -184,7 +192,6 @@ const CreditSalaryScreen = () => {
         return;
       }
 
-      // Prepare data for API - only 3 required fields
       const data = {
         employee_id: parseInt(formData.selectedEmployee),
         payment_type: formData.paymentType,
@@ -193,7 +200,6 @@ const CreditSalaryScreen = () => {
 
       console.log('Submitting credit salary data:', data);
 
-      // Call API endpoint
       const response = await post('/api/employeeCredit', data);
 
       if (response && response.id) {
@@ -204,7 +210,6 @@ const CreditSalaryScreen = () => {
       }
     } catch (err) {
       console.error('Error crediting salary:', err);
-      // Check if this is a 422 error (validation error)
       if (err.message && err.message.includes('422')) {
         showNotification('warning', t('MSG.invalidInputData') || 'Invalid input data');
       } else {
@@ -248,7 +253,7 @@ const CreditSalaryScreen = () => {
 
   // Render component
   return (
-    <div className="p-1">
+    <div className="p-1" style={{ backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
       {/* Notifications */}
       {notification.show && (
         <CAlert
@@ -261,167 +266,203 @@ const CreditSalaryScreen = () => {
         </CAlert>
       )}
 
-      <CCard className="shadow" style={{border: '1px solid rgba(0,0,0,0.125)'}}>
-        <CCardHeader className="bg-white border-bottom">
-          <div className="d-flex align-items-center mb-2">
-            <CIcon icon={cilCreditCard} className="me-2 text-primary" size="lg" />
-            <h3 className="mb-0 text-dark fw-semibold">
-              {t('LABELS.creditScreen') || 'Credit Salary'}
-            </h3>
-          </div>
-          <p className="text-muted mb-0">
-            {t('LABELS.creditSalaryDescription') || 'Credit salary payments to your employees securely'}
-          </p>
-        </CCardHeader>
-        <CCardBody className="p-1">
-          <CForm>
-            {/* Employee Selection */}
-            <div className="mb-4">
-              <CFormLabel className="fw-semibold text-dark mb-3">
-                {t('LABELS.selectEmployee') || 'Select Employee'} <span className="text-danger">*</span>
-              </CFormLabel>
-              <div className="position-relative">
-                <CFormSelect
-                  value={formData.selectedEmployee}
-                  onChange={(e) => handleFormChange('selectedEmployee', e.target.value)}
-                  disabled={submitting || employees.length === 0}
-                  className="form-select-lg border-0 bg-light"
-                  style={{ paddingLeft: '50px' }}
-                >
-                  <option value="">
-                    {employees.length === 0
-                      ? (t('LABELS.noEmployeesAvailable') || 'No employees available')
-                      : (t('LABELS.chooseEmployee') || 'Choose an employee')
-                    }
-                  </option>
-                  {employees.map(employee => (
-                    <option key={employee.id} value={employee.id}>
-                  {employee.name}
-                  {employee.mobile && ` — ${employee.mobile}`}
-                  </option>
-                  ))}
-                </CFormSelect>
-                <CIcon
-                  icon={cilUser}
-                  className="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"
-                />
+      <CContainer fluid className="px-0">
+        <CCard className="shadow-sm border-0" style={{ borderRadius: '12px' }}>
+          <CCardHeader className="bg-white border-0 pb-0" style={{ borderRadius: '12px 12px 0 0' }}>
+            <div className="d-flex align-items-center mb-2">
+              <div className="d-flex align-items-center justify-content-center me-3"
+                   style={{
+                     width: '40px',
+                     height: '40px',
+                     backgroundColor: '#e3f2fd',
+                     borderRadius: '8px'
+                   }}>
+                <CIcon icon={cilUser} className="text-primary" size="lg" />
               </div>
-              {employees.length === 0 && (
-                <small className="text-warning d-flex align-items-center mt-2">
-                  <CIcon icon={cilWarning} className="me-1" size="sm" />
-                  {t('MSG.noEmployeesLoadRetry') || 'No employees loaded. Please refresh or contact support.'}
-                </small>
-              )}
-            </div>
-
-            {/* Credit Salary Amount */}
-            <div className="mb-4">
-              <CFormLabel className="fw-semibold text-dark mb-3">
-                {t('LABELS.creditSalaryAmount') || 'Credit Salary Amount'} <span className="text-danger">*</span>
-              </CFormLabel>
-              <div className="position-relative">
-                <CFormInput
-                  type="number"
-                  placeholder={t('LABELS.enterAmount') || 'Enter amount'}
-                  value={formData.creditAmount}
-                  onChange={(e) => handleFormChange('creditAmount', e.target.value)}
-                  min="0.01"
-                  step="0.01"
-                  disabled={submitting}
-                  className="form-control-lg border-0 bg-light"
-                  style={{ paddingLeft: '50px' }}
-                  onInput={(e) => {
-                    let inputValue = e.target.value;
-                    // Ensure the value has only one decimal point and up to two decimal places
-                    inputValue = inputValue.replace(/^(\d*\.?\d{0,2}).*$/, '$1');
-                    // Update the value only if it's valid
-                    if (inputValue !== e.target.value) {
-                      e.target.value = inputValue;
-                    }
-                  }}
-                />
-                <span className="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted fw-bold">
-                  ₹
-                </span>
+              <div>
+                <h4 className="mb-0 text-dark fw-bold">
+                  {t('LABELS.creditScreen') || 'Credit Salary'}
+                </h4>
+                <p className="text-muted mb-0 small">
+                  {t('LABELS.creditSalaryDescription') || 'Fill in the details below to credit salary to employee'}
+                </p>
               </div>
-              <small className="text-muted d-flex align-items-center mt-2">
-                <CIcon icon={cilInfo} className="me-1" size="sm" />
-                {t('MSG.enterAmountGreaterThanZero') || 'Enter amount greater than zero'}
-              </small>
             </div>
+          </CCardHeader>
 
-            {/* Payment Type Selection */}
-            <div className="mb-4">
-              <CFormLabel className="fw-semibold text-dark mb-3">
-                {t('LABELS.paymentType') || 'Payment Type'}
-              </CFormLabel>
-              <div className="position-relative">
-                <CFormSelect
-                  value={formData.paymentType}
-                  onChange={(e) => handleFormChange('paymentType', e.target.value)}
-                  disabled={submitting}
-                  className="form-select-lg border-0 bg-light"
-                  style={{ paddingLeft: '50px' }}
-                >
-                  <option value="cash">
-                    {t('LABELS.cash') || 'Cash'}
-                  </option>
-                  <option value="upi">
-                    {t('LABELS.upi') || 'UPI'}
-                  </option>
-                  <option value="bank_transfer">
-                    {t('LABELS.bankTransfer') || 'Bank Transfer'}
-                  </option>
-                </CFormSelect>
-                <CIcon
-                  icon={cilMoney}
-                  className="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"
-                />
-              </div>
-              <small className="text-muted d-flex align-items-center mt-2">
-                <CIcon icon={cilInfo} className="me-1" size="sm" />
-                {t('MSG.selectPaymentMethod') || 'Select the payment method for salary credit'}
-              </small>
-            </div>
+          <CCardBody className="p-4">
+            <CForm>
+              <CRow>
+                {/* Employee Selection */}
+                <CCol md={6} className="mb-4">
+                  <CFormLabel className="fw-semibold text-dark mb-2">
+                    {t('LABELS.selectEmployee') || 'Employee Name'}
+                    <span className="text-danger ms-1">*</span>
+                  </CFormLabel>
+                  <CFormSelect
+                    value={formData.selectedEmployee}
+                    onChange={(e) => handleFormChange('selectedEmployee', e.target.value)}
+                    disabled={submitting || employees.length === 0}
+                    invalid={!!validationErrors.selectedEmployee}
+                    className={`form-select ${validationErrors.selectedEmployee ? 'border-danger' : ''}`}
+                    style={{
+                      padding: '8px 16px',
+                      fontSize: '14px',
+                      borderRadius: '4px',
+                      backgroundColor: '#ffffff',
+                      border: validationErrors.selectedEmployee ? '2px solid #dc3545' : '1px solid #d1d5db',
+                      boxShadow: 'none'
+                    }}
+                  >
+                    <option value="">
+                      {employees.length === 0
+                        ? (t('LABELS.noEmployeesAvailable') || 'No employees available')
+                        : (t('LABELS.chooseEmployee') || 'Select Employee')
+                      }
+                    </option>
+                    {employees.map(employee => (
+                      <option key={employee.id} value={employee.id}>
+                        {employee.name}
+                        {employee.mobile && ` — ${employee.mobile}`}
+                      </option>
+                    ))}
+                  </CFormSelect>
+                  {validationErrors.selectedEmployee && (
+                    <small className="text-danger d-flex align-items-center mt-2">
+                      {t('MSG.pleaseSelectEmployee') || 'Please select an employee'}
+                    </small>
+                  )}
+                </CCol>
 
-            {/* No employees state */}
-            {employees.length === 0 && !loading && (
-              <div className="text-center py-5">
-                <div className="mb-4">
-                  <CIcon icon={cilPeople} size="3xl" className="text-muted mb-3" />
-                  <h5 className="text-dark">{t('MSG.noEmployeesAvailable') || 'No Employees Available'}</h5>
-                  <p className="text-muted">{t('MSG.contactAdminToAddEmployees') || 'Please contact your administrator to add employees.'}</p>
+                {/* Payment Type Selection */}
+                <CCol md={6} className="mb-4">
+                  <CFormLabel className="fw-semibold text-dark mb-2">
+                    {t('LABELS.paymentType') || 'Payment Type'}
+                  </CFormLabel>
+                  <CFormSelect
+                    value={formData.paymentType}
+                    onChange={(e) => handleFormChange('paymentType', e.target.value)}
+                    disabled={submitting}
+                    className="form-select"
+                    style={{
+                      padding: '8px 16px',
+                      fontSize: '14px',
+                      borderRadius: '4px',
+                      backgroundColor: '#ffffff',
+                      border: '1px solid #d1d5db',
+                      boxShadow: 'none'
+                    }}
+                  >
+                    <option value="cash">
+                      {t('LABELS.cash') || 'Cash'}
+                    </option>
+                    <option value="upi">
+                      {t('LABELS.upi') || 'UPI'}
+                    </option>
+                    <option value="bank_transfer">
+                      {t('LABELS.bankTransfer') || 'Bank Transfer'}
+                    </option>
+                  </CFormSelect>
+                </CCol>
+              </CRow>
+
+              <CRow>
+                {/* Credit Salary Amount */}
+                <CCol md={6} className="mb-4">
+                  <CFormLabel className="fw-semibold text-dark mb-2">
+                    {t('LABELS.creditSalaryAmount') || 'Credit Salary Amount'}
+                    <span className="text-danger ms-1">*</span>
+                  </CFormLabel>
+                  <div className="position-relative">
+                    <CFormInput
+                      type="number"
+                      placeholder={t('LABELS.enterAmount') || '0.00'}
+                      value={formData.creditAmount}
+                      onChange={(e) => handleFormChange('creditAmount', e.target.value)}
+                      min="0.01"
+                      step="0.01"
+                      disabled={submitting}
+                      invalid={!!validationErrors.creditAmount}
+                      className={`form-control ${validationErrors.creditAmount ? 'border-danger' : ''}`}
+                      style={{
+                        padding: '8px 16px 8px 40px',
+                        fontSize: '14px',
+                        borderRadius: '4px',
+                        backgroundColor: '#ffffff',
+                        border: validationErrors.creditAmount ? '2px solid #dc3545' : '1px solid #d1d5db',
+                        boxShadow: 'none'
+                      }}
+                      onInput={(e) => {
+                        let inputValue = e.target.value;
+                        inputValue = inputValue.replace(/^(\d*\.?\d{0,2}).*$/, '$1');
+                        if (inputValue !== e.target.value) {
+                          e.target.value = inputValue;
+                        }
+                      }}
+                    />
+                    <span className="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted fw-bold" style={{ fontSize: '14px' }}>
+                      ₹
+                    </span>
+                  </div>
+                  {validationErrors.creditAmount && (
+                    <small className="text-danger d-flex align-items-center mt-2">
+                      {formData.creditAmount === ''
+                        ? (t('MSG.pleaseEnterCreditAmount') || 'Please enter credit amount')
+                        : (t('MSG.amountMustBeGreaterThanZero') || 'Amount must be greater than zero')}
+                    </small>
+                  )}
+                </CCol>
+
+                {/* Empty column for spacing */}
+                <CCol md={6} className="mb-4">
+                  {/* This column can be used for additional fields in the future */}
+                </CCol>
+              </CRow>
+
+              {/* No employees state */}
+              {employees.length === 0 && !loading && (
+                <div className="text-center py-5">
+                  <div className="mb-4">
+                    <CIcon icon={cilPeople} size="3xl" className="text-muted mb-3" />
+                    <h5 className="text-dark">{t('MSG.noEmployeesAvailable') || 'No Employees Available'}</h5>
+                    <p className="text-muted">{t('MSG.contactAdminToAddEmployees') || 'Please contact your administrator to add employees.'}</p>
+                  </div>
+                  <CButton color="primary" variant="outline" onClick={fetchInitialData} className="px-4">
+                    <CIcon icon={cilReload} className="me-2" />
+                    {t('LABELS.refresh') || 'Refresh'}
+                  </CButton>
                 </div>
-                <CButton color="primary" variant="outline" onClick={fetchInitialData} className="px-4">
-                  <CIcon icon={cilReload} className="me-2" />
-                  {t('LABELS.refresh') || 'Refresh'}
-                </CButton>
-              </div>
-            )}
-          </CForm>
-        </CCardBody>
+              )}
+            </CForm>
+          </CCardBody>
 
-        {employees.length > 0 && (
-          <CCardFooter className="bg-transparent border-top-0 p-2">
-            <div className="d-flex justify-content-between align-items-center">
-              <div className="d-flex align-items-center text-muted">
-                <CIcon icon={cilShieldAlt} className="me-2" />
-                <small>{t('MSG.allTransactionsSecure') || 'All transactions are secure'}</small>
-              </div>
-              <div className="d-flex gap-2">
+          {employees.length > 0 && (
+            <CCardFooter className="bg-white border-0 p-4" style={{ borderRadius: '0 0 12px 12px' }}>
+              <div className="d-flex justify-content-end align-items-center gap-3">
                 <CButton
                   color="light"
                   disabled={submitting}
                   onClick={resetForm}
-                  className="px-4"
+                  className="px-4 py-2"
+                  style={{
+                    borderRadius: '8px',
+                    border: '1px solid #dee2e6',
+                    fontWeight: '500'
+                  }}
                 >
-                  Cancel
+                  {t('LABELS.cancel')}
                 </CButton>
                 <CButton
                   color="primary"
-                  disabled={submitting || employees.length === 0}
+                  disabled={submitting || employees.length === 0 || validationErrors.selectedEmployee || validationErrors.creditAmount}
                   onClick={handleSubmitCreditSalary}
-                  className="px-4"
+                  className="px-4 py-2"
+                  style={{
+                    borderRadius: '8px',
+                    fontWeight: '500',
+                    backgroundColor: '#007bff',
+                    borderColor: '#007bff'
+                  }}
                 >
                   {submitting ? (
                     <>
@@ -436,10 +477,10 @@ const CreditSalaryScreen = () => {
                   )}
                 </CButton>
               </div>
-            </div>
-          </CCardFooter>
-        )}
-      </CCard>
+            </CCardFooter>
+          )}
+        </CCard>
+      </CContainer>
     </div>
   );
 };

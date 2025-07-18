@@ -22,7 +22,7 @@ import {
   CModalBody,
   CModalFooter,
 } from '@coreui/react';
-import { cilUser, cilCheckCircle, cilX } from '@coreui/icons';
+import { cilUser, cilCheckCircle, cilX, cilArrowLeft } from '@coreui/icons';
 import CIcon from '@coreui/icons-react';
 import { put, getAPICall } from '../../../util/api';
 
@@ -460,6 +460,19 @@ const EmployeeEditForm = () => {
 
   return (
     <CContainer fluid className="min-h-screen bg-light py-0 py-md-2 p-1">
+      <CRow className="mb-3 mb-md-4">
+        <CCol xs={12}>
+          <CButton
+            color="secondary"
+            variant="outline"
+            onClick={() => navigate(-1)}
+            className="fw-medium"
+          >
+            <CIcon icon={cilArrowLeft} className="me-1" />
+            {t('LABELS.back')}
+          </CButton>
+        </CCol>
+      </CRow>
       <CRow className="justify-content-center">
         <CCol xs={12} className="px-1 px-md-2">
           {/* Notifications */}
@@ -487,10 +500,10 @@ const EmployeeEditForm = () => {
                     <CIcon icon={cilUser} className="me-2 me-md-3 text-primary" size="lg" />
                     <div>
                       <h1 className="h4 h3-md mb-1 text-dark fw-bold">
-                        Edit Employee Details
+                        {t('LABELS.editEmployeeDetails')}
                       </h1>
                       <p className="text-muted mb-0 small">
-                        Update the details below to modify employee information
+                        {t('LABELS.editEmployeeDetailsDownMsg')}
                       </p>
                     </div>
                   </div>
@@ -905,7 +918,7 @@ const EmployeeEditForm = () => {
                         disabled={submitting}
                         className="px-4 py-2 fw-medium order-2 order-sm-1"
                       >
-                        {t('LABELS.cancel')}
+                        {t('LABELS.cancel2')}
                       </CButton>
                       <CButton
                         color="primary"

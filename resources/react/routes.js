@@ -169,9 +169,9 @@ export default function fetchRoutes () {
       { path: '/employees/:id',              name: 'Employee Details',           element: EmployeeDetails },
       { path: '/bulk_employee_tracker',              name: 'Employee Details',           element: BulkEmployeeTracker },
       { path: '/checkInWithSelfie',              name: 'Employee Attendance',           element: checkInWithSelfie },
-      { path: '/payrollAndAttendanceReport',              name: 'Payroll And Attendace Report',           element: PayrollAndAttendanceReport},
+      { path: '/payrollAndAttendanceReport',              name: 'Payroll Report',           element: PayrollAndAttendanceReport},
       { path: '/editEmployeeDetails/:id',              name: 'Edit Employee Details',           element: Edit_Employee_Details}
-    ]           
+    ]
   }
 
   /* ─────────────────────────────  MANAGER  (user === 2) ───────────────────────────── */
