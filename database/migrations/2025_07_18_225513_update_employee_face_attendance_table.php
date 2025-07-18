@@ -11,7 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        //
+        Schema::table('employee_face_attendance', function (Blueprint $table) {
+              $table->string('checkin_img')->nullable()->change();
+        } );//
     }
 
     /**
@@ -19,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+       Schema::table('employee_face_attendance', function (Blueprint $table) {
+               $table->string('checkin_img')->nullable(false)->change();
+        } );// //
     }
 };
