@@ -17,13 +17,14 @@ import {
 } from '@coreui/react';
 import { getAPICall, put } from '../../../util/api';
 
-const TrackerEditModal = ({ visible, onClose, trackerId, onSuccess }) => {
+const TrackerEditModal = ({ fetchEmployees,visible, onClose, trackerId, onSuccess }) => {
   const [formData, setFormData] = useState({
     half_day: false,
     check_in_time: '',
     check_out_time: '',
     status: ''
   });
+  const [originalData, setOriginalData] = useState({}); // Store original data
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [tracker, setTracker] = useState({});
@@ -62,13 +63,23 @@ const TrackerEditModal = ({ visible, onClose, trackerId, onSuccess }) => {
       check_out_time: '',
       status: ''
     });
+    setOriginalData({});
     setErrors({});
   };
 
   const formatDateTimeForInput = (dateTimeString) => {
     if (!dateTimeString) return '';
-    // Convert from "YYYY-MM-DD HH:MM:SS" to "YYYY-MM-DDTHH:MM" format for datetime-local input
-    const date = new Date(dateTimeString);
+    
+    // Handle both formats: "2025-07-18T14:09:56.000000Z" and "2025-07-18 17:10:00"
+    let date;
+    if (dateTimeString.includes('T')) {
+      // ISO format with T
+      date = new Date(dateTimeString);
+    } else {
+      // Format: "2025-07-18 17:10:00"
+      date = new Date(dateTimeString.replace(' ', 'T'));
+    }
+    
     if (isNaN(date.getTime())) return '';
     
     // Format to YYYY-MM-DDTHH:MM for datetime-local input
@@ -82,13 +93,16 @@ const TrackerEditModal = ({ visible, onClose, trackerId, onSuccess }) => {
   };
 
   const loadTrackerData = (trackerData) => {
-    // Map API response data to form fields
-    setFormData({
+    // Map API response data to form fields correctly
+    const mappedData = {
       half_day: trackerData.half_day || false,
       check_in_time: trackerData.created_at ? formatDateTimeForInput(trackerData.created_at) : '',
       check_out_time: trackerData.check_out_time ? formatDateTimeForInput(trackerData.check_out_time) : '',
       status: trackerData.status || ''
-    });
+    };
+    
+    setFormData(mappedData);
+    setOriginalData(mappedData); // Store original data for comparison
     setErrors({});
   };
 
@@ -111,7 +125,16 @@ const TrackerEditModal = ({ visible, onClose, trackerId, onSuccess }) => {
     if (!dateTimeString) return null;
     // Convert to the format expected by API: YYYY-MM-DD HH:MM:SS
     const date = new Date(dateTimeString);
-    return date.toISOString().slice(0, 19).replace('T', ' ');
+    
+    // Format as local time, not UTC
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   };
 
   const validateForm = () => {
@@ -131,42 +154,75 @@ const TrackerEditModal = ({ visible, onClose, trackerId, onSuccess }) => {
     return Object.keys(newErrors).length === 0;
   };
 
- // In your handleSubmit function, modify the payload:
+  // Check if form has been modified
+  const hasFormChanged = () => {
+    return (
+      formData.half_day !== originalData.half_day ||
+      formData.check_in_time !== originalData.check_in_time ||
+      formData.check_out_time !== originalData.check_out_time ||
+      formData.status !== originalData.status
+    );
+  };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  if (!validateForm()) {
-    return;
-  }
+  // Build payload with only changed fields
+  const buildPayload = () => {
+    const payload = {};
+    
+    if (formData.half_day !== originalData.half_day) {
+      payload.half_day = formData.half_day ? '1' : '0';
+    }
+    
+    if (formData.check_in_time !== originalData.check_in_time) {
+      payload.check_in_time = formData.check_in_time ? formatDateTime(formData.check_in_time) : null;
+    }
+    
+    if (formData.check_out_time !== originalData.check_out_time) {
+      payload.check_out_time = formData.check_out_time ? formatDateTime(formData.check_out_time) : null;
+    }
+    
+    if (formData.status !== originalData.status) {
+      payload.status = formData.status || null;
+    }
+    
+    return payload;
+  };
 
-  setLoading(true);
-
-  try {
-    const payload = {
-      half_day: formData.half_day ? '1' : '0', // Convert boolean to string
-      check_in_time: formData.check_in_time ? formatDateTime(formData.check_in_time) : null,
-      check_out_time: formData.check_out_time ? formatDateTime(formData.check_out_time) : null,
-      status: formData.status || null
-    };
-
-    const result = await put(`/api/employeetracker/${trackerId}`, payload);
-
-    // Check if response has data with id (successful update)
-    if (result.data && result.data.id) {
-      onSuccess?.(result.message);
-      onClose();
-    } else {
-      throw new Error('Invalid response from server');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
     }
 
-  } catch (error) {
-    console.error('Error updating tracker:', error);
-    setErrors({ submit: error.message });
-  } finally {
-    setLoading(false);
-  }
-};
+    setLoading(true);
+
+    try {
+      const payload = buildPayload();
+      
+      // Only submit if there are changes
+      if (Object.keys(payload).length === 0) {
+        onClose();
+        return;
+      }
+
+      const result = await put(`/api/employeetracker/${trackerId}`, payload);
+
+      // Check if response has data with id (successful update)
+      if (result.data && result.data.id) {
+        onSuccess?.(result.message);
+        onClose();
+        fetchEmployees();
+      } else {
+        throw new Error('Invalid response from server');
+      }
+
+    } catch (error) {
+      console.error('Error updating tracker:', error);
+      setErrors({ submit: error.message });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleClose = () => {
     if (!loading) {
@@ -224,7 +280,7 @@ const handleSubmit = async (e) => {
           </CRow>
 
           <CRow className="mb-3">
-            <CCol>
+            <CCol md={6}>
               <CFormLabel htmlFor="status">Status</CFormLabel>
               <CFormSelect
                 id="status"
@@ -232,6 +288,7 @@ const handleSubmit = async (e) => {
                 onChange={(e) => handleInputChange('status', e.target.value)}
                 invalid={!!errors.status}
               >
+                <option value="">Select Status</option>
                 {statusOptions.map(option => (
                   <option key={option.value} value={option.value}>
                     {option.label}
@@ -255,7 +312,11 @@ const handleSubmit = async (e) => {
           <CButton color="secondary" onClick={handleClose} disabled={loading}>
             Cancel
           </CButton>
-          <CButton color="primary" type="submit" disabled={loading}>
+          <CButton 
+            color="primary" 
+            type="submit" 
+            disabled={loading || !hasFormChanged()}
+          >
             {loading ? (
               <>
                 <CSpinner size="sm" className="me-2" />

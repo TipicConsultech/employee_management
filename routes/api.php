@@ -63,7 +63,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('employee-transactions', EmployeeTransactionController::class);  
     Route::apiResource('employee-tracker', EmployeeTrackerController::class);
     Route::apiResource('employees', EmployeeController::class);
-    Route::get ('/employeeDtailsForDashboard',[EmployeeController::class, 'employeeDtailsForDashboard']);
+    Route::post('/employeeDtailsForDashboard',[EmployeeController::class, 'employeeDtailsForDashboard']);
     Route::get('/employee/{id}', [EmployeeController::class, 'showEmployeesDetails']);
  Route::put('/employees/{employee}', [EmployeeController::class, 'update']);
  Route::put('/employeetracker/{id}', [EmployeeTrackerController::class, 'updateTraker']);

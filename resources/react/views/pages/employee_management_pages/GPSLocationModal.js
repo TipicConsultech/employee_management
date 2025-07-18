@@ -37,6 +37,7 @@ const GPSLocationModal = ({
   const [isWithinPremises, setIsWithinPremises] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+
   // Parse GPS coordinates when props change
   useEffect(() => {
     if (gpsCoordinates && isOpen) {
@@ -47,8 +48,9 @@ const GPSLocationModal = ({
         setCoordinates(coords);
         setLoading(false);
       }, 500);
+        
     }
-  }, [gpsCoordinates, isOpen]);
+  }, [gpsCoordinates, isOpen,attendanceType]);
 
   // Fetch company location
   useEffect(() => {
@@ -133,7 +135,7 @@ const GPSLocationModal = ({
     if (attendanceType === 'check_in') {
       return {
         label: 'Check-in',
-        icon: cilAccountLogin,
+        icon: cilAccountLogout,
         color: 'success',
         bgColor: '#d1e7dd',
         textColor: '#0f5132'
@@ -186,7 +188,7 @@ const GPSLocationModal = ({
           <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
             {/* Status Badges */}
             <div className="d-flex flex-wrap gap-2">
-              <div 
+              {/* <div 
                 className="d-flex align-items-center px-2 py-1 rounded-pill"
                 style={{ 
                   backgroundColor: attendanceInfo.bgColor,
@@ -197,7 +199,7 @@ const GPSLocationModal = ({
               >
                 <CIcon icon={attendanceInfo.icon} size="sm" className="me-1" />
                 {attendanceInfo.label} Location
-              </div>
+              </div> */}
               
               {companyLocation && coordinates && (
                 <div 
@@ -214,7 +216,7 @@ const GPSLocationModal = ({
                     size="sm" 
                     className="me-1" 
                   />
-                  Within Premises
+                 {isWithinPremises?"Within Premises":"Outside of Premises"}
                 </div>
               )}
             </div>

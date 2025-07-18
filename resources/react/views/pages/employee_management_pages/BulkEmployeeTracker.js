@@ -1,7 +1,7 @@
 import react from 'react'
 import { useNavigate } from "react-router-dom";
 import MobileEmployeeRow from "./MobileBulkEmployeeTracker";
-import { cilLocationPin, cilCheckCircle, cilXCircle, cilPencil, cilInput, cilClock,  cilPeople, cilCheck, cilWarning } from '@coreui/icons';
+import { cilLocationPin, cilCheckCircle, cilXCircle, cilPencil, cilInput, cilClock,  cilPeople, cilCheck, cilWarning, } from '@coreui/icons';
 import { useTranslation } from "react-i18next";
 import React, { useCallback, useEffect, useState } from "react";
 import { CAlert, CButton,CButtonGroup,CCard,CBadge, CCardBody,CTableBody, CCardHeader,CTableDataCell,CTableHeaderCell,CFormCheck, CContainer, CSpinner,CTooltip,CTable,CTableHead,CTableRow} from "@coreui/react";
@@ -27,13 +27,15 @@ function BulkEmployeeCheckInOut() {
     const [selectedTrackerId, setSelectedTrackerId] = useState(null);
     const [mapVisible, setMapVisible] = useState(false);
     const [selectedGps,setSelectedGps]= useState(null);
-    const [attendanceType,setAttendanceType]= useState(null);
+  
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]); // Current date in YYYY-MM-DD format
+     const [isCurrentDate, setIsCurrentDate] = useState(true);
 
     const handleEditClick = (trackerId) => {
         setSelectedTrackerId(trackerId);
         setModalVisible(true);
     };
-
+      let attendanceType=null;
     const handleDeleteClick = (empId) => {
         // Implement delete logic here
         console.log(`Delete employee with ID: ${empId}`);
@@ -42,19 +44,12 @@ function BulkEmployeeCheckInOut() {
 
     const handleMapClick = (gpsCoordinates, type) => {
         setSelectedGps(gpsCoordinates);
-        setAttendanceType(type);
+         attendanceType=type;
         setMapVisible(true);
+      
+        
     };
 
-    // useEffect(() => {
-    //     const styleElement = document.createElement('style');
-    //     styleElement.textContent = mobileStyles;
-    //     document.head.appendChild(styleElement);
-
-    //     return () => {
-    //         document.head.removeChild(styleElement);
-    //     };
-    // }, []);
 
     const fetchFaceAttendanceStatus = useCallback(async () => {
         try {
@@ -101,51 +96,82 @@ function BulkEmployeeCheckInOut() {
         return { checkIn, checkOut, status };
     }, []);
 
-    const fetchEmployees = useCallback(async () => {
-        try {
-            setLoading(true);
-            const response = await getAPICall('/api/employeeDtailsForDashboard');
-            console.log('API Response:', response);
+    const fetchEmployees = useCallback(async (date = null) => {
+    try {
+        setLoading(true);
+        
+        // Use provided date or selectedDate
+        const targetDate = date || selectedDate;
+        
+        // Create the payload with date
+        const payload = {
+            date: targetDate
+        };
+        
+        // Change from GET to POST request with date payload
+        const response = await post('/api/employeeDtailsForDashboard', payload);
+        
+        console.log('API Response:', response);
 
-            if (response && Array.isArray(response)) {
-                const employeesWithStatus = response.map(employee => {
-                    const attendanceStatus = getAttendanceStatus(employee.trackers);
-                    return {
-                        ...employee,
-                        ...attendanceStatus,
-                        selected: false
-                    };
-                });
-                console.log('Processed employees:', employeesWithStatus);
-                setEmployees(employeesWithStatus);
-            } else if (response && response.data && Array.isArray(response.data)) {
-                const employeesWithStatus = response.data.map(employee => {
-                    const attendanceStatus = getAttendanceStatus(employee.trackers);
-                    return {
-                        ...employee,
-                        ...attendanceStatus,
-                        selected: false
-                    };
-                });
-                console.log('Processed employees (nested):', employeesWithStatus);
-                setEmployees(employeesWithStatus);
-            } else {
-                console.log('Invalid response format:', response);
-                showNotification('warning', t('MSG.failedToFetchEmployees') || 'Failed to fetch employees');
-            }
-        } catch (error) {
-            console.error('Error fetching employees:', error);
-            showNotification('warning', `${t('MSG.errorConnectingToServer') || 'Error connecting to server'}: ${error.message}`);
-        } finally {
-            setLoading(false);
+        if (response && Array.isArray(response)) {
+            const employeesWithStatus = response.map(employee => {
+                const attendanceStatus = getAttendanceStatus(employee.trackers);
+                return {
+                    ...employee,
+                    ...attendanceStatus,
+                    selected: false
+                };
+            });
+            console.log('Processed employees:', employeesWithStatus);
+            setEmployees(employeesWithStatus);
+        } else if (response && response.data && Array.isArray(response.data)) {
+            const employeesWithStatus = response.data.map(employee => {
+                const attendanceStatus = getAttendanceStatus(employee.trackers);
+                return {
+                    ...employee,
+                    ...attendanceStatus,
+                    selected: false
+                };
+            });
+            console.log('Processed employees (nested):', employeesWithStatus);
+            setEmployees(employeesWithStatus);
+        } else {
+            console.log('Invalid response format:', response);
+            showNotification('warning', t('MSG.failedToFetchEmployees') || 'Failed to fetch employees');
         }
-    }, [showNotification, t, getAttendanceStatus]);
+    } catch (error) {
+        console.error('Error fetching employees:', error);
+        showNotification('warning', `${t('MSG.errorConnectingToServer') || 'Error connecting to server'}: ${error.message}`);
+    } finally {
+        setLoading(false);
+    }
+}, [selectedDate, showNotification, t, getAttendanceStatus]);
 
-    useEffect(() => {
-        fetchFaceAttendanceStatus();
-        fetchEmployees();
-    }, [fetchFaceAttendanceStatus, fetchEmployees]);
+const handleDateChange = useCallback((event) => {
+    const newDate = event.target.value;
+    const currentDate = new Date().toISOString().split('T')[0];
+    
+    setSelectedDate(newDate);
+    setIsCurrentDate(newDate === currentDate);
+    
+    // Fetch employees for the new date
+    fetchEmployees(newDate);
+}, [fetchEmployees,employees]);
 
+// 4. Add today button handler
+const handleTodayClick = useCallback(() => {
+    const currentDate = new Date().toISOString().split('T')[0];
+    setSelectedDate(currentDate);
+    setIsCurrentDate(true);
+    
+    // Fetch employees for current date
+    fetchEmployees(currentDate);
+}, [fetchEmployees]);
+
+   useEffect(() => {
+    fetchFaceAttendanceStatus();
+    fetchEmployees(selectedDate);
+}, [fetchFaceAttendanceStatus, selectedDate]);
     const handleEmployeeSelection = useCallback((employeeId, isSelected) => {
         setEmployees(prev =>
             prev.map(emp => {
@@ -191,105 +217,110 @@ function BulkEmployeeCheckInOut() {
     }, [employees, selectedEmployees]);
 
     const handleBulkCheckIn = useCallback(async () => {
-        if (selectedEmployees.length === 0) {
-            showNotification('warning', t('MSG.selectEmployeesFirst') || 'Please select employees first');
-            return;
-        }
+    if (selectedEmployees.length === 0) {
+        showNotification('warning', t('MSG.selectEmployeesFirst') || 'Please select employees first');
+        return;
+    }
 
-        try {
-            setNotification({ show: false, type: '', message: '' });
-            setSubmitting(true);
+    try {
+        setNotification({ show: false, type: '', message: '' });
+        setSubmitting(true);
 
-            const payload = {
-                employees: selectedEmployees
-            };
+        const payload = {
+            employees: selectedEmployees
+        };
 
-            const response = await post('/api/bulkCheckIn', payload);
+        const response = await post('/api/bulkCheckIn', payload);
 
-            if (response && (response.message || response.rows_updated)) {
-                showNotification('success',
-                    `${t('MSG.bulkCheckInSuccess') }`
-                );
-
-                setEmployees(prev =>
-                    prev.map(emp => {
-                        const empId = emp.id || emp.employee_id || emp.emp_id;
-                        return selectedEmployees.includes(empId)
-                            ? { ...emp, checkIn: true, status: 'Present', selected: false }
-                            : { ...emp, selected: false };
-                    })
-                );
-
-                setSelectedEmployees([]);
-                setSelectAll(false);
-            } else {
-                showNotification('warning', t('MSG.failedToProcessRequest') || 'Failed to process request');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            showNotification('warning', `${t('MSG.error') || 'Error'}: ${error.message}`);
-        } finally {
-            setSubmitting(false);
-        }
-    }, [selectedEmployees, showNotification, t]);
-
-    const handleBulkCheckOut = useCallback(async () => {
-        if (selectedEmployees.length === 0) {
-            showNotification('warning', t('MSG.selectEmployeesFirst') || 'Please select employees first');
-            return;
-        }
-
-        const employeesWithoutCheckIn = getSelectedEmployeesWithoutCheckIn();
-
-        if (employeesWithoutCheckIn.length > 0) {
-            const employeeNames = employeesWithoutCheckIn.map(emp =>
-                emp.name || emp.employee_name || emp.first_name || 'Unknown'
-            ).join(', ');
-
-            showNotification('warning',
-                `${t('MSG.checkInRequiredForCheckOut') || 'Check-in required for check-out'}: ${employeeNames}`
+        if (response && (response.message || response.rows_updated)) {
+            showNotification('success',
+                `${t('MSG.bulkCheckInSuccess') }`
             );
-            return;
+            
+            // -----> SCROLL TO TOP on success
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            setEmployees(prev =>
+                prev.map(emp => {
+                    const empId = emp.id || emp.employee_id || emp.emp_id;
+                    return selectedEmployees.includes(empId)
+                        ? { ...emp, checkIn: true, status: 'Present', selected: false }
+                        : { ...emp, selected: false };
+                })
+            );
+            setSelectedEmployees([]);
+            setSelectAll(false);
+        } else {
+            showNotification('warning', t('MSG.failedToProcessRequest') || 'Failed to process request');
         }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('warning', `${t('MSG.error') || 'Error'}: ${error.message}`);
+    } finally {
+        setSubmitting(false);
+    }
+}, [selectedEmployees, showNotification, t]);
 
-        try {
-            setNotification({ show: false, type: '', message: '' });
-            setSubmitting(true);
+const handleBulkCheckOut = useCallback(async () => {
+    if (selectedEmployees.length === 0) {
+        showNotification('warning', t('MSG.selectEmployeesFirst') || 'Please select employees first');
+        return;
+    }
 
-            const validEmployees = getSelectedEmployeesWithCheckIn().map(emp => emp.id || emp.employee_id || emp.emp_id);
+    const employeesWithoutCheckIn = getSelectedEmployeesWithoutCheckIn();
 
-            const payload = {
-                employees: validEmployees
-            };
+    if (employeesWithoutCheckIn.length > 0) {
+        const employeeNames = employeesWithoutCheckIn.map(emp =>
+            emp.name || emp.employee_name || emp.first_name || 'Unknown'
+        ).join(', ');
 
-            const response = await post('/api/bulkCheckOut', payload);
+        showNotification('warning',
+            `${t('MSG.checkInRequiredForCheckOut') || 'Check-in required for check-out'}: ${employeeNames}`
+        );
+        return;
+    }
 
-            if (response && (response.message || response.rows_updated)) {
-                showNotification('success',
-                    `${t('MSG.bulkCheckOutSuccess') }`
-                );
+    try {
+        setNotification({ show: false, type: '', message: '' });
+        setSubmitting(true);
 
-                setEmployees(prev =>
-                    prev.map(emp => {
-                        const empId = emp.id || emp.employee_id || emp.emp_id;
-                        return validEmployees.includes(empId)
-                            ? { ...emp, checkOut: true, status: 'Present', selected: false }
-                            : { ...emp, selected: false };
-                    })
-                );
+        const validEmployees = getSelectedEmployeesWithCheckIn().map(emp => emp.id || emp.employee_id || emp.emp_id);
 
-                setSelectedEmployees([]);
-                setSelectAll(false);
-            } else {
-                showNotification('warning', t('MSG.failedToProcessRequest') || 'Failed to process request');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            showNotification('warning', `${t('MSG.error') || 'Error'}: ${error.message}`);
-        } finally {
-            setSubmitting(false);
+        const payload = {
+            employees: validEmployees
+        };
+
+        const response = await post('/api/bulkCheckOut', payload);
+
+        if (response && (response.message || response.rows_updated)) {
+            showNotification('success',
+                `${t('MSG.bulkCheckOutSuccess') }`
+            );
+            
+            // -----> SCROLL TO TOP on success
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            setEmployees(prev =>
+                prev.map(emp => {
+                    const empId = emp.id || emp.employee_id || emp.emp_id;
+                    return validEmployees.includes(empId)
+                        ? { ...emp, checkOut: true, status: 'Present', selected: false }
+                        : { ...emp, selected: false };
+                })
+            );
+
+            setSelectedEmployees([]);
+            setSelectAll(false);
+        } else {
+            showNotification('warning', t('MSG.failedToProcessRequest') || 'Failed to process request');
         }
-    }, [selectedEmployees, showNotification, t, getSelectedEmployeesWithoutCheckIn, getSelectedEmployeesWithCheckIn]);
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('warning', `${t('MSG.error') || 'Error'}: ${error.message}`);
+    } finally {
+        setSubmitting(false);
+    }
+}, [selectedEmployees, showNotification, t, getSelectedEmployeesWithoutCheckIn, getSelectedEmployeesWithCheckIn]);
 
     const isCheckOutDisabled = useCallback(() => {
         if (selectedEmployees.length === 0 || submitting) return true;
@@ -387,30 +418,82 @@ function BulkEmployeeCheckInOut() {
                         </CAlert>
                     )}
 
-                    <CCard className="shadow-lg border-0 w-100">
-                        <CCardHeader
-                            className="py-3 py-md-4"
+                    
+         
+
+{/* Remove the existing centered date picker section completely */}
+
+<CCard className="shadow-lg border-0 w-100">
+    <CCardHeader
+        className="py-3 py-md-4"
+        style={{
+            backgroundColor: "#E6E6FA",
+            borderBottom: '3px solid #6c757d'
+        }}
+    >
+        <div className="d-flex  flex-lg-row align-items-start align-items-lg-center justify-content-between gap-3">
+            {/* Left side - Title and description */}
+            <div className="d-flex mt-2 mt-md-0 align-items-center">
+                <CIcon icon={cilPeople} className="me-2 me-md-3" size="xl" />
+                <div>
+                    <h4 className="mb-1 fw-bold fs-6 fs-sm-5 fs-md-4 small d-none d-sm-block">
+                        {t('LABELS.bulkEmployeeAttendance') || 'Bulk Employee Attendance'}
+                    </h4>
+                    <p className="text-muted mb-0 small d-none d-sm-block">
+                        {t('LABELS.manageMultipleEmployees') || 'Manage multiple employees check-in/out'}
+                    </p>
+                </div>
+            </div>
+
+            {/* Right side - Date picker and selected count */}
+            <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2 gap-sm-3">
+                {/* Date picker section */}
+                <div className="d-flex align-items-center gap-2 bg-light p-2 rounded border">
+                    <CIcon icon={cilClock} className="text-primary" />
+                    <span className="text-muted small fw-medium d-none d-sm-inline">
+                        {t('LABELS.selectDate') || 'Select Date'}
+                    </span>
+                   <input
+  type="date"
+  value={selectedDate}
+  onChange={handleDateChange}
+  className="form-control form-control-sm"
+  style={{
+    width: '150px',
+    border: '1px solid #ced4da',
+    borderRadius: '4px',
+    fontSize: '0.875rem',
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    backdropFilter: 'blur(10px)'
+  }}
+/>
+
+                    {!isCurrentDate && (
+                        <CButton
+                            color="primary"
+                            size="sm"
+                            onClick={handleTodayClick}
+                            className="px-3 py-1"
                             style={{
-                                backgroundColor: "#E6E6FA",
-                                borderBottom: '3px solid #6c757d'
+                                fontSize: '0.75rem',
+                                fontWeight: 'bold',
+                                borderRadius: '4px'
                             }}
                         >
-                            <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 gap-sm-3">
-                                <div className="d-flex align-items-center">
-                                    <CIcon icon={cilPeople} className="me-2 me-md-3" size="xl" />
-                                    <div>
-                                        <h4 className="mb-1 fw-bold fs-6 fs-sm-5 fs-md-4">{t('LABELS.bulkEmployeeAttendance') || 'Bulk Employee Attendance'}</h4>
-                                        <p className="text-muted mb-0 small d-none d-sm-block">{t('LABELS.manageMultipleEmployees') || 'Manage multiple employees check-in/out'}</p>
-                                    </div>
-                                </div>
+                            {t('LABELS.today') || 'Today'}
+                        </CButton>
+                    )}
+                </div>
 
-                                <div className="text-end">
-                                    <CBadge color="primary" className="fs-6 px-2 px-md-3 py-1 py-md-2">
-                                        {selectedEmployees.length} {t('LABELS.selected') || 'Selected'}
-                                    </CBadge>
-                                </div>
-                            </div>
-                        </CCardHeader>
+                {/* Selected count badge */}
+                {/* <div className="text-end">
+                    <CBadge color="primary" className="fs-6 px-2 px-md-3 py-1 py-md-2">
+                        {selectedEmployees.length} {t('LABELS.selected') || 'Selected'}
+                    </CBadge>
+                </div> */}
+            </div>
+        </div>
+    </CCardHeader>
 
                         <CCardBody className="p-2 p-sm-3 p-md-4">
                             <div className="mb-3 mb-md-4">
@@ -768,7 +851,7 @@ function BulkEmployeeCheckInOut() {
                                                                                 color: employee.trackers?.[0]?.check_in_gps ? '' : '#6c757d'
                                                                             }}
                                                                             disabled={!employee.trackers?.[0]?.check_in_gps}
-                                                                            onClick={() => handleMapClick(employee.trackers?.[0]?.check_in_gps, 'check-in')}
+                                                                            onClick={() => handleMapClick(employee.trackers?.[0]?.check_in_gps,'check-in')}
                                                                         >
                                                                             <CIcon icon={cilLocationPin} size="sm" />
                                                                         </CButton>
@@ -891,7 +974,7 @@ function BulkEmployeeCheckInOut() {
                                                               >
                                                                 <span className="d-flex align-items-center gap-1">
                                                                   <CIcon icon={cilPencil} />
-                                                                  {t('LABELS.edit') || 'Edit'}
+                                                                  {t('LABELS.smallEditButton') || 'Edit'}
                                                                 </span>
                                                               </CButton>
 
@@ -925,6 +1008,7 @@ function BulkEmployeeCheckInOut() {
                 imageType={imageModal.imageType}
             />
             <TrackerEditModal
+                fetchEmployee={fetchEmployees}
                 visible={modalVisible}
                 onClose={() => setModalVisible(false)}
                 trackerId={selectedTrackerId}

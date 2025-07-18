@@ -141,12 +141,13 @@ class EmployeeController extends Controller
         ], 201);
     }
 
-    public function employeeDtailsForDashboard()
-    {
+    public function employeeDtailsForDashboard(Request $request)
+    {   
+
         $productId = auth()->user()->product_id;
         $companyId = auth()->user()->company_id;
-        $today = now()->toDateString();
-
+        // $today = now()->toDateString();
+        $today=$request->date;
         $employees = Employee::where('product_id', $productId)
             ->where('company_id', $companyId)
             ->with([

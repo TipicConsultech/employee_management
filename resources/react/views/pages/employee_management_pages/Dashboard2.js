@@ -41,7 +41,7 @@ const Dashboard2 = () => {
             {/* <h5 className="fw-bold text-dark mb-0 fs-4 fs-md-3">
               {t('LABELS.employeeAttendance')}
             </h5> */}
-            <h5 className="text-muted mt-4">Dashboard Overview</h5>
+            <h5 className="text-muted mt-4">{t('LABELS.dashboardOverview')} </h5>
           </CCol>
         </CRow>
 
