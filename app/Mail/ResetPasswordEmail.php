@@ -44,7 +44,7 @@ class ResetPasswordEmail extends Mailable
             //     'token' => $this->token,
             // ],
             with: [
-                'url' => url('https://meghmalhar.tipic.co.in/#/updatepassword?token=' . $this->token),
+                'url' => url('https://ems.tipic.co.in/#/updatepassword?token=' . $this->token),
                 'token' => $this->token,
             ],
         );

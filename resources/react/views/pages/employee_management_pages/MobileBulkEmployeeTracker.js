@@ -102,7 +102,7 @@ const MobileEmployeeRow = ({ handleEditClick, handleMapClick, employee, empId, e
                                >
                                   <span className="d-flex align-items-center gap-1">
                                     <CIcon icon={cilPencil} />
-                                    {t('LABELS.edit') || 'Edit'}
+                                    {t('LABELS.smallEditButton') || 'Edit'}
                                   </span>
                                 </CButton>
 
