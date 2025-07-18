@@ -401,7 +401,7 @@ const EmployeeEditForm = () => {
       }
 
       const response = await put(`/api/employees/${id}`, payload);
-      if (response && response.employee) {
+      if (response && response.data.id) {
         showNotification('success', response.message || t('MSG.employeeUpdatedSuccess'));
         setShowModal(false);
       } else {

@@ -302,6 +302,16 @@ const handleDownload = () => {
 
   return (
     <CContainer fluid className="px-3 px-md-4">
+      <CButton
+      color="secondary"
+      variant="outline"
+      size="sm"
+      onClick={() => navigate(-1)}
+      className="d-flex align-items-center gap-2 mb-2"
+    >
+      <i className="fas fa-arrow-left"></i>
+      Back
+    </CButton>
       {/* Header Section */}
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 mt-3">
         <div className="mb-2 mb-md-0">
