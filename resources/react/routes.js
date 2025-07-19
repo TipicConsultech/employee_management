@@ -67,6 +67,7 @@ const SetCoordinates = React.lazy(() => import('./views/pages/employee_managemen
 const BulkEmployeeTracker = React.lazy(() => import('./views/pages/employee_management_pages/BulkEmployeeTracker'))
 const checkInWithSelfie = React.lazy(() => import('./views/pages/employee_management_pages/CheckInWithSelfie'))
 const PayrollAndAttendanceReport = React.lazy(() => import('./views/pages/employee_management_pages/WeeklyPayrollandAttendanceReport'))
+const Edit_Employee_Details = React.lazy(() => import('./views/pages/employee_management_pages/Edit_Employee_Details'))
 /* ====================================================================== */
 
 export default function fetchRoutes () {
@@ -159,16 +160,17 @@ export default function fetchRoutes () {
 
       { path: '/usermanagement/create-user', name: 'Create User',              element: NewUsers },
       { path: 'usermanagement/all-users',    name: 'All Users',                element: AllUser },
-      { path: '/Document_verification',    name: 'All Users',                element: DocumentVerification },
-      { path: '/employee_registration',    name: 'All Users',                element: EmployeeRegistration },
-      { path: '/credit_screen',    name: 'All Users',                element: CreditScreen },
-      { path: '/employee_tracker',    name: 'All Users',                element: EmployeeTracker },
-      { path: '/set_coordinates',    name: 'All Users',                element: SetCoordinates },
+      { path: '/Document_verification',    name: ' Document Verification',                element: DocumentVerification },
+      { path: '/employee_registration',    name: 'Employee Registration ',                element: EmployeeRegistration },
+      { path: '/credit_screen',    name: 'Advance Payment',                element: CreditScreen },
+      { path: '/employee_tracker',    name: 'Employee Attendance',                element: EmployeeTracker },
+      { path: '/set_coordinates',    name: 'Set Company Location',                element: SetCoordinates },
       { path: '/dashboard',                name: 'Dashboard',                  element: Dashboard2 },
       { path: '/employees/:id',              name: 'Employee Details',           element: EmployeeDetails },
       { path: '/bulk_employee_tracker',              name: 'Employee Details',           element: BulkEmployeeTracker },
-      { path: '/checkInWithSelfie',              name: 'Checking In With Selfie',           element: checkInWithSelfie },
-      { path: '/payrollAndAttendanceReport',              name: 'Payroll And Attendace Report',           element: PayrollAndAttendanceReport},
+      { path: '/checkInWithSelfie',              name: 'Employee Attendance',           element: checkInWithSelfie },
+      { path: '/payrollAndAttendanceReport',              name: 'Payroll Report',           element: PayrollAndAttendanceReport},
+      { path: '/editEmployeeDetails/:id',              name: 'Edit Employee Details',           element: Edit_Employee_Details}
     ]
   }
 
@@ -253,8 +255,8 @@ export default function fetchRoutes () {
     routes = [
       { path: '/resetPassword',         name: 'Update Password', element: Resetpassword },
       { path: '/updatepassword',        name: 'Reset Password',  element: Updatepassword },
- { path: '/checkInWithSelfie',              name: 'Checking In With Selfie',           element: checkInWithSelfie },
-      { path: '/employee_tracker',    name: 'All Users',                element: EmployeeTracker },
+ { path: '/checkInWithSelfie',              name: 'Employee Attendance',           element: checkInWithSelfie },
+      { path: '/employee_tracker',    name: 'Employee Attendance',                element: EmployeeTracker },
     ]
   }
 

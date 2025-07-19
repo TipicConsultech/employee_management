@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo ,useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   CContainer,
@@ -25,7 +25,7 @@ import {
 } from '@coreui/react';
 import { cilUser, cilPlus, cilCheckCircle, cilX } from '@coreui/icons';
 import CIcon from '@coreui/icons-react';
-import { post , getAPICall } from '../../../util/api';
+import { post, getAPICall } from '../../../util/api';
 
 // Constants
 const NOTIFICATION_TIMEOUT = 3000;
@@ -47,7 +47,7 @@ const INITIAL_FORM_DATA = {
   adhaar_number: '',
   mobile: '',
   refferal_by: '',
-  referral_by_number: '', // ADD THIS LINE
+  referral_by_number: '',
   is_login: false,
   password: '',
   re_enter_password: '',
@@ -76,18 +76,16 @@ const EmployeeRegistrationForm = () => {
     { value: 'contract', label: t('LABELS.contract') }
   ], [t]);
 
-
-    const ATTENDANCE_TYPE_OPTIONS = useMemo(() => [
+  const ATTENDANCE_TYPE_OPTIONS = useMemo(() => [
     { value: 'face_attendance', label: t('LABELS.faceAttendance') },
     { value: 'location', label: t('LABELS.location') },
     { value: 'both', label: t('LABELS.both') }
-    ], [t]);
+  ], [t]);
 
-    // ADD THIS NEW CONSTANT
-    const OVERTIME_TYPE_OPTIONS = useMemo(() => [
-      { value: 'hourly', label: t('LABELS.hourly') },
-      { value: 'fixed', label: t('LABELS.fixed') }
-    ], [t]);
+  const OVERTIME_TYPE_OPTIONS = useMemo(() => [
+    { value: 'hourly', label: t('LABELS.hourly') },
+    { value: 'fixed', label: t('LABELS.fixed') }
+  ], [t]);
 
   // State management
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
@@ -97,30 +95,40 @@ const EmployeeRegistrationForm = () => {
   const [errors, setErrors] = useState({});
   const [faceAttendanceEnabled, setFaceAttendanceEnabled] = useState(false);
   const [loadingFaceAttendance, setLoadingFaceAttendance] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showReEnterPassword, setShowReEnterPassword] = useState(false);
 
   // Dynamic payment type options based on work type
-const PAYMENT_TYPE_OPTIONS = useMemo(() => {
-  if (formData.work_type === 'fulltime') {
-    return [
-      { value: 'weekly', label: t('LABELS.weekly') },
-      { value: 'monthly', label: t('LABELS.monthly') }
-    ];
-  }
-  return [];
-}, [formData.work_type, t]);
+  const PAYMENT_TYPE_OPTIONS = useMemo(() => {
+    if (formData.work_type === 'fulltime') {
+      return [
+        { value: 'weekly', label: t('LABELS.weekly') },
+        { value: 'monthly', label: t('LABELS.monthly') }
+      ];
+    }
+    return [];
+  }, [formData.work_type, t]);
 
-const CONTRACT_TYPE_OPTIONS = useMemo(() => {
-  if (formData.work_type === 'contract') {
-    return [
-      { value: 'volume_based', label: t('LABELS.volumeBasedContract') },
-      { value: 'fixed', label: t('LABELS.fixedContract') }
-    ];
-  }
-  return [];
-}, [formData.work_type, t]);
+  const CONTRACT_TYPE_OPTIONS = useMemo(() => {
+    if (formData.work_type === 'contract') {
+      return [
+        { value: 'volume_based', label: t('LABELS.volumeBasedContract') },
+        { value: 'fixed', label: t('LABELS.fixedContract') }
+      ];
+    }
+    return [];
+  }, [formData.work_type, t]);
 
   // Check if current work type is fulltime
   const isFullTimeWork = formData.work_type === 'fulltime';
+
+  // Scroll to top function
+  const scrollToTop = useCallback(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  }, []);
 
   // Notification helper
   const showNotification = useCallback((type, message) => {
@@ -136,197 +144,170 @@ const CONTRACT_TYPE_OPTIONS = useMemo(() => {
     setNotification(INITIAL_NOTIFICATION);
   }, []);
 
-const validateForm = useCallback(() => {
-  const newErrors = {};
+  const validateForm = useCallback(() => {
+    const newErrors = {};
 
-  // Required fields validation
-  if (!formData.name.trim()) newErrors.name = t('MSG.nameRequired');
-  if (!formData.gender) newErrors.gender = t('MSG.genderRequired');
-  if (!formData.work_type) newErrors.work_type = t('MSG.workTypeRequired');
+    // Required fields validation
+    if (!formData.name.trim()) newErrors.name = t('MSG.nameRequired');
+    if (!formData.gender) newErrors.gender = t('MSG.genderRequired');
+    if (!formData.work_type) newErrors.work_type = t('MSG.workTypeRequired');
 
-  // Payment type validation for fulltime only
-  if (formData.work_type === 'fulltime' && !formData.payment_type) {
-    newErrors.payment_type = t('MSG.paymentTypeRequired');
-  }
-
-  if (formData.work_type === 'fulltime' && !formData.overtime_type) {
-  newErrors.overtime_type = t('MSG.overtimeTypeRequired');
-}
-
-  // Contract type validation for contract only
-  if (formData.work_type === 'contract' && !formData.contract_type) {
-    newErrors.contract_type = t('MSG.contractTypeRequired');
-  }
-
-  // Conditional validations based on work type
-  if (isFullTimeWork) {
-    // Fulltime specific validations
-    if (!formData.wage_hour) newErrors.wage_hour = t('MSG.wageHourRequired');
-    if (!formData.wage_overtime) newErrors.wage_overtime = t('MSG.wageOvertimeRequired');
-
-    // Number validations for fulltime
-  if (
-  formData.wage_hour !== '' &&
-  (isNaN(formData.wage_hour) || parseFloat(formData.wage_hour) < 0)
-) {
-  newErrors.wage_hour = t('MSG.wageHourPositiveNumber'); // Accepts 0
-}
-
-if (
-  formData.wage_overtime !== '' &&
-  (isNaN(formData.wage_overtime) || parseFloat(formData.wage_overtime) < 0)
-) {
-  newErrors.wage_overtime = t('MSG.wageOvertimePositiveNumber'); // Accepts 0
-}
-    if (formData.credit && (isNaN(formData.credit) || parseFloat(formData.credit) < 0)) {
-      newErrors.credit = t('MSG.creditPositiveNumber');
-    }
-    if (formData.debit && (isNaN(formData.debit) || parseFloat(formData.debit) < 0)) {
-      newErrors.debit = t('MSG.debitPositiveNumber');
-    }
-  }
-
-  // Half-day payment validation
-  if (formData.half_day_payment && (isNaN(formData.half_day_payment) || parseFloat(formData.half_day_payment) < 0)) {
-    newErrors.half_day_payment = t('MSG.halfDayPaymentPositiveNumber');
-  }
-
-  // Holiday payment validation
-  if (formData.holiday_payment && (isNaN(formData.holiday_payment) || parseFloat(formData.holiday_payment) < 0)) {
-    newErrors.holiday_payment = t('MSG.holidayPaymentPositiveNumber');
-  }
-
-  // Adhaar number validation (12 digits)
-  if (!formData.adhaar_number) {
-    newErrors.adhaar_number = t('MSG.adhaarRequired');
-  } else if (!/^\d{12}$/.test(formData.adhaar_number)) {
-    newErrors.adhaar_number = t('MSG.adhaarInvalid');
-  }
-
-  // Mobile number validation (10 digits)
-  if (!formData.mobile) {
-    newErrors.mobile = t('MSG.mobileRequired');
-  } else if (!/^\d{10}$/.test(formData.mobile)) {
-    newErrors.mobile = t('MSG.mobileInvalid');
-  }
-
-  if (formData.referral_by_number && formData.referral_by_number.trim()) {
-  if (!/^\d{10}$/.test(formData.referral_by_number)) {
-    newErrors.referral_by_number = t('MSG.referralNumberInvalid');
-  }
-}
-
-  // Password validation when login is enabled
-  if (formData.is_login) {
-    if (!formData.password) {
-      newErrors.password = t('MSG.passwordRequired');
-    } else if (formData.password.length < 6) {
-      newErrors.password = t('MSG.passwordMinLength');
+    // Payment type validation for fulltime only
+    if (formData.work_type === 'fulltime' && !formData.payment_type) {
+      newErrors.payment_type = t('MSG.paymentTypeRequired');
     }
 
-    if (!formData.re_enter_password) {
-      newErrors.re_enter_password = t('MSG.reEnterPasswordRequired');
-    } else if (formData.password !== formData.re_enter_password) {
-      newErrors.re_enter_password = t('MSG.passwordMismatch');
+    if (formData.work_type === 'fulltime' && !formData.overtime_type) {
+      newErrors.overtime_type = t('MSG.overtimeTypeRequired');
     }
 
-    // Attendance type validation when login is enabled
-    if (!formData.attendance_type) {
-      newErrors.attendance_type = t('MSG.attendanceTypeRequired');
+    // Contract type validation for contract only
+    if (formData.work_type === 'contract' && !formData.contract_type) {
+      newErrors.contract_type = t('MSG.contractTypeRequired');
     }
 
-    // Email validation
-    if (formData.email && formData.email.trim()) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email.trim())) {
-        newErrors.email = t('MSG.emailInvalid');
+    // Conditional validations based on work type
+    if (isFullTimeWork) {
+      // Fulltime specific validations
+      if (!formData.wage_hour) newErrors.wage_hour = t('MSG.wageHourRequired');
+      if (!formData.wage_overtime) newErrors.wage_overtime = t('MSG.wageOvertimeRequired');
+
+      // Number validations for fulltime
+      if (
+        formData.wage_hour !== '' &&
+        (isNaN(formData.wage_hour) || parseFloat(formData.wage_hour) < 0)
+      ) {
+        newErrors.wage_hour = t('MSG.wageHourPositiveNumber');
+      }
+
+      if (
+        formData.wage_overtime !== '' &&
+        (isNaN(formData.wage_overtime) || parseFloat(formData.wage_overtime) < 0)
+      ) {
+        newErrors.wage_overtime = t('MSG.wageOvertimePositiveNumber');
+      }
+      if (formData.credit && (isNaN(formData.credit) || parseFloat(formData.credit) < 0)) {
+        newErrors.credit = t('MSG.creditPositiveNumber');
+      }
+      if (formData.debit && (isNaN(formData.debit) || parseFloat(formData.debit) < 0)) {
+        newErrors.debit = t('MSG.debitPositiveNumber');
       }
     }
-  }
 
-  setErrors(newErrors);
-  return Object.keys(newErrors).length === 0;
-}, [formData, t, isFullTimeWork]);
+    // Half-day payment validation
+    if (formData.half_day_payment && (isNaN(formData.half_day_payment) || parseFloat(formData.half_day_payment) < 0)) {
+      newErrors.half_day_payment = t('MSG.halfDayPaymentPositiveNumber');
+    }
+
+    // Holiday payment validation
+    if (formData.holiday_payment && (isNaN(formData.holiday_payment) || parseFloat(formData.holiday_payment) < 0)) {
+      newErrors.holiday_payment = t('MSG.holidayPaymentPositiveNumber');
+    }
+
+    // Adhaar number validation (12 digits)
+    if (!formData.adhaar_number) {
+      newErrors.adhaar_number = t('MSG.adhaarRequired');
+    } else if (!/^\d{12}$/.test(formData.adhaar_number)) {
+      newErrors.adhaar_number = t('MSG.adhaarInvalid');
+    }
+
+    // Mobile number validation (10 digits)
+    if (!formData.mobile) {
+      newErrors.mobile = t('MSG.mobileRequired');
+    } else if (!/^\d{10}$/.test(formData.mobile)) {
+      newErrors.mobile = t('MSG.mobileInvalid');
+    }
+
+    if (formData.referral_by_number && formData.referral_by_number.trim()) {
+      if (!/^\d{10}$/.test(formData.referral_by_number)) {
+        newErrors.referral_by_number = t('MSG.referralNumberInvalid');
+      }
+    }
+
+    // Password validation when login is enabled
+    if (formData.is_login) {
+      if (!formData.password) {
+        newErrors.password = t('MSG.passwordRequired');
+      } else if (formData.password.length < 6) {
+        newErrors.password = t('MSG.passwordMinLength');
+      }
+
+      if (!formData.re_enter_password) {
+        newErrors.re_enter_password = t('MSG.reEnterPasswordRequired');
+      } else if (formData.password !== formData.re_enter_password) {
+        newErrors.re_enter_password = t('MSG.passwordMismatch');
+      }
+
+      // Attendance type validation when login is enabled
+      if (!formData.attendance_type) {
+        newErrors.attendance_type = t('MSG.attendanceTypeRequired');
+      }
+
+      // Email validation
+      if (formData.email && formData.email.trim()) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email.trim())) {
+          newErrors.email = t('MSG.emailInvalid');
+        }
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }, [formData, t, isFullTimeWork]);
 
   // Form handlers
   const handleInputChange = useCallback((field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
-  }, [errors]);
+    // Trigger validation on input change
+    validateForm();
+  }, [validateForm]);
 
   const handleNumberInput = useCallback((field, value) => {
-    // Allow only positive numbers
     if (value === '' || /^\d*\.?\d*$/.test(value)) {
       handleInputChange(field, value);
     }
   }, [handleInputChange]);
 
   const handleDigitOnlyInput = useCallback((field, value, maxLength) => {
-    // Allow only digits up to maxLength
     if (value === '' || (/^\d*$/.test(value) && value.length <= maxLength)) {
       handleInputChange(field, value);
     }
   }, [handleInputChange]);
 
   const handleWorkTypeChange = useCallback((value) => {
-  setFormData(prev => ({
-    ...prev,
-    work_type: value,
-    payment_type: value === 'fulltime' ? prev.payment_type : '', // Keep payment_type for fulltime
-    contract_type: value === 'contract' ? prev.contract_type : '', // Keep contract_type for contract
-    overtime_type: value === 'fulltime' ? prev.overtime_type : '', // ADD THIS LINE
-    // Clear fulltime specific fields when switching to contract
-    wage_hour: value === 'contract' ? '' : prev.wage_hour,
-    wage_overtime: value === 'contract' ? '' : prev.wage_overtime,
-    credit: value === 'contract' ? '0' : prev.credit,
-    debit: value === 'contract' ? '0' : prev.debit,
-  }));
-
-  // Clear related errors
-  setErrors(prev => {
-    const newErrors = { ...prev };
-    delete newErrors.work_type;
-    delete newErrors.payment_type;
-    delete newErrors.contract_type;
-    delete newErrors.overtime_type; // ADD THIS LINE
-    if (value === 'contract') {
-      delete newErrors.wage_hour;
-      delete newErrors.wage_overtime;
-      delete newErrors.credit;
-      delete newErrors.debit;
-    }
-    return newErrors;
-  });
-}, []);
+    setFormData(prev => ({
+      ...prev,
+      work_type: value,
+      payment_type: value === 'fulltime' ? prev.payment_type : '',
+      contract_type: value === 'contract' ? prev.contract_type : '',
+      overtime_type: value === 'fulltime' ? prev.overtime_type : '',
+      wage_hour: value === 'contract' ? '' : prev.wage_hour,
+      wage_overtime: value === 'contract' ? '' : prev.wage_overtime,
+      credit: value === 'contract' ? '0' : prev.credit,
+      debit: value === 'contract' ? '0' : prev.debit,
+    }));
+    validateForm();
+  }, [validateForm]);
 
   const handleCheckboxChange = useCallback((checked) => {
-  setFormData(prev => ({
-    ...prev,
-    is_login: checked,
-    password: checked ? prev.password : '',
-    re_enter_password: checked ? prev.re_enter_password : '',
-    attendance_type: checked ? prev.attendance_type : ''
-  }));
-  // Clear password and attendance errors when unchecking
-  if (!checked) {
-    setErrors(prev => {
-      const newErrors = { ...prev };
-      delete newErrors.password;
-      delete newErrors.re_enter_password;
-      delete newErrors.attendance_type;
-      return newErrors;
-    });
-  }
-}, []);
+    setFormData(prev => ({
+      ...prev,
+      is_login: checked,
+      password: checked ? prev.password : '',
+      re_enter_password: checked ? prev.re_enter_password : '',
+      attendance_type: checked ? prev.attendance_type : ''
+    }));
+    validateForm();
+  }, [validateForm]);
 
-    const resetForm = useCallback(() => {
+  const resetForm = useCallback(() => {
     setFormData(INITIAL_FORM_DATA);
     setErrors({});
     setShowModal(false);
-    }, []);
+    setShowPassword(false);
+    setShowReEnterPassword(false);
+  }, []);
 
   // Submit handler
   const handleSubmit = useCallback(async () => {
@@ -338,7 +319,6 @@ if (
     setSubmitting(true);
 
     try {
-      // Prepare payload - exclude password fields if login is not enabled
       const payload = { ...formData };
 
       if (!formData.is_login) {
@@ -346,10 +326,8 @@ if (
         delete payload.re_enter_password;
       }
 
-      // Remove re_enter_password from payload as it's only for validation
       delete payload.re_enter_password;
 
-      // Remove fulltime specific fields for contract workers
       if (!isFullTimeWork) {
         delete payload.wage_hour;
         delete payload.wage_overtime;
@@ -359,9 +337,14 @@ if (
 
       console.log('Submitting employee data:', payload);
       const response = await post('/api/employees', payload);
-      if (response && response.employee.id) {
+      if (response.message === "Email already taken" ||
+          response.message === "Mobile number already taken" ||
+          response.message === "Aadhaar number already taken") {
+        showNotification('danger', response.message || t('MSG.employeeRegisteredSuccess'));
+      } else if (response && response.employee.id) {
         showNotification('success', response.message || t('MSG.employeeRegisteredSuccess'));
         resetForm();
+        scrollToTop(); // Scroll to top after successful submission
       } else {
         showNotification('danger', response.message || t('MSG.employeeRegistrationFailed'));
       }
@@ -371,29 +354,29 @@ if (
     } finally {
       setSubmitting(false);
     }
-  }, [formData, validateForm, showNotification, resetForm, t, isFullTimeWork]);
+  }, [formData, validateForm, showNotification, resetForm, t, isFullTimeWork, scrollToTop]);
 
   // Memoized form validation state
-const isFormValid = useMemo(() => {
-  const baseRequiredFields = formData.name.trim() &&
+  const isFormValid = useMemo(() => {
+    const baseRequiredFields = formData.name.trim() &&
          formData.gender &&
          formData.work_type &&
          formData.adhaar_number &&
          formData.mobile;
 
-  let typeSpecificValidation = false;
+    let typeSpecificValidation = false;
 
-  if (formData.work_type === 'fulltime') {
-    typeSpecificValidation = formData.payment_type &&
-                           formData.overtime_type && // ADD THIS LINE
-                           formData.wage_hour &&
-                           formData.wage_overtime;
-  } else if (formData.work_type === 'contract') {
-    typeSpecificValidation = formData.contract_type;
-  }
+    if (formData.work_type === 'fulltime') {
+      typeSpecificValidation = formData.payment_type &&
+                             formData.overtime_type &&
+                             formData.wage_hour &&
+                             formData.wage_overtime;
+    } else if (formData.work_type === 'contract') {
+      typeSpecificValidation = formData.contract_type;
+    }
 
-  return baseRequiredFields && typeSpecificValidation;
-}, [formData]);
+    return baseRequiredFields && typeSpecificValidation;
+  }, [formData]);
 
   const openModal = useCallback(() => {
     setShowModal(true);
@@ -408,35 +391,41 @@ const isFormValid = useMemo(() => {
     handleSubmit();
   }, [closeModal, handleSubmit]);
 
-  // Fetch face attendance status on component mount
-useEffect(() => {
-  const fetchFaceAttendanceStatus = async () => {
-    try {
-      setLoadingFaceAttendance(true);
-      const response = await getAPICall('/api/isface-attendance');
-      setFaceAttendanceEnabled(response.face_attendance);
+  const togglePasswordVisibility = useCallback(() => {
+    setShowPassword(prev => !prev);
+  }, []);
 
-      // If face attendance is disabled, set default to location
-      if (!response.face_attendance) {
+  const toggleReEnterPasswordVisibility = useCallback(() => {
+    setShowReEnterPassword(prev => !prev);
+  }, []);
+
+  // Fetch face attendance status on component mount
+  useEffect(() => {
+    const fetchFaceAttendanceStatus = async () => {
+      try {
+        setLoadingFaceAttendance(true);
+        const response = await getAPICall('/api/isface-attendance');
+        setFaceAttendanceEnabled(response.face_attendance);
+
+        if (!response.face_attendance) {
+          setFormData(prev => ({
+            ...prev,
+            attendance_type: 'location'
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching face attendance status:', error);
         setFormData(prev => ({
           ...prev,
           attendance_type: 'location'
         }));
+      } finally {
+        setLoadingFaceAttendance(false);
       }
-    } catch (error) {
-      console.error('Error fetching face attendance status:', error);
-      // Default to location if API fails
-      setFormData(prev => ({
-        ...prev,
-        attendance_type: 'location'
-      }));
-    } finally {
-      setLoadingFaceAttendance(false);
-    }
-  };
+    };
 
-  fetchFaceAttendanceStatus();
-}, []);
+    fetchFaceAttendanceStatus();
+  }, []);
 
   return (
     <CContainer fluid className="min-h-screen bg-light py-0 py-md-2 p-1">
@@ -467,10 +456,10 @@ useEffect(() => {
                     <CIcon icon={cilUser} className="me-2 me-md-3 text-primary" size="lg" />
                     <div>
                       <h1 className="h4 h3-md mb-1 text-dark fw-bold">
-                        Create New Employee
+                        {t('LABELS.createNewEmployee')}
                       </h1>
                       <p className="text-muted mb-0 small">
-                        Fill in the details below to register a new employee
+                        {t('LABELS.addNewEmployeeDescription')}
                       </p>
                     </div>
                   </div>
@@ -493,7 +482,7 @@ useEffect(() => {
                       onChange={(e) => handleInputChange('name', e.target.value)}
                       invalid={!!errors.name}
                       disabled={submitting}
-                      className="mb-1"
+                      className={`mb-1 ${errors.name ? 'border-danger' : ''}`}
                     />
                     {errors.name && <div className="text-danger small">{errors.name}</div>}
                   </CCol>
@@ -507,7 +496,7 @@ useEffect(() => {
                       onChange={(e) => handleInputChange('gender', e.target.value)}
                       invalid={!!errors.gender}
                       disabled={submitting}
-                      className="mb-1"
+                      className={`mb-1 ${errors.gender ? 'border-danger' : ''}`}
                     >
                       <option value="">{t('LABELS.selectGender')}</option>
                       {GENDER_OPTIONS.map(option => (
@@ -532,7 +521,7 @@ useEffect(() => {
                       onChange={(e) => handleWorkTypeChange(e.target.value)}
                       invalid={!!errors.work_type}
                       disabled={submitting}
-                      className="mb-1"
+                      className={`mb-1 ${errors.work_type ? 'border-danger' : ''}`}
                     >
                       <option value="">{t('LABELS.selectWorkType')}</option>
                       {WORK_TYPE_OPTIONS.map(option => (
@@ -555,7 +544,7 @@ useEffect(() => {
                           onChange={(e) => handleInputChange('payment_type', e.target.value)}
                           invalid={!!errors.payment_type}
                           disabled={submitting}
-                          className="mb-1"
+                          className={`mb-1 ${errors.payment_type ? 'border-danger' : ''}`}
                         >
                           <option value="">{t('LABELS.selectPaymentType')}</option>
                           {PAYMENT_TYPE_OPTIONS.map(option => (
@@ -578,7 +567,7 @@ useEffect(() => {
                           onChange={(e) => handleInputChange('contract_type', e.target.value)}
                           invalid={!!errors.contract_type}
                           disabled={submitting}
-                          className="mb-1"
+                          className={`mb-1 ${errors.contract_type ? 'border-danger' : ''}`}
                         >
                           <option value="">{t('LABELS.selectContractType')}</option>
                           {CONTRACT_TYPE_OPTIONS.map(option => (
@@ -593,7 +582,7 @@ useEffect(() => {
                   </CCol>
                 </CRow>
 
-                {/* ADD THIS NEW ROW FOR OVERTIME TYPE */}
+                {/* Overtime Type */}
                 {formData.work_type === 'fulltime' && (
                   <CRow className="mb-4">
                     <CCol xs={12} md={6}>
@@ -606,7 +595,7 @@ useEffect(() => {
                         onChange={(e) => handleInputChange('overtime_type', e.target.value)}
                         invalid={!!errors.overtime_type}
                         disabled={submitting}
-                        className="mb-1"
+                        className={`mb-1 ${errors.overtime_type ? 'border-danger' : ''}`}
                       >
                         <option value="">{t('LABELS.selectOvertimeType')}</option>
                         {OVERTIME_TYPE_OPTIONS.map(option => (
@@ -640,14 +629,17 @@ useEffect(() => {
                           onChange={(e) => handleNumberInput('wage_hour', e.target.value)}
                           invalid={!!errors.wage_hour}
                           disabled={submitting}
-                          className="mb-1"
+                          className={`mb-1 ${errors.wage_hour ? 'border-danger' : ''}`}
                         />
                         {errors.wage_hour && <div className="text-danger small">{errors.wage_hour}</div>}
                       </CCol>
-
-                      {/* <CCol xs={12} md={6}>
+                      <CCol xs={12} md={6}>
                         <CFormLabel className="fw-semibold text-dark mb-2">
-                          {t('LABELS.wageOvertime')}
+                          {formData.overtime_type === 'hourly'
+                            ? 'Overtime per Hour'
+                            : formData.overtime_type === 'fixed'
+                            ? 'Overtime per Day'
+                            : t('LABELS.wageOvertime')}
                           <span className="text-danger ms-1">*</span>
                         </CFormLabel>
                         <CFormInput
@@ -657,34 +649,10 @@ useEffect(() => {
                           onChange={(e) => handleNumberInput('wage_overtime', e.target.value)}
                           invalid={!!errors.wage_overtime}
                           disabled={submitting}
-                          className="mb-1"
+                          className={`mb-1 ${errors.wage_overtime ? 'border-danger' : ''}`}
                         />
                         {errors.wage_overtime && <div className="text-danger small">{errors.wage_overtime}</div>}
-                      </CCol> */}
-                      <CCol xs={12} md={6}>
-  <CFormLabel className="fw-semibold text-dark mb-2">
-    {formData.overtime_type === 'hourly'
-      ? 'Overtime per Hour'
-      : formData.overtime_type === 'fixed'
-      ? 'Overtime per Day'
-      : t('LABELS.wageOvertime')}
-    <span className="text-danger ms-1">*</span>
-  </CFormLabel>
-  <CFormInput
-    type="text"
-    placeholder={t('LABELS.priceZero')}
-    value={formData.wage_overtime}
-    onChange={(e) => handleNumberInput('wage_overtime', e.target.value)}
-    invalid={!!errors.wage_overtime}
-    disabled={submitting}
-    className="mb-1"
-  />
-  {errors.wage_overtime && (
-    <div className="text-danger small">{errors.wage_overtime}</div>
-  )}
-</CCol>
-
-
+                      </CCol>
                     </CRow>
 
                     {/* Credit and Debit */}
@@ -700,7 +668,7 @@ useEffect(() => {
                           onChange={(e) => handleNumberInput('credit', e.target.value)}
                           invalid={!!errors.credit}
                           disabled={submitting}
-                          className="mb-1"
+                          className={`mb-1 ${errors.credit ? 'border-danger' : ''}`}
                         />
                         {errors.credit && <div className="text-danger small">{errors.credit}</div>}
                       </CCol>
@@ -715,7 +683,7 @@ useEffect(() => {
                           onChange={(e) => handleNumberInput('debit', e.target.value)}
                           invalid={!!errors.debit}
                           disabled={submitting}
-                          className="mb-1"
+                          className={`mb-1 ${errors.debit ? 'border-danger' : ''}`}
                         />
                         {errors.debit && <div className="text-danger small">{errors.debit}</div>}
                       </CCol>
@@ -736,7 +704,7 @@ useEffect(() => {
                       onChange={(e) => handleNumberInput('half_day_payment', e.target.value)}
                       invalid={!!errors.half_day_payment}
                       disabled={submitting}
-                      className="mb-1"
+                      className={`mb-1 ${errors.half_day_payment ? 'border-danger' : ''}`}
                     />
                     {errors.half_day_payment && <div className="text-danger small">{errors.half_day_payment}</div>}
                   </CCol>
@@ -751,12 +719,11 @@ useEffect(() => {
                       onChange={(e) => handleNumberInput('holiday_payment', e.target.value)}
                       invalid={!!errors.holiday_payment}
                       disabled={submitting}
-                      className="mb-1"
+                      className={`mb-1 ${errors.holiday_payment ? 'border-danger' : ''}`}
                     />
                     {errors.holiday_payment && <div className="text-danger small">{errors.holiday_payment}</div>}
                   </CCol>
                 </CRow>
-
 
                 {/* Adhaar Number and Mobile */}
                 <CRow className="mb-4">
@@ -772,7 +739,7 @@ useEffect(() => {
                       onChange={(e) => handleDigitOnlyInput('adhaar_number', e.target.value, 12)}
                       invalid={!!errors.adhaar_number}
                       disabled={submitting}
-                      className="mb-1"
+                      className={`mb-1 ${errors.adhaar_number ? 'border-danger' : ''}`}
                     />
                     {errors.adhaar_number && <div className="text-danger small">{errors.adhaar_number}</div>}
                   </CCol>
@@ -788,7 +755,7 @@ useEffect(() => {
                       onChange={(e) => handleDigitOnlyInput('mobile', e.target.value, 10)}
                       invalid={!!errors.mobile}
                       disabled={submitting}
-                      className="mb-1"
+                      className={`mb-1 ${errors.mobile ? 'border-danger' : ''}`}
                     />
                     {errors.mobile && <div className="text-danger small">{errors.mobile}</div>}
                   </CCol>
@@ -807,7 +774,7 @@ useEffect(() => {
                       onChange={(e) => handleInputChange('email', e.target.value)}
                       invalid={!!errors.email}
                       disabled={submitting}
-                      className="mb-1"
+                      className={`mb-1 ${errors.email ? 'border-danger' : ''}`}
                     />
                     {errors.email && <div className="text-danger small">{errors.email}</div>}
                   </CCol>
@@ -838,7 +805,7 @@ useEffect(() => {
                       onChange={(e) => handleDigitOnlyInput('referral_by_number', e.target.value, 10)}
                       invalid={!!errors.referral_by_number}
                       disabled={submitting}
-                      className="mb-1"
+                      className={`mb-1 ${errors.referral_by_number ? 'border-danger' : ''}`}
                     />
                     {errors.referral_by_number && <div className="text-danger small">{errors.referral_by_number}</div>}
                   </CCol>
@@ -846,7 +813,6 @@ useEffect(() => {
                     {/* Empty column for spacing */}
                   </CCol>
                 </CRow>
-
 
                 {/* Login Checkbox */}
                 <CRow className="mb-4">
@@ -870,15 +836,26 @@ useEffect(() => {
                         {t('LABELS.password')}
                         <span className="text-danger ms-1">*</span>
                       </CFormLabel>
-                      <CFormInput
-                        type="password"
-                        placeholder={t('LABELS.password')}
-                        value={formData.password}
-                        onChange={(e) => handleInputChange('password', e.target.value)}
-                        invalid={!!errors.password}
-                        disabled={submitting}
-                        className="mb-1"
-                      />
+                      <CInputGroup>
+                        <CFormInput
+                          type={showPassword ? "text" : "password"}
+                          placeholder={t('LABELS.password')}
+                          value={formData.password}
+                          onChange={(e) => handleInputChange('password', e.target.value)}
+                          invalid={!!errors.password}
+                          disabled={submitting}
+                          className={errors.password ? 'border-danger' : ''}
+                        />
+                        <CInputGroupText
+                          style={{ cursor: 'pointer' }}
+                          onClick={togglePasswordVisibility}
+                          className="bg-light border-start-0"
+                        >
+                          <span className="text-muted" style={{ fontSize: '16px' }}>
+                            {showPassword ? '🔒' : '👁️'}
+                          </span>
+                        </CInputGroupText>
+                      </CInputGroup>
                       {errors.password && <div className="text-danger small">{errors.password}</div>}
                     </CCol>
                     <CCol xs={12} md={6}>
@@ -886,15 +863,26 @@ useEffect(() => {
                         {t('LABELS.reEnterPassword')}
                         <span className="text-danger ms-1">*</span>
                       </CFormLabel>
-                      <CFormInput
-                        type="password"
-                        placeholder={t('LABELS.reEnterPassword')}
-                        value={formData.re_enter_password}
-                        onChange={(e) => handleInputChange('re_enter_password', e.target.value)}
-                        invalid={!!errors.re_enter_password}
-                        disabled={submitting}
-                        className="mb-1"
-                      />
+                      <CInputGroup>
+                        <CFormInput
+                          type={showReEnterPassword ? "text" : "password"}
+                          placeholder={t('LABELS.reEnterPassword')}
+                          value={formData.re_enter_password}
+                          onChange={(e) => handleInputChange('re_enter_password', e.target.value)}
+                          invalid={!!errors.re_enter_password}
+                          disabled={submitting}
+                          className={errors.re_enter_password ? 'border-danger' : ''}
+                        />
+                        <CInputGroupText
+                          style={{ cursor: 'pointer' }}
+                          onClick={toggleReEnterPasswordVisibility}
+                          className="bg-light border-start-0"
+                        >
+                          <span className="text-muted" style={{ fontSize: '16px' }}>
+                            {showReEnterPassword ? '🔒' : '👁️'}
+                          </span>
+                        </CInputGroupText>
+                      </CInputGroup>
                       {errors.re_enter_password && <div className="text-danger small">{errors.re_enter_password}</div>}
                     </CCol>
                   </CRow>
@@ -913,7 +901,7 @@ useEffect(() => {
                         onChange={(e) => handleInputChange('attendance_type', e.target.value)}
                         invalid={!!errors.attendance_type}
                         disabled={submitting}
-                        className="mb-1"
+                        className={`mb-1 ${errors.attendance_type ? 'border-danger' : ''}`}
                       >
                         <option value="">{t('LABELS.selectAttendanceType')}</option>
                         {ATTENDANCE_TYPE_OPTIONS.map(option => (
@@ -980,7 +968,7 @@ useEffect(() => {
       </CRow>
 
       {/* Confirmation Modal */}
-      <CModal visible={showModal} onClose={closeModal}>
+      <CModal visible={showModal} backdrop="static" keyboard={false}>
         <CModalHeader className="border-bottom">
           <CModalTitle className="h5 fw-semibold">
             {t('LABELS.confirmEmployeeCreation')}
@@ -989,27 +977,27 @@ useEffect(() => {
         <CModalBody className="p-4">
           <p className="mb-3">{t('MSG.confirmEmployeeCreationMessage')}</p>
           <div className="bg-light rounded p-3">
-          <p className="mb-2"><strong>{t('LABELS.name')}:</strong> {formData.name}</p>
-          <p className="mb-2"><strong>{t('LABELS.gender')}:</strong> {formData.gender}</p>
-          <p className="mb-2"><strong>{t('LABELS.workType')}:</strong> {formData.work_type}</p>
-          {formData.work_type === 'fulltime' && (
-            <>
-              <p className="mb-2"><strong>{t('LABELS.paymentType')}:</strong> {formData.payment_type}</p>
-              <p className="mb-2"><strong>{t('LABELS.overtimeType')}:</strong> {formData.overtime_type}</p>
-            </>
-          )}
-          {formData.work_type === 'contract' && (
-            <p className="mb-2"><strong>{t('LABELS.contractType')}:</strong> {formData.contract_type}</p>
-          )}
-          <p className="mb-2"><strong>{t('LABELS.mobile')}:</strong> {formData.mobile}</p>
-          <p className="mb-2"><strong>{t('LABELS.loginAccess')}:</strong> {formData.is_login ? t('LABELS.yes') : t('LABELS.no')}</p>
-          {formData.is_login && (
-            <p className="mb-0"><strong>{t('LABELS.attendanceType')}:</strong> {formData.attendance_type}</p>
-          )}
-          {formData.referral_by_number && (
-          <p className="mb-2"><strong>{t('LABELS.referralByNumber')}:</strong> {formData.referral_by_number}</p>
-          )}
-        </div>
+            <p className="mb-2"><strong>{t('LABELS.name')}:</strong> {formData.name}</p>
+            <p className="mb-2"><strong>{t('LABELS.gender')}:</strong> {formData.gender}</p>
+            <p className="mb-2"><strong>{t('LABELS.workType')}:</strong> {formData.work_type}</p>
+            {formData.work_type === 'fulltime' && (
+              <>
+                <p className="mb-2"><strong>{t('LABELS.paymentType')}:</strong> {formData.payment_type}</p>
+                <p className="mb-2"><strong>{t('LABELS.overtimeType')}:</strong> {formData.overtime_type}</p>
+              </>
+            )}
+            {formData.work_type === 'contract' && (
+              <p className="mb-2"><strong>{t('LABELS.contractType')}:</strong> {formData.contract_type}</p>
+            )}
+            <p className="mb-2"><strong>{t('LABELS.mobile')}:</strong> {formData.mobile}</p>
+            <p className="mb-2"><strong>{t('LABELS.loginAccess')}:</strong> {formData.is_login ? t('LABELS.yes') : t('LABELS.no')}</p>
+            {formData.is_login && (
+              <p className="mb-0"><strong>{t('LABELS.attendanceType')}:</strong> {formData.attendance_type}</p>
+            )}
+            {formData.referral_by_number && (
+              <p className="mb-2"><strong>{t('LABELS.referralByNumber')}:</strong> {formData.referral_by_number}</p>
+            )}
+          </div>
         </CModalBody>
         <CModalFooter className="border-top">
           <CButton

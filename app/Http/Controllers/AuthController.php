@@ -8,6 +8,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Employee;
+use Illuminate\Validation\ValidationException;
 
 
 
@@ -90,6 +91,13 @@ class AuthController extends Controller
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
+        }  
+
+         if ($user->type==10) {
+            return response()->json([
+                'message' => 'User not allowed for Manager Login. Kindly contact admin.',
+                'blocked' => true,
+            ], 403);
         }
 
         /* ───── 4. block checks ───── */
@@ -136,6 +144,13 @@ class AuthController extends Controller
         //Check if mobile no exists
         $user = User::where('mobile', $fields['mobile'])->first();
         $employee=Employee::where('mobile',$user->mobile)->first();
+
+         if ($user->type!=10) {
+            return response()->json([
+                'message' => 'User not allowed for Manager login. Kindly contact admin.',
+                'blocked' => true,
+            ], 403);
+        }
        
           $user->attendance_type = $employee->attendance_type;
           $user->employee_id     = $employee->id;   // typo fixed

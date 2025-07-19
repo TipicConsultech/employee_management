@@ -26,8 +26,8 @@ class EmployeeTransactionController extends Controller
         'start_date'   => ['required', 'date_format:Y-m-d'],   // enforce real dates
         'end_date'     => ['required', 'date_format:Y-m-d'],
         'employee_id'  => ['required', 'integer', 'exists:employee,id'],
-        'payed_amount' => ['required','integer'],
-        'salary_amount'=> ['required', 'integer'],
+        'payed_amount' => ['required','numeric'],
+        'salary_amount'=> ['required', 'numeric'],
         'payment_type' => ['required', 'in:cash,upi,bank_transfer'],
     ]);
 

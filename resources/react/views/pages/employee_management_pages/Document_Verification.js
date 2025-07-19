@@ -23,16 +23,14 @@ import {
     CModalHeader,
     CModalTitle
 } from '@coreui/react';
-import { getAPICall, post, postFormData } from '../../../util/api';
+import { getAPICall, postFormData } from '../../../util/api';
 import { useTranslation } from 'react-i18next';
 import CIcon from '@coreui/icons-react';
 import { cilZoom, cilCloudUpload, cilX } from '@coreui/icons';
 
 function EmployeeDocumentUpload() {
-    // Add translation hook
     const { t } = useTranslation("global");
 
-    // State management
     const [employees, setEmployees] = useState([]);
     const [documentTypes, setDocumentTypes] = useState([]);
     const [selectedEmployee, setSelectedEmployee] = useState('');
@@ -42,8 +40,13 @@ function EmployeeDocumentUpload() {
     const [documentTypesLoading, setDocumentTypesLoading] = useState(true);
     const [notification, setNotification] = useState({ show: false, type: '', message: '' });
     const [uploading, setUploading] = useState(false);
+    const [otherDocument, setOtherDocument] = useState({
+        name: '',
+        file: null,
+        fileName: '',
+        previewUrl: null
+    });
 
-    // Modal state for document preview
     const [previewModal, setPreviewModal] = useState({
         visible: false,
         document: null,
@@ -52,54 +55,42 @@ function EmployeeDocumentUpload() {
         fileType: ''
     });
 
-    // Enhanced status code message mapping
     const getStatusMessage = (statusCode, responseData = null) => {
         const statusMessages = {
-            200: 'Operation completed successfully',
-            201: 'Document uploaded successfully',
-            400: 'Invalid request. Please check your input',
-            401: 'Unauthorized. Please login again',
-            403: 'Access denied. You do not have permission',
-            404: 'Resource not found',
-            409: 'Conflict. Document already exists',
-            413: 'File too large. Please upload a smaller file',
-            415: 'Unsupported file type',
-            422: 'Validation failed. Please check required fields',
-            500: 'Internal server error. Please try again later',
-            502: 'Server unavailable. Please try again later',
-            503: 'Service temporarily unavailable'
+            200: t('MSG.operationSuccess'),
+            201: t('MSG.documentUploadedSuccess'),
+            400: t('MSG.invalidRequest'),
+            401: t('MSG.unauthorized'),
+            403: t('MSG.accessDenied'),
+            404: t('MSG.resourceNotFound'),
+            409: t('MSG.documentExists'),
+            413: t('MSG.fileTooLarge'),
+            415: t('MSG.unsupportedFileType'),
+            422: t('MSG.validationFailed'),
+            500: t('MSG.serverError'),
+            502: t('MSG.serverUnavailable'),
+            503: t('MSG.serviceUnavailable')
         };
 
-        // Check if response has custom error message
         if (responseData) {
-            if (responseData.message) {
-                return responseData.message;
-            }
-            if (responseData.error) {
-                return responseData.error;
-            }
+            if (responseData.message) return responseData.message;
+            if (responseData.error) return responseData.error;
             if (responseData.errors && Array.isArray(responseData.errors)) {
                 return responseData.errors.join(', ');
             }
         }
 
-        return statusMessages[statusCode] || `Unexpected response (Status: ${statusCode})`;
+        return statusMessages[statusCode] || t('MSG.unexpectedResponse', { status: statusCode });
     };
 
-    // Enhanced API response handler
-    const handleAPIResponse = (response, successMessage = 'Operation completed successfully') => {
-        console.log('API Response:', response); // Debug log
-
-        // Handle different response structures
+    const handleAPIResponse = (response, successMessage = t('MSG.operationSuccess')) => {
         if (!response) {
-            showNotification('danger', 'No response received from server');
+            showNotification('danger', t('MSG.noResponse'));
             return false;
         }
 
-        // Check for HTTP status codes
         if (response.status !== undefined) {
             const statusCode = response.status;
-
             if (statusCode >= 200 && statusCode < 300) {
                 showNotification('success', successMessage);
                 return true;
@@ -110,52 +101,44 @@ function EmployeeDocumentUpload() {
             }
         }
 
-        // Check for success property
         if (response.success !== undefined) {
             if (response.success === true) {
                 showNotification('success', response.message || successMessage);
                 return true;
             } else {
-                const errorMessage = response.message || response.error || 'Operation failed';
+                const errorMessage = response.message || response.error || t('MSG.operationFailed');
                 showNotification('danger', errorMessage);
                 return false;
             }
         }
 
-        // Check for error property
         if (response.error !== undefined) {
             if (!response.error) {
                 showNotification('success', response.message || successMessage);
                 return true;
             } else {
-                const errorMessage = response.message || response.error || 'Operation failed';
+                const errorMessage = response.message || response.error || t('MSG.operationFailed');
                 showNotification('danger', errorMessage);
                 return false;
             }
         }
 
-        // Check for data property existence (assume success if data exists)
         if (response.data !== undefined) {
             showNotification('success', successMessage);
             return true;
         }
 
-        // If response is an array (for list endpoints)
         if (Array.isArray(response)) {
             showNotification('success', successMessage);
             return true;
         }
 
-        // Default case - if we can't determine success/failure
-        console.warn('Unable to determine API response status:', response);
-        showNotification('warning', 'Response received but status unclear');
+        showNotification('warning', t('MSG.responseUnclear'));
         return false;
     };
 
-    // Memoized helper function for showing notifications
     const showNotification = useCallback((type, message) => {
         setNotification({ show: true, type, message });
-        // Auto hide success messages after 4 seconds
         if (type === 'success') {
             setTimeout(() => {
                 setNotification({ show: false, type: '', message: '' });
@@ -163,49 +146,41 @@ function EmployeeDocumentUpload() {
         }
     }, []);
 
-    // Enhanced fetch employees function
     const fetchEmployees = useCallback(async () => {
         try {
             setEmployeesLoading(true);
             const response = await getAPICall('/api/employees');
-            console.log('Employees API Response:', response); // Debug log
-
             if (response && (response.data || Array.isArray(response))) {
                 const employeesData = response.data || response;
                 setEmployees(employeesData);
 
                 if (employeesData.length === 0) {
-                    showNotification('info', 'No employees found');
+                    showNotification('info', t('MSG.noEmployeesFound'));
                 } else {
-                    handleAPIResponse(response, `${employeesData.length} employees loaded successfully`);
+                    handleAPIResponse(response, t('MSG.employeesLoaded', { count: employeesData.length }));
                 }
             } else {
-                handleAPIResponse(response, 'Failed to fetch employees');
+                handleAPIResponse(response, t('MSG.failedToFetchEmployees'));
             }
         } catch (error) {
-            console.error('Error fetching employees:', error);
-            showNotification('danger', `Error connecting to server: ${error.message}`);
+            showNotification('danger', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
         } finally {
             setEmployeesLoading(false);
         }
-    }, [showNotification]);
+    }, [showNotification, t]);
 
-    // Enhanced fetch document types function
     const fetchDocumentTypes = useCallback(async () => {
         try {
             setDocumentTypesLoading(true);
             const response = await getAPICall('/api/document-type');
-            console.log('Document Types API Response:', response); // Debug log
-
             if (response && (response.data || Array.isArray(response))) {
                 const documentTypesData = response.data || response;
                 setDocumentTypes(documentTypesData);
 
                 if (documentTypesData.length === 0) {
-                    showNotification('info', 'No document types found');
+                    showNotification('info', t('MSG.noDocumentTypesFound'));
                     setDocumentUploads([]);
                 } else {
-                    // Auto-generate document upload rows for each document type
                     const documentRows = documentTypesData.map(type => ({
                         id: type.id,
                         documentType: type.id,
@@ -215,48 +190,39 @@ function EmployeeDocumentUpload() {
                         previewUrl: null
                     }));
                     setDocumentUploads(documentRows);
-                    handleAPIResponse(response, `${documentTypesData.length} document types loaded successfully`);
+                   handleAPIResponse(response, t('MSG.documentTypesLoaded', { count: documentTypesData.length }));
                 }
             } else {
-                handleAPIResponse(response, 'Failed to fetch document types');
+                handleAPIResponse(response, t('MSG.failedToFetchDocumentTypes'));
             }
         } catch (error) {
-            console.error('Error fetching document types:', error);
-            showNotification('danger', `Error connecting to server: ${error.message}`);
+            showNotification('danger', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
         } finally {
             setDocumentTypesLoading(false);
         }
-    }, [showNotification]);
+    }, [showNotification, t]);
 
-    // Fetch data on component mount
     useEffect(() => {
         fetchEmployees();
         fetchDocumentTypes();
     }, [fetchEmployees, fetchDocumentTypes]);
 
-    // Handle file upload
     const handleFileUpload = (id, event) => {
         const file = event.target.files[0];
         if (file) {
-            // Validate file type
             const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
             if (!allowedTypes.includes(file.type)) {
-                showNotification('warning', 'Please upload only JPEG, JPG, PNG, or PDF files');
+                showNotification('warning', t('MSG.invalidFileType'));
                 return;
             }
-
-            // Validate file size (10MB max)
             if (file.size > 10 * 1024 * 1024) {
-                showNotification('warning', 'File size must be less than 10MB');
+                showNotification('warning', t('MSG.fileTooLarge'));
                 return;
             }
-
-            // Create preview URL for images
             let previewUrl = null;
             if (file.type.startsWith('image/')) {
                 previewUrl = URL.createObjectURL(file);
             }
-
             setDocumentUploads(documentUploads.map(doc =>
                 doc.id === id ? {
                     ...doc,
@@ -265,18 +231,15 @@ function EmployeeDocumentUpload() {
                     previewUrl: previewUrl
                 } : doc
             ));
-
-            showNotification('success', `File "${file.name}" selected successfully`);
+            showNotification('success', t('MSG.fileSelected', { fileName: file.name }));
         }
     };
 
-    // Preview document in modal
     const previewDocument = (doc) => {
         if (!doc.file) {
-            showNotification('info', 'Please select a file to preview');
+            showNotification('info', t('MSG.selectFileToPreview'));
             return;
         }
-
         let previewUrl = null;
         let fileType = doc.file.type;
 
@@ -285,7 +248,6 @@ function EmployeeDocumentUpload() {
         } else if (doc.file.type === 'application/pdf') {
             previewUrl = URL.createObjectURL(doc.file);
         }
-
         if (previewUrl) {
             setPreviewModal({
                 visible: true,
@@ -295,11 +257,10 @@ function EmployeeDocumentUpload() {
                 fileType: fileType
             });
         } else {
-            showNotification('info', 'Preview not available for this file type');
+            showNotification('info', t('MSG.previewNotAvailable'));
         }
     };
 
-    // Close preview modal
     const closePreviewModal = () => {
         if (previewModal.previewUrl && previewModal.fileType === 'application/pdf') {
             URL.revokeObjectURL(previewModal.previewUrl);
@@ -313,48 +274,37 @@ function EmployeeDocumentUpload() {
         });
     };
 
-    // Enhanced upload documents function
     const uploadDocuments = async () => {
         if (!selectedEmployee) {
-            showNotification('warning', 'Please select an employee');
+            showNotification('warning', t('MSG.selectEmployee'));
             return;
         }
 
-        if (documentUploads.length === 0) {
-            showNotification('warning', 'Please add at least one document');
-            return;
-        }
+        const uploadedDocs = documentUploads.filter(doc => doc.file);
+        const hasOtherDoc = otherDocument.file && otherDocument.name.trim();
 
-        // Validate all documents - only check if at least one file is uploaded
-        const uploadedFiles = documentUploads.filter(doc => doc.file);
-        if (uploadedFiles.length === 0) {
-            showNotification('warning', 'Please upload at least one document');
+        if (uploadedDocs.length === 0 && !hasOtherDoc) {
+            showNotification('warning', t('MSG.uploadAtLeastOneDocument'));
             return;
         }
 
         try {
             setUploading(true);
-
-            // Create FormData for file upload with document type IDs as keys
             const formData = new FormData();
             formData.append('employee_id', selectedEmployee);
 
-            // Only include documents that have files uploaded
-            const documentsToUpload = documentUploads.filter(doc => doc.file);
-            documentsToUpload.forEach((doc) => {
-                // Use actual document type ID as key
+            uploadedDocs.forEach(doc => {
                 formData.append(doc.documentType.toString(), doc.file);
             });
 
-            console.log('Uploading documents for employee:', selectedEmployee);
-            console.log('Documents to upload:', documentsToUpload.length);
+            if (hasOtherDoc) {
+                formData.append('custom_document_name', otherDocument.name.trim());
+                formData.append('custom_document_file', otherDocument.file);
+            }
 
             const response = await postFormData('/api/employee-details', formData);
-            console.log('Upload API Response:', response); // Debug log
 
-            // Handle response with proper status code checking
-            if (handleAPIResponse(response, `${documentsToUpload.length} documents uploaded successfully`)) {
-                // Reset form on success
+            if (handleAPIResponse(response, t('MSG.documentsUploaded', { count: uploadedDocs.length + (hasOtherDoc ? 1 : 0) }))) {
                 setSelectedEmployee('');
                 setDocumentUploads(documentUploads.map(doc => ({
                     ...doc,
@@ -362,48 +312,41 @@ function EmployeeDocumentUpload() {
                     fileName: '',
                     previewUrl: null
                 })));
-
-                // Clear file inputs
+                setOtherDocument({
+                    name: '',
+                    file: null,
+                    fileName: '',
+                    previewUrl: null
+                });
                 const fileInputs = document.querySelectorAll('input[type="file"]');
                 fileInputs.forEach(input => input.value = '');
+
+                window.scrollTo({ top: 0, behavior: "smooth" });
             }
         } catch (error) {
-            console.error('Error uploading documents:', error);
-
-            // More specific error handling
-            if (error.response) {
-                // Server responded with error status
-                const errorMessage = getStatusMessage(error.response.status, error.response.data);
-                showNotification('danger', errorMessage);
-            } else if (error.request) {
-                // Network error
-                showNotification('danger', 'Network error. Please check your connection and try again');
-            } else {
-                // Other error
-                showNotification('danger', `Error uploading documents: ${error.message}`);
-            }
+            const msg = error.response
+                ? getStatusMessage(error.response.status, error.response.data)
+                : (error.request
+                    ? t('MSG.networkError')
+                    : t('MSG.errorUploadingDocuments', { error: error.message }));
+            showNotification('danger', msg);
         } finally {
             setUploading(false);
         }
     };
 
-    // Cancel and reset form
     const cancelUpload = () => {
         setSelectedEmployee('');
-        // Reset only the files, keep the document types structure
         setDocumentUploads(documentUploads.map(doc => ({
             ...doc,
             file: null,
             fileName: '',
             previewUrl: null
         })));
-
-        // Clear file inputs
         const fileInputs = document.querySelectorAll('input[type="file"]');
         fileInputs.forEach(input => input.value = '');
-
         setNotification({ show: false, type: '', message: '' });
-        showNotification('info', 'Form reset successfully');
+        showNotification('info', t('MSG.formResetSuccess'));
     };
 
     return (
@@ -414,12 +357,11 @@ function EmployeeDocumentUpload() {
                         <CCardHeader style={{ backgroundColor: "#E6E6FA" }}>
                             <div className="d-flex align-items-center">
                                 <CIcon icon={cilCloudUpload} className="me-2" />
-                                <strong>Employee Document Upload</strong>
+                                <strong>{t('LABELS.employeeDocumentUpload')}</strong>
                             </div>
-                            <small className="text-muted">Upload important documents for your employees securely</small>
+                            <small className="text-muted">{t('LABELS.uploadDocumentsDescription')}</small>
                         </CCardHeader>
 
-                        {/* Enhanced Notifications */}
                         {notification.show && (
                             <CAlert
                                 color={notification.type}
@@ -436,11 +378,10 @@ function EmployeeDocumentUpload() {
                         )}
 
                         <CCardBody>
-                            {/* Employee Selection */}
                             <CRow className="mb-4">
                                 <CCol md={6}>
                                     <CFormLabel htmlFor="employeeSelect" className="fw-bold">
-                                        Select Employee <span className="text-danger">*</span>
+                                        {t('LABELS.selectEmployee')} <span className="text-danger">*</span>
                                     </CFormLabel>
                                     <CFormSelect
                                         id="employeeSelect"
@@ -449,7 +390,7 @@ function EmployeeDocumentUpload() {
                                         disabled={employeesLoading}
                                         className={selectedEmployee ? 'border-success' : ''}
                                     >
-                                        <option value="">Choose an employee</option>
+                                        <option value="">{t('LABELS.chooseEmployee')}</option>
                                         {employees.map((employee) => (
                                             <option key={employee.id} value={employee.id}>
                                                 {employee.id} - {employee.name}
@@ -459,30 +400,29 @@ function EmployeeDocumentUpload() {
                                     {employeesLoading && (
                                         <div className="mt-2">
                                             <CSpinner size="sm" className="me-2" />
-                                            <small className="text-muted">Loading employees...</small>
+                                            <small className="text-muted">{t('MSG.loadingEmployees')}</small>
                                         </div>
                                     )}
                                     {!employeesLoading && employees.length === 0 && (
                                         <small className="text-warning mt-1 d-block">
-                                            No employees available. Please add employees first.
+                                            {t('MSG.noEmployeesAvailable')}
                                         </small>
                                     )}
                                 </CCol>
                             </CRow>
 
-                            {/* Document Uploads Section */}
                             <div className="mb-4">
                                 <div className="mb-3">
-                                    <CFormLabel className="fw-bold mb-0">Document Uploads</CFormLabel>
+                                    <CFormLabel className="fw-bold mb-0">{t('LABELS.documentUploads')}</CFormLabel>
                                     <small className="text-muted d-block">
-                                        Upload at least one document to proceed
+                                        {t('LABELS.uploadDocumentsInstruction')}
                                     </small>
                                 </div>
 
                                 {documentTypesLoading ? (
                                     <div className="d-flex justify-content-center align-items-center py-4">
                                         <CSpinner color="primary" className="me-2" />
-                                        <span>Loading document types...</span>
+                                        <span>{t('MSG.loadingDocumentTypes')}</span>
                                     </div>
                                 ) : (
                                     <div className="table-responsive">
@@ -490,13 +430,13 @@ function EmployeeDocumentUpload() {
                                             <CTableHead>
                                                 <CTableRow>
                                                     <CTableHeaderCell scope="col" style={{ width: '30%' }}>
-                                                        Document Type
+                                                        {t('LABELS.documentType')}
                                                     </CTableHeaderCell>
                                                     <CTableHeaderCell scope="col" style={{ width: '40%' }}>
-                                                        Document Upload
+                                                        {t('LABELS.documentUpload')}
                                                     </CTableHeaderCell>
                                                     <CTableHeaderCell scope="col" style={{ width: '30%' }}>
-                                                        Preview Document
+                                                        {t('LABELS.previewDocument')}
                                                     </CTableHeaderCell>
                                                 </CTableRow>
                                             </CTableHead>
@@ -517,11 +457,11 @@ function EmployeeDocumentUpload() {
                                                                 />
                                                                 {doc.fileName && (
                                                                     <small className="text-success d-block mt-1">
-                                                                        ✓ Selected: {doc.fileName}
+                                                                        ✓ {t('MSG.selectedFile', { fileName: doc.fileName })}
                                                                     </small>
                                                                 )}
                                                                 <small className="text-muted">
-                                                                    Accepted: JPEG, JPG, PNG, PDF (Max 10MB)
+                                                                    {t('LABELS.acceptedFileTypes')}
                                                                 </small>
                                                             </CTableDataCell>
                                                             <CTableDataCell>
@@ -533,7 +473,7 @@ function EmployeeDocumentUpload() {
                                                                     disabled={!doc.file}
                                                                 >
                                                                     <CIcon icon={cilZoom} className="me-1" />
-                                                                    Preview
+                                                                    {t('LABELS.preview')}
                                                                 </CButton>
                                                             </CTableDataCell>
                                                         </CTableRow>
@@ -543,28 +483,111 @@ function EmployeeDocumentUpload() {
                                                         <CTableDataCell colSpan="3" className="text-center py-4">
                                                             <div className="text-muted">
                                                                 <CIcon icon={cilCloudUpload} size="xl" className="mb-2" />
-                                                                <p className="mb-0">No document types available</p>
-                                                                <small>Document types will appear here once loaded</small>
+                                                                <p className="mb-0">{t('MSG.noDocumentTypesAvailable')}</p>
+                                                                <small>{t('MSG.documentTypesWillAppear')}</small>
                                                             </div>
                                                         </CTableDataCell>
                                                     </CTableRow>
                                                 )}
+
+                                                <CTableRow>
+                                                    <CTableDataCell>
+                                                        <CFormInput
+                                                            type="text"
+                                                            name="otherDocumentName"
+                                                            placeholder={t('LABELS.enterDocumentDescription')}
+                                                            className="mt-0"
+                                                            value={otherDocument.name}
+                                                            onChange={(e) =>
+                                                                setOtherDocument((prev) => ({ ...prev, name: e.target.value }))
+                                                            }
+                                                        />
+                                                        <div className="fw-medium">{t('LABELS.otherDocument')}</div>
+                                                    </CTableDataCell>
+                                                    <CTableDataCell>
+                                                        <CFormInput
+                                                            type="file"
+                                                            name="otherDocumentFile"
+                                                            size="sm"
+                                                            accept=".jpeg,.jpg,.png,.pdf"
+                                                            onChange={(e) => {
+                                                                const file = e.target.files[0];
+                                                                if (file) {
+                                                                    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+                                                                    if (!allowedTypes.includes(file.type)) {
+                                                                        showNotification('warning', t('MSG.invalidFileType'));
+                                                                        return;
+                                                                    }
+                                                                    if (file.size > 10 * 1024 * 1024) {
+                                                                        showNotification('warning', t('MSG.fileTooLarge'));
+                                                                        return;
+                                                                    }
+
+                                                                    const previewUrl = file.type.startsWith('image/') || file.type === 'application/pdf'
+                                                                        ? URL.createObjectURL(file)
+                                                                        : null;
+
+                                                                    setOtherDocument((prev) => ({
+                                                                        ...prev,
+                                                                        file: file,
+                                                                        fileName: file.name,
+                                                                        previewUrl: previewUrl
+                                                                    }));
+
+                                                                    showNotification('success', t('MSG.fileSelected', { fileName: file.name }));
+                                                                }
+                                                            }}
+                                                        />
+                                                        {otherDocument.fileName && (
+                                                            <small className="text-success d-block mt-1">
+                                                                ✓ {t('MSG.selectedFile', { fileName: otherDocument.fileName })}
+                                                            </small>
+                                                        )}
+                                                        <small className="text-muted d-block mt-1">
+                                                            {t('LABELS.acceptedFileTypes')}
+                                                        </small>
+                                                    </CTableDataCell>
+                                                    <CTableDataCell>
+                                                        <CButton
+                                                            color="info"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                if (!otherDocument.file) {
+                                                                    showNotification('warning', t('MSG.selectFileFirst'));
+                                                                } else {
+                                                                    previewDocument({
+                                                                        documentTypeName: otherDocument.name || t('LABELS.otherDocument'),
+                                                                        file: otherDocument.file,
+                                                                        fileName: otherDocument.fileName,
+                                                                        previewUrl: otherDocument.previewUrl
+                                                                    });
+                                                                }
+                                                            }}
+                                                            disabled={!otherDocument.file}
+                                                        >
+                                                            <CIcon icon={cilZoom} className="me-1" />
+                                                            {t('LABELS.preview')}
+                                                        </CButton>
+                                                    </CTableDataCell>
+                                                </CTableRow>
                                             </CTableBody>
                                         </CTable>
                                     </div>
                                 )}
                             </div>
 
-                            {/* Upload Summary */}
                             {documentUploads.length > 0 && (
                                 <div className="mb-3">
                                     <small className="text-info">
-                                        <strong>Upload Summary:</strong> {documentUploads.filter(doc => doc.file).length} of {documentUploads.length} documents selected
+                                        <strong>{t('LABELS.uploadSummary')}:</strong> {t('MSG.uploadSummary', {
+                                            selected: documentUploads.filter(doc => doc.file).length,
+                                            total: documentUploads.length
+                                        })}
                                     </small>
                                 </div>
                             )}
 
-                            {/* Action Buttons */}
                             <div className="d-flex justify-content-end gap-2">
                                 <CButton
                                     color="secondary"
@@ -573,7 +596,7 @@ function EmployeeDocumentUpload() {
                                     disabled={uploading}
                                 >
                                     <CIcon icon={cilX} className="me-1" />
-                                    Cancel
+                                    {t('LABELS.cancel')}
                                 </CButton>
                                 <CButton
                                     color="primary"
@@ -583,12 +606,12 @@ function EmployeeDocumentUpload() {
                                     {uploading ? (
                                         <>
                                             <CSpinner size="sm" className="me-2" />
-                                            Uploading...
+                                            {t('LABELS.uploading')}
                                         </>
                                     ) : (
                                         <>
                                             <CIcon icon={cilCloudUpload} className="me-2" />
-                                            Upload Documents
+                                            {t('LABELS.uploadDocuments')}
                                         </>
                                     )}
                                 </CButton>
@@ -598,7 +621,6 @@ function EmployeeDocumentUpload() {
                 </CCol>
             </CRow>
 
-            {/* Document Preview Modal */}
             <CModal
                 visible={previewModal.visible}
                 onClose={closePreviewModal}
@@ -607,7 +629,7 @@ function EmployeeDocumentUpload() {
                 className="document-preview-modal"
             >
                 <CModalHeader>
-                    <CModalTitle>Document Preview</CModalTitle>
+                    <CModalTitle>{t('LABELS.documentPreview')}</CModalTitle>
                 </CModalHeader>
                 <CModalBody className="p-0">
                     <div className="bg-light p-3 border-bottom">
@@ -622,7 +644,7 @@ function EmployeeDocumentUpload() {
                             <div className="text-center">
                                 <img
                                     src={previewModal.previewUrl}
-                                    alt="Document preview"
+                                    alt={t('LABELS.documentPreview')}
                                     className="img-fluid rounded shadow-sm"
                                     style={{ maxHeight: '500px', width: 'auto' }}
                                 />
@@ -633,7 +655,7 @@ function EmployeeDocumentUpload() {
                                     src={previewModal.previewUrl}
                                     width="100%"
                                     height="500px"
-                                    title="PDF Preview"
+                                    title={t('LABELS.pdfPreview')}
                                     className="border rounded"
                                     style={{ minHeight: '500px' }}
                                 />
@@ -641,7 +663,7 @@ function EmployeeDocumentUpload() {
                         ) : (
                             <div className="text-center py-5">
                                 <CIcon icon={cilZoom} size="xl" className="text-muted mb-3" />
-                                <p className="text-muted mb-0">Preview not available for this file type</p>
+                                <p className="text-muted mb-0">{t('MSG.previewNotAvailable')}</p>
                             </div>
                         )}
                     </div>
@@ -649,7 +671,7 @@ function EmployeeDocumentUpload() {
                 <CModalFooter>
                     <CButton color="secondary" onClick={closePreviewModal}>
                         <CIcon icon={cilX} className="me-2" />
-                        Close
+                        {t('LABELS.close')}
                     </CButton>
                 </CModalFooter>
             </CModal>
@@ -658,25 +680,21 @@ function EmployeeDocumentUpload() {
                 .document-preview-modal .modal-dialog {
                     max-width: 800px;
                 }
-
                 @media (max-width: 768px) {
                     .document-preview-modal .modal-dialog {
                         max-width: 95%;
                         margin: 10px auto;
                     }
-
                     .document-preview-modal iframe {
                         height: 400px !important;
                         min-height: 400px !important;
                     }
                 }
-
                 @media (max-width: 576px) {
                     .document-preview-modal .modal-dialog {
                         max-width: 100%;
                         margin: 5px;
                     }
-
                     .document-preview-modal iframe {
                         height: 300px !important;
                         min-height: 300px !important;

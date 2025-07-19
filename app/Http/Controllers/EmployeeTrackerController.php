@@ -27,51 +27,50 @@ class EmployeeTrackerController extends Controller
         return response()->json(EmployeeTracker::latest()->paginate(15));
     }
 
-    /* POST /api/employee-tracker */
-    //     public function store(Request $request)
-// {
-//     $data = $request->validate([
-//             'check_in'       => ['boolean'],
-//             'check_out'      => ['boolean'],
-//             'payment_status' => ['boolean'],
-//             'check_in_gps'   => ['nullable', 'string', 'max:255'],
-//             'checkin_img'  => ['nullable', 'image', 'mimes:jpeg,jpg,png', 'max:2048'],
-//             'checkout_img' => ['nullable', 'image', 'mimes:jpeg,jpg,png', 'max:2048'],
-//         ]);
+public function updateTraker(Request $request, $id) {
+    // Validate input fields
+    $validatedData = $request->validate([
+        'check_in_time'   => 'nullable|date',
+        'check_out_time'  => 'nullable|date',
+        'half_day'        => 'nullable|boolean',
+        'status'          => 'nullable|in:CL,PL,SL,NA,H',
+    ]);
+
+    // Find tracker
+    $tracker = EmployeeTracker::findOrFail($id);
+    $CompanyCoordinates=CompanyCordinate::where('company_id',auth()->user()->company_id)->first();
+    // Prepare update array
+    $updateData = [];
+
+    if (isset($validatedData['check_in_time'])) {
+        $updateData['check_in_time'] = $validatedData['check_in_time'];
+    }
+
+    if (isset($validatedData['check_out_time'])) {
+        $updateData['check_out_time'] = $validatedData['check_out_time'];
+        $updateData['check_out'] = true; // assuming 'check_out' is a boolean column
+        $updateData['check_out_gps'] = $CompanyCoordinates->required_lat . "," . $CompanyCoordinates->required_lng;
+    }
+
+    if (isset($validatedData['half_day'])) {
+        $updateData['half_day'] = $validatedData['half_day'];
+    }
+
+    if (isset($validatedData['status'])) {
+        $updateData['status'] = $validatedData['status'];
+    }
+
+    // Update tracker
+    $tracker->update($updateData);
+
+    return response()->json([
+        'message' => 'Tracker updated successfully',
+        'data' => $tracker
+    ]);
+}
 
 
-    //     // get the single employee row that matches the logged‑in user’s mobile
-//     $employeeId = Employee::where('mobile', auth()->user()->mobile)
-//                           ->value('id');          // returns the id directly
 
-    //     $data['company_id'] = auth()->user()->company_id;
-//     $data['product_id'] = auth()->user()->product_id;
-//     $data['employee_id'] = $employeeId;           // now an actual integer
-
-    //     $company=CompanyInfo::where('product_id',$data['product_id']);
-//     $product=Products::find($data['product_id']);
-//     $employee_name=auth()->user()->name;
-
-    //     $tracker = EmployeeTracker::create($data);
-
-    //      if ($request->hasFile('checkin_img'))
-//         {
-//             $file      = $request->file('checkin_img');
-
-    //             $extension = $file->getClientOriginalExtension();
-//             $picture   = $product->product_name.'/'.$$company->company_name.'/'.$employee_name.'/'.date('His').'-'.$tracker->id;
-//             //move image to public/img folder
-//             $file->move(public_path(env('UPLOAD_PATH').'img/'.$request['dest']), $picture);
-//             return response()->json([
-//                 "success" => true,
-//                 "message" => "Image Uploaded Succesfully",
-//                 "fileName"=>$picture
-//             ]);
-//         }
-
-    //     //EmployeeFaceAttendance::create([auth()])
-//     return response()->json($tracker, 201);
-// }
 
     public function store(Request $request)
     {
@@ -123,25 +122,7 @@ class EmployeeTrackerController extends Controller
                 ], 201);
             }
 
-            // /* 3‑d Store image & create attendance -------------------- */
-            // $file = $request->file('checkin_img');
-
-            // $filename = Str::slug($product->product_name).'/'
-            //           . Str::slug($company->company_name ?? 'company').'/'
-            //           . 'emp-'.Str::slug($employee->name).'/'
-            //           . 'checkin_'.time().'.'.$file->extension();
-
-            // // $storedPath     = $file->storeAs('face_attendance', $filename, 'public');
-            // // $storedPath = $file->move(public_path(env('UPLOAD_PATH').'face_attendance'), $filename);
-            // // $checkinImgUrl  = url(Storage::url($storedPath));   // absolute link
-
-            // $targetDir  = base_path(
-            //         trim(env('UPLOAD_PATH'), '/')        // ../public_html/ems
-            //     ).DIRECTORY_SEPARATOR.'face_attendance'; // …/ems/face_attendance
-
-            // $checkinImgUrl  = url(Storage::url($targetDir));   // absolute link
-
-            /* 3‑c  Build storage path & public URL --------------------- */
+           
 
             // pull context data exactly like before …
             $employee = Employee::where('mobile', auth()->user()->mobile)->firstOrFail();

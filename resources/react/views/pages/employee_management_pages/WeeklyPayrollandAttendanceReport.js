@@ -285,11 +285,11 @@ const WeeklyPresentyPayroll = () => {
 
   return (
     <CContainer fluid>
-      <CRow className="mb-2">
+      {/* <CRow className="mb-2">
         <CCol>
           <h4 className="text-center mb-2">{t('LABELS.weeklyPresentyPayrollChart')}</h4>
         </CCol>
-      </CRow>
+      </CRow> */}
 
       <CRow className="mb-4">
         <CCol>

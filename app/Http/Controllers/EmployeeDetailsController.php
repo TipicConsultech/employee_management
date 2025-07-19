@@ -6,6 +6,8 @@ use App\Models\EmployeeDetails;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\DocumentType;
+ 
 
 class EmployeeDetailsController extends Controller
 {
@@ -20,45 +22,93 @@ class EmployeeDetailsController extends Controller
 
 public function store(Request $request)
 {
-    // 1️⃣ Validate just the employee_id (files are dynamic keys)
     $request->validate([
         'employee_id' => ['required', 'exists:employee,id'],
+        'custom_document_name' => 'nullable|string|max:255',
+        'custom_document_file' => 'nullable|file|max:10240|mimes:jpeg,jpg,png,pdf',
     ]);
-
+ 
     $employeeId = (int) $request->input('employee_id');
-    $companyId  = auth()->user()->company_id;   // must exist in company_info.id
+    $companyId  = auth()->user()->company_id;
     $productId  = auth()->user()->product_id;
-
-    // 2️⃣ Fail fast if no files at all
-    if ($request->allFiles() === []) {
+ 
+    $files = $request->allFiles();
+ 
+    if (empty($files) && !$request->hasFile('custom_document_file')) {
         return response()->json([
             'message' => 'No documents uploaded.',
         ], 422);
     }
-
+ 
     $inserted = [];
-
-    // 3️⃣ Loop over every uploaded file (adhaar, pan, etc.)
-    foreach ($request->allFiles() as $docId => $file) {
-      
-        // Read raw bytes and base‑64 encode (avoids UTF‑8 JSON errors)
+ 
+    // 1️⃣ Process standard documents
+    foreach ($files as $docId => $file) {
+        if ($docId === 'custom_document_file') continue;
+ 
         $base64 = base64_encode($file->get());
-
-        $detail = EmployeeDetails::create([
-            'product_id'    => $productId,
-            'employee_id'   => $employeeId,
-            'company_id'    => $companyId,
-            'document_id' => $docId,  
-            'document_link' => $base64,    // <‑‑ MUST be present
-        ]);
-        $detail['status']=201;
-
-        $inserted[] = $detail;
+ 
+        // Check if exists
+        $existing = EmployeeDetails::where('employee_id', $employeeId)
+            ->where('document_id', $docId)
+            ->first();
+ 
+        if ($existing) {
+            $existing->update(['document_link' => $base64]);
+            $existing['status'] = 200;
+            $inserted[] = $existing;
+        } else {
+            $detail = EmployeeDetails::create([
+                'product_id'    => $productId,
+                'employee_id'   => $employeeId,
+                'company_id'    => $companyId,
+                'document_id'   => $docId,
+                'document_link' => $base64,
+            ]);
+            $detail['status'] = 201;
+            $inserted[] = $detail;
+        }
     }
-
-    // 4️⃣ Return the rows (document_link is hidden)s
-    return response()->json($inserted, 201);
+ 
+    // 2️⃣ Handle custom "Other Document" — exact logic style from your original code
+    if ($request->filled('custom_document_name') && $request->hasFile('custom_document_file')) {
+        $docName = $request->input('custom_document_name');
+        $file = $request->file('custom_document_file');
+        $base64 = base64_encode($file->get());
+ 
+        // Create the document_type row (⚠️ same logic as before, not firstOrCreate)
+        $documentType = DocumentType::create([
+            'document_name' => $docName,
+        ]);
+ 
+        $customDocId = $documentType->id;
+ 
+        // Check if this custom doc already exists for this employee
+        $existing = EmployeeDetails::where('employee_id', $employeeId)
+            ->where('document_id', $customDocId)
+            ->first();
+ 
+        if ($existing) {
+            $existing->update(['document_link' => $base64]);
+            $existing['status'] = 200;
+            $inserted[] = $existing;
+        } else {
+            $detail = EmployeeDetails::create([
+                'product_id'    => $productId,
+                'employee_id'   => $employeeId,
+                'company_id'    => $companyId,
+                'document_id'   => $customDocId,
+                'document_link' => $base64,
+            ]);
+            $detail['status'] = 201;
+            $inserted[] = $detail;
+        }
+    }
+ 
+    return response()->json($inserted);
 }
+
+ 
     /* GET /api/employee-details/{details} */
     public function show(EmployeeDetails $employeeDetail): JsonResponse
     {
