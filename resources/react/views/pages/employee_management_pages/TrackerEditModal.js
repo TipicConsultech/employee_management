@@ -279,7 +279,7 @@ const TrackerEditModal = ({ fetchEmployees,visible, onClose, trackerId, onSucces
             </CCol>
           </CRow>
 
-          <CRow className="mb-3">
+          {/* <CRow className="mb-3">
             <CCol md={6}>
               <CFormLabel htmlFor="status">Status</CFormLabel>
               <CFormSelect
@@ -299,7 +299,7 @@ const TrackerEditModal = ({ fetchEmployees,visible, onClose, trackerId, onSucces
                 <div className="invalid-feedback d-block">{errors.status}</div>
               )}
             </CCol>
-          </CRow>
+          </CRow> */}
 
           {errors.submit && (
             <div className="alert alert-danger">
