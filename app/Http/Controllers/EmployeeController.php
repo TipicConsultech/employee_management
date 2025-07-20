@@ -274,34 +274,37 @@ class EmployeeController extends Controller
 
         // Step 2: Extract only fillable fields (email is NOT in employees table)
         $data = $request->only($employee->getFillable());
+        $cleanedRequest = collect($request->all())->filter(function ($value) {
+    return $value !== ''; // remove empty strings
+})->toArray();
 
         // Step 3: Validate incoming fields
-        $validated = validator(array_merge($data, $request->only('email')), [
-            'product_id' => 'sometimes|integer|exists:products,id',
-            'company_id' => 'sometimes|integer|exists:company_info,company_id',
-            'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|max:255', // Handled separately
-            'gender' => 'sometimes|in:male,female,other',
-            'payment_type' => 'sometimes|string|max:100',
-            'work_type' => 'sometimes|string|max:100',
-            'price' => 'sometimes|numeric',
-            'wage_hour' => 'sometimes|numeric',
-            'wage_overtime' => 'nullable|numeric',
-            'credit' => 'sometimes|numeric',
-            'debit' => 'sometimes|numeric',
-            'adhaar_number' => 'sometimes|string|max:20',
-            'mobile' => 'sometimes|string|max:15',
-            'refferal_by' => 'sometimes|string|max:255',
-            'isActive' => 'sometimes|boolean',
-            'half_day_rate' => 'sometimes',
-            'holiday_rate' => 'sometimes',
-            'overtime_type' => 'sometimes|string|max:50',
-            'contract_type' => 'nullable|string|max:50',
-            'attendance_type' => 'sometimes|string|max:50',
-            'refferal_number' => 'nullable|string|max:20',
-            'user_id' => 'sometimes|integer|exists:users,id',
-            'working_hours' => 'sometimes|numeric',
-        ])->validate();
+    $validated = validator($cleanedRequest, [
+    'product_id' => 'sometimes|integer|exists:products,id',
+    'company_id' => 'sometimes|integer|exists:company_info,company_id',
+    'name' => 'sometimes|string|max:255',
+    'email' => 'nullable|email|max:255',
+    'gender' => 'sometimes|in:male,female,other',
+    'payment_type' => 'nullable|string|max:100',
+    'work_type' => 'nullable|string|max:100',
+    'price' => 'nullable|numeric',
+    'wage_hour' => 'nullable|numeric',
+    'wage_overtime' => 'nullable|numeric',
+    'credit' => 'nullable|numeric',
+    'debit' => 'nullable|numeric',
+    'adhaar_number' => 'nullable|string|max:20',
+    'mobile' => 'nullable|string|max:15',
+    'refferal_by' => 'nullable|string|max:255',
+    'isActive' => 'sometimes|boolean',
+    'half_day_rate' => 'nullable',
+    'holiday_rate' => 'nullable',
+    'overtime_type' => 'nullable|string|max:50',
+    'contract_type' => 'nullable|string|max:50',
+    'attendance_type' => 'nullable|string|max:50',
+    'refferal_number' => 'nullable|string|max:20',
+    'user_id' => 'nullable|integer|exists:users,id',
+    'working_hours' => 'nullable|numeric',
+])->validate();
 
         // Step 4: Update employee table
         $employee->update($validated);

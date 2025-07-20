@@ -566,7 +566,7 @@
     "workType": "कामाचा प्रकार",
     "selectWorkType": "कामाचा प्रकार निवडा",
     "priceZero": "0.00",
-    "wageHour": "तासाचे वेतन",
+    "wageHour": "दिवसाचे वेतन",
     "wageOvertime": "ओव्हरटाईम वेतन",
     "debit": "नामे",
     "adhaarNumber": "आधार क्रमांक",
@@ -867,7 +867,11 @@
     "noCheckInLocation": "वापरकर्त्याने चेक-इन लोकेशन अपलोड केले नाही",
     "noCheckOutLocation": "वापरकर्त्याने चेक-आउट लोकेशन अपलोड केले नाही",
     "smallEditButton":"संपादन",
-    "today":"आज"
+    "today":"आज",
+    "basicInformation":"प्राथमिक माहिती",
+    "additionalInfo":"अधिक माहिती",
+    "employeeConfiguration":"कर्मचारी कॉन्फिगरेशन",
+    "wageConfiguration":"वेतन कॉन्फिगरेशन"
   },
 
 

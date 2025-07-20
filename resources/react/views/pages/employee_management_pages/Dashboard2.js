@@ -10,6 +10,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import BulkEmployeeCheckInOut from './BulkEmployeeTracker';
 
+
 const Dashboard2 = () => {
   const { t, i18n } = useTranslation("global");
   
@@ -44,6 +45,7 @@ const Dashboard2 = () => {
             <h5 className="text-muted mt-4">{t('LABELS.dashboardOverview')} </h5>
           </CCol>
         </CRow>
+
 
         {/* Stats Cards */}
         <CRow className="g-2 g-md-3 mb-4">
@@ -94,10 +96,12 @@ const Dashboard2 = () => {
         </CRow>
       </CContainer>
 
+
       <BulkEmployeeCheckInOut />
     </>
   );
 };
+
 
 const StatCard = ({ title, value, icon, color, bgColor, iconBg, borderColor }) => (
   <CCard 
@@ -107,16 +111,17 @@ const StatCard = ({ title, value, icon, color, bgColor, iconBg, borderColor }) =
       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       cursor: 'pointer',
       border: `1px solid ${borderColor}20`,
-      borderRadius: '16px'
+      borderRadius: '16px',
+      boxShadow: '0 2px 16px rgba(0,0,0,0.3)' // Extra dark default shadow
     }}
     onMouseEnter={(e) => {
       e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)';
-      e.currentTarget.style.boxShadow = `0 20px 40px ${borderColor}20`;
-      e.currentTarget.style.borderColor = `${borderColor}40`;
+      e.currentTarget.style.boxShadow = '0 20px 50px rgba(0,0,0,0.6)'; // Extra dark hover shadow
+      e.currentTarget.style.borderColor = '#00000080'; // Dark border on hover
     }}
     onMouseLeave={(e) => {
       e.currentTarget.style.transform = 'translateY(0) scale(1)';
-      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+      e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.3)'; // Extra dark leave shadow
       e.currentTarget.style.borderColor = `${borderColor}20`;
     }}
   >
@@ -155,7 +160,7 @@ const StatCard = ({ title, value, icon, color, bgColor, iconBg, borderColor }) =
             background: iconBg,
             borderRadius: '16px',
             flexShrink: 0,
-            boxShadow: `0 8px 24px ${borderColor}30`
+            boxShadow: '0 8px 36px rgba(0,0,0,0.5)' // Extra dark icon shadow
           }}
         >
           {React.cloneElement(icon, { 
@@ -219,5 +224,6 @@ const StatCard = ({ title, value, icon, color, bgColor, iconBg, borderColor }) =
     </CCardBody>
   </CCard>
 );
+
 
 export default Dashboard2;

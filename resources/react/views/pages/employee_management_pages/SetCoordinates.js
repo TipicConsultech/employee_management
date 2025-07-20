@@ -28,7 +28,7 @@ const COORDINATE_LIMITS = {
 
 const TOLERANCE_TYPES = {
     METERS: 'meters',
-    DECIMAL_DEGREES: 'decimal_degrees',
+    CUSTOM_METERS: 'custom_meters',
     NO_LIMIT: 'no_limit'
 };
 
@@ -66,7 +66,7 @@ function StoreCoordinates() {
         autoHide: true
     });
 
-    // Enhanced tolerance options with better categorization
+    // Enhanced tolerance options with meter-based options
     const toleranceOptions = useMemo(() => [
         {
             value: '',
@@ -74,30 +74,27 @@ function StoreCoordinates() {
             type: null
         },
         {
+            value: 'preset_25',
+            label: '25 meters',
+            type: TOLERANCE_TYPES.METERS,
+            meters: 25
+        },
+        {
+            value: 'preset_50',
+            label: '50 meters',
+            type: TOLERANCE_TYPES.METERS,
+            meters: 50
+        },
+        {
             value: 'preset_100',
-            label: '100m (≈ 0.0009°)',
+            label: '100 meters',
             type: TOLERANCE_TYPES.METERS,
-            meters: 100,
-            decimalDegrees: 0.0009
-        },
-        {
-            value: 'preset_500',
-            label: '500m (≈ 0.0045°)',
-            type: TOLERANCE_TYPES.METERS,
-            meters: 500,
-            decimalDegrees: 0.0045
-        },
-        {
-            value: 'preset_1000',
-            label: '1km (≈ 0.009°)',
-            type: TOLERANCE_TYPES.METERS,
-            meters: 1000,
-            decimalDegrees: 0.009
+            meters: 100
         },
         {
             value: 'custom',
             label: t('LABELS.customTolerance') || 'Custom Tolerance',
-            type: TOLERANCE_TYPES.DECIMAL_DEGREES
+            type: TOLERANCE_TYPES.CUSTOM_METERS
         },
         {
             value: 'no_limit',
@@ -112,21 +109,28 @@ function StoreCoordinates() {
         return toleranceOptions.find(opt => opt.value === formData.toleranceType);
     }, [formData.toleranceType, toleranceOptions]);
 
-    // Calculate final tolerance value
+    // Calculate final tolerance value in decimal degrees
     const getFinalToleranceValue = useCallback(() => {
         if (!selectedToleranceOption) return null;
 
+        const latitude = parseFloat(formData.latitude) || 0;
+
         switch (selectedToleranceOption.type) {
             case TOLERANCE_TYPES.METERS:
-                return selectedToleranceOption.decimalDegrees;
-            case TOLERANCE_TYPES.DECIMAL_DEGREES:
-                return parseFloat(formData.customTolerance) || 0;
+                // Convert preset meter values to decimal degrees
+                const presetConversion = metersToDecimalDegrees(selectedToleranceOption.meters, latitude);
+                return presetConversion.latitude; // Use latitude conversion as it's more conservative
+            case TOLERANCE_TYPES.CUSTOM_METERS:
+                // Convert custom meter input to decimal degrees
+                const customMeters = parseFloat(formData.customTolerance) || 0;
+                const customConversion = metersToDecimalDegrees(customMeters, latitude);
+                return customConversion.latitude; // Use latitude conversion as it's more conservative
             case TOLERANCE_TYPES.NO_LIMIT:
                 return 999;
             default:
                 return null;
         }
-    }, [selectedToleranceOption, formData.customTolerance]);
+    }, [selectedToleranceOption, formData.customTolerance, formData.latitude]);
 
     // Enhanced notification system
     const showNotification = useCallback((type, message, autoHide = true) => {
@@ -179,7 +183,7 @@ function StoreCoordinates() {
                     newErrors.customTolerance = t('MSG.customToleranceInvalidFormat') || 'Custom tolerance must be a valid number';
                 } else if (customTol <= 0) {
                     newErrors.customTolerance = t('MSG.customTolerancePositive') || 'Custom tolerance must be greater than 0';
-                } else if (customTol > 1) {
+                } else if (customTol > 100000) {
                     newErrors.customTolerance = t('MSG.customToleranceHigh') || 'Custom tolerance seems unusually high. Are you sure?';
                 }
             }
@@ -452,7 +456,7 @@ function StoreCoordinates() {
                             </CRow>
 
                             <CRow className="mb-3">
-                                <CCol md={selectedToleranceOption?.type === TOLERANCE_TYPES.DECIMAL_DEGREES ? 6 : 12}>
+                                <CCol md={selectedToleranceOption?.type === TOLERANCE_TYPES.CUSTOM_METERS ? 6 : 12}>
                                     <CFormLabel htmlFor="toleranceType">
                                         {t('LABELS.tolerance') || 'Tolerance'} <span className="text-danger">*</span>
                                     </CFormLabel>
@@ -475,24 +479,24 @@ function StoreCoordinates() {
                                     )}
                                 </CCol>
 
-                                {selectedToleranceOption?.type === TOLERANCE_TYPES.DECIMAL_DEGREES && (
+                                {selectedToleranceOption?.type === TOLERANCE_TYPES.CUSTOM_METERS && (
                                     <CCol md={6}>
                                         <CFormLabel htmlFor="customTolerance">
-                                            {t('LABELS.customToleranceValue') || 'Custom Tolerance (decimal degrees)'} <span className="text-danger">*</span>
+                                            {t('LABELS.customToleranceValue') || 'Custom Tolerance (meters)'} <span className="text-danger">*</span>
                                         </CFormLabel>
                                         <CInputGroup>
                                             <CFormInput
                                                 type="number"
                                                 id="customTolerance"
-                                                placeholder="0.001"
+                                                placeholder="100"
                                                 value={formData.customTolerance}
                                                 onChange={(e) => handleInputChange('customTolerance', e.target.value)}
                                                 invalid={!!errors.customTolerance}
-                                                step="0.000001"
-                                                min="0"
-                                                max="1"
+                                                step="1"
+                                                min="1"
+                                                max="100000"
                                             />
-                                            <CInputGroupText>°</CInputGroupText>
+                                            <CInputGroupText>m</CInputGroupText>
                                         </CInputGroup>
                                         {errors.customTolerance && (
                                             <CFormFeedback invalid className="d-block">
@@ -500,7 +504,7 @@ function StoreCoordinates() {
                                             </CFormFeedback>
                                         )}
                                         <small className="text-muted">
-                                            {t('LABELS.customToleranceHelp') || 'Tip: 0.001° ≈ 100m, 0.0001° ≈ 10m'}
+                                            {t('LABELS.customToleranceHelp') || 'Enter tolerance distance in meters (e.g., 25, 50, 100)'}
                                         </small>
                                     </CCol>
                                 )}
@@ -516,6 +520,10 @@ function StoreCoordinates() {
                                             <span className="text-muted">
                                                 {selectedToleranceOption.type === TOLERANCE_TYPES.NO_LIMIT ? (
                                                     t('LABELS.noLimitDescription') || 'No geographical limits will be applied'
+                                                ) : selectedToleranceOption.type === TOLERANCE_TYPES.METERS ? (
+                                                    `${selectedToleranceOption.meters} meters (≈ ${getFinalToleranceValue().toFixed(6)}° decimal degrees)`
+                                                ) : selectedToleranceOption.type === TOLERANCE_TYPES.CUSTOM_METERS ? (
+                                                    `${formData.customTolerance} meters (≈ ${getFinalToleranceValue().toFixed(6)}° decimal degrees)`
                                                 ) : (
                                                     `${getFinalToleranceValue()}° ${t('LABELS.decimalDegrees') || 'decimal degrees'}`
                                                 )}

@@ -571,7 +571,7 @@
     "workType": "Work Type",
     "selectWorkType": "Select Work Type",
     "priceZero": "0.00",
-    "wageHour": "Wage per Hour",
+    "wageHour": "Wage per day",
     "wageOvertime": "Wage Overtime",
     "debit": "Debit",
     "adhaarNumber": "Adhaar Number",
@@ -869,7 +869,11 @@
     "noCheckInLocation":"User did not uploded the check-in location",
     "noCheckOutLocation":"User did not uploded the check-out location",
     "smallEditButton":"Edit",
-    "today":"Today"
+    "today":"Today",
+    "basicInformation":"Basic Information",
+    "additionalInfo":"Additional Info",
+    "employeeConfiguration":"Employee Configuration",
+    "wageConfiguration":"Wage Configuration"
     },
 
 
