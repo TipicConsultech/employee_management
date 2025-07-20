@@ -16,7 +16,7 @@ import Monthly from './ShowingDataPage/monthly';
 import Weekly from './ShowingDataPage/weekly';
 import Customly from './ShowingDataPage/customly';
 import Contract from './ShowingDataPage/contract';
-import { cilArrowLeft } from '@coreui/icons';
+import { cilArrowLeft, cilPencil, cilMagnifyingGlass, cilPhone, cilMoney, cilWallet } from '@coreui/icons';
 
 const EmployeeDetailsPage = () => {
   const { t } = useTranslation("global");
@@ -283,50 +283,48 @@ const EmployeeDetailsPage = () => {
           </div>
         </div>
 
-        <div className="d-flex gap-2 d-md-flex d-none">
+        <div className="merged-button-wrapper d-none d-md-flex">
           <CButton
             color="warning"
-            variant="outline"
+            className="merged-button edit-button"
             onClick={handleEditEmployee}
-            className="d-flex align-items-center gap-2"
           >
-            <i className="fas fa-edit"></i>
+            <CIcon icon={cilPencil} className="me-2" />
             {t('LABELS.editEmployeeDetails')}
           </CButton>
           <CButton
             color="primary"
-            variant="outline"
+            className="merged-button view-button"
             onClick={handleViewDocuments}
-            className="d-flex align-items-center gap-2"
           >
-            <i className="fas fa-file-alt"></i>
-            {viewDocuments ? t('LABELS.hideDocuments') : t('LABELS.viewDocuments')}
+            <CIcon icon={cilMagnifyingGlass} className="me-2" />
+            {t('LABELS.viewDocuments')}
           </CButton>
         </div>
       </div>
 
       <CRow className="g-2 g-md-3 mb-3">
         <CCol xs={12} md={6} lg={4}>
-          <CCard className="h-100 shadow-sm border-0 rounded-3">
-            <CCardBody className="p-3 p-md-4">
-              <div className="d-flex align-items-center mb-2 mb-md-3">
+          <CCard className="h-100 shadow-sm border-0 rounded-3 sleek-border-card">
+            <CCardBody className="p-2 p-md-2">
+              <div className="d-flex align-items-center mb-1 mb-md-1">
                 <div className="bg-primary bg-opacity-10 rounded-circle p-2 me-3 d-none d-md-flex">
-                  <i className="fas fa-phone text-primary"></i>
+                  <CIcon icon={cilPhone} className="text-primary" />
                 </div>
                 <div>
                   <h6 className="mb-0 text-muted">
-                    <i className="fas fa-phone text-primary me-2 d-md-none"></i>
+                    <CIcon icon={cilPhone} className="text-primary me-2 d-md-none" />
                     {t('LABELS.contactDetails')}
                   </h6>
                 </div>
               </div>
               <div className="row">
-                <div className="col-6 col-md-12 mb-2 mb-md-3">
+                <div className="col-6 col-md-6">
                   <small className="text-muted d-block">{t('LABELS.mobile')}</small>
                   <h6 className="mb-0 fw-semibold d-md-none">{employee.mobile}</h6>
-                  <h5 className="mb-0 fw-semibold d-none d-md-block">{employee.mobile}</h5>
+                  <h6 className="mb-0 fw-semibold d-none d-md-block">{employee.mobile}</h6>
                 </div>
-                <div className="col-6 col-md-12">
+                <div className="col-6 col-md-6">
                   <small className="text-muted d-block">{t('LABELS.aadhaar')}</small>
                   <h6 className="mb-0 fw-semibold">{employee.adhaar_number}</h6>
                 </div>
@@ -336,31 +334,35 @@ const EmployeeDetailsPage = () => {
         </CCol>
 
         <CCol xs={12} md={6} lg={4}>
-          <CCard className="h-100 shadow-sm border-0 rounded-3">
-            <CCardBody className="p-3 p-md-4">
-              <div className="d-flex align-items-center mb-2 mb-md-3">
+          <CCard className="h-100 shadow-sm border-0 rounded-3 sleek-border-card">
+            <CCardBody className="p-2 p-md-2">
+              <div className="d-flex align-items-center mb-1 mb-md-1">
                 <div className="bg-success bg-opacity-10 rounded-circle p-2 me-3 d-none d-md-flex">
-                  <i className="fas fa-rupee-sign text-success"></i>
+                  <CIcon icon={cilMoney} className="text-success" />
                 </div>
                 <div>
                   <h6 className="mb-0 text-muted">
-                    <i className="fas fa-rupee-sign text-success me-2 d-md-none"></i>
+                    <CIcon icon={cilMoney} className="text-success me-2 d-md-none" />
                     {t('LABELS.wageDetails')}
                   </h6>
                 </div>
               </div>
               <div className="row">
-                <div className="col-6">
+                <div className="col-6 col-md-6">
                   <small className="text-muted d-block">{t('LABELS.regular')}</small>
-                  <h6 className="mb-0 fw-semibold text-success d-md-none">{formatCurrency(employee.wage_hour)}</h6>
-                  <h5 className="mb-0 fw-semibold text-success d-none d-md-block">{formatCurrency(employee.wage_hour)}</h5>
-                  <small className="text-muted d-none d-md-block">{t('LABELS.perHour')}</small>
+                  <div className="d-flex align-items-center">
+                    <h6 className="mb-0 fw-semibold text-success d-md-none">{formatCurrency(employee.wage_hour)} </h6>
+                    <h5 className="mb-0 fw-semibold text-success d-none d-md-block">{formatCurrency(employee.wage_hour)} </h5>
+                    <small className="text-muted me-1">{t('LABELS.perHour')}</small>
+                  </div>
                 </div>
-                <div className="col-6">
+                <div className="col-6 col-md-6">
                   <small className="text-muted d-block">{t('LABELS.overtime')}</small>
-                  <h6 className="mb-0 fw-semibold text-warning d-md-none">{formatCurrency(employee.wage_overtime)}</h6>
-                  <h5 className="mb-0 fw-semibold text-warning d-none d-md-block">{formatCurrency(employee.wage_overtime)}</h5>
-                  <small className="text-muted d-none d-md-block">{employee.overtime_type === "hourly" ? t('LABELS.perHour') : t('LABELS.perDay')}</small>
+                  <div className="d-flex align-items-center">
+                    <h6 className="mb-0 fw-semibold text-warning d-md-none">{formatCurrency(employee.wage_overtime)} </h6>
+                    <h5 className="mb-0 fw-semibold text-warning d-none d-md-block">{formatCurrency(employee.wage_overtime)} </h5>
+                    <small className="text-muted me-1">{employee.overtime_type === "hourly" ? t('LABELS.perHour') : t('LABELS.perDay')}</small>
+                  </div>
                 </div>
               </div>
             </CCardBody>
@@ -368,33 +370,29 @@ const EmployeeDetailsPage = () => {
         </CCol>
 
         <CCol xs={12} md={6} lg={4}>
-          <CCard className="h-100 shadow-sm border-0 rounded-3">
-            <CCardBody className="p-3 p-md-4">
-              <div className="d-flex align-items-center mb-2 mb-md-3">
+          <CCard className="h-100 shadow-sm border-0 rounded-3 sleek-border-card">
+            <CCardBody className="p-2 p-md-2">
+              <div className="d-flex align-items-center mb-1 mb-md-1">
                 <div className="bg-info bg-opacity-10 rounded-circle p-2 me-3 d-none d-md-flex">
-                  <i className="fas fa-wallet text-info"></i>
+                  <CIcon icon={cilWallet} className="text-info" />
                 </div>
                 <div>
                   <h6 className="mb-0 text-muted">
-                    <i className="fas fa-wallet text-info me-2 d-md-none"></i>
+                    <CIcon icon={cilWallet} className="text-info me-2 d-md-none" />
                     {t('LABELS.financialSummary')}
                   </h6>
                 </div>
               </div>
               <div className="row">
-                <div className="col-6">
+                <div className="col-6 col-md-6">
                   <small className="text-muted d-block">{t('LABELS.credit')}</small>
                   <h6 className="mb-1 fw-semibold text-success d-md-none">{formatCurrency(employee.credit)}</h6>
                   <h5 className="mb-2 fw-semibold text-success d-none d-md-block">{formatCurrency(employee.credit)}</h5>
+                </div>
+                <div className="col-6 col-md-6">
                   <small className="text-muted d-block">{t('LABELS.debit')}</small>
                   <h6 className="mb-0 fw-semibold text-danger d-md-none">{formatCurrency(employee.debit)}</h6>
                   <h5 className="mb-0 fw-semibold text-danger d-none d-md-block">{formatCurrency(employee.debit)}</h5>
-                </div>
-                <div className="col-6">
-                  <small className="text-muted d-block">{t('LABELS.referredBy')}</small>
-                  <h6 className="mb-2 fw-semibold">{employee.refferal_by || '-'}</h6>
-                  <small className="text-muted d-block">{t('LABELS.referralMobile')}</small>
-                  <h6 className="mb-0 fw-semibold">{employee.refferal_number || '-'}</h6>
                 </div>
               </div>
             </CCardBody>
@@ -403,30 +401,24 @@ const EmployeeDetailsPage = () => {
       </CRow>
 
       <div className="d-md-none mb-3">
-        <CRow className="g-2">
-          <CCol xs={12}>
-            <CButton
-              color="warning"
-              variant="outline"
-              onClick={handleEditEmployee}
-              className="w-100 d-flex align-items-center justify-content-center gap-2"
-            >
-              <i className="fas fa-edit"></i>
-              {t('LABELS.editEmployeeDetails')}
-            </CButton>
-          </CCol>
-          <CCol xs={12}>
-            <CButton
-              color="primary"
-              variant="outline"
-              onClick={handleViewDocuments}
-              className="w-100 d-flex align-items-center justify-content-center gap-2"
-            >
-              <i className="fas fa-file-alt"></i>
-              {viewDocuments ? t('LABELS.hideDocuments') : t('LABELS.viewDocuments')}
-            </CButton>
-          </CCol>
-        </CRow>
+        <div className="merged-button-wrapper d-flex justify-content-center">
+          <CButton
+            color="warning"
+            className="merged-button edit-button d-flex justify-content-center align-items-center"
+            onClick={handleEditEmployee}
+          >
+            <CIcon icon={cilPencil} className="me-2" />
+            {t('LABELS.editEmployeeDetails')}
+          </CButton>
+          <CButton
+            color="primary"
+            className="merged-button view-button d-flex justify-content-center align-items-center"
+            onClick={handleViewDocuments}
+          >
+            <CIcon icon={cilMagnifyingGlass} className="me-2" />
+            {t('LABELS.viewDocuments')}
+          </CButton>
+        </div>
       </div>
 
       <CCollapse visible={viewDocuments}>
@@ -555,7 +547,6 @@ const EmployeeDetailsPage = () => {
                 </CTab>
                 <CTab itemKey="Week" className="rounded-pill me-2">
                   <i className="fas fa-calendar-week me-1"></i>
-                  <i className="fas fa-calendar-week me-1"></i>
                   {t('LABELS.weekly')}
                 </CTab>
                 <CTab itemKey="Custom" className="rounded-pill">
@@ -632,9 +623,119 @@ const EmployeeDetailsPage = () => {
           border-radius: 50px !important;
         }
 
+        /* Sleek Revolving Border Animation */
+        .sleek-border-card {
+          position: relative;
+          overflow: hidden;
+        }
+
+        .sleek-border-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          border-radius: 1rem;
+          padding: 2px;
+          background: linear-gradient(45deg,
+            #ff6b6b, /* Vibrant coral */
+            #ff8e53, /* Warm orange */
+            #ff6b6b,
+            #ff8e53,
+            #ff6b6b
+          );
+          background-size: 200% 200%;
+          animation: revolvingBorder 4s linear infinite;
+          mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          mask-composite: xor;
+          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          z-index: 1;
+        }
+
+        .sleek-border-card .card-body {
+          position: relative;
+          z-index: 2;
+          background: white;
+          border-radius: calc(1rem - 2px);
+          margin: 2px;
+        }
+
+        @keyframes revolvingBorder {
+          0% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 200% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+
+        .merged-button-wrapper {
+          display: flex;
+          gap: 0.5rem;
+          align-items: center;
+        }
+
+        .merged-button {
+          border-radius: 8px !important;
+          padding: 0.75rem 1.5rem;
+          font-size: 0.9rem;
+          font-weight: 500;
+          transition: all 0.3s ease;
+          display: flex;
+          align-items: center;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .edit-button {
+          background: linear-gradient(45deg, #f0ad4e, #f7c65e);
+          border: none;
+          color: white;
+        }
+
+        .view-button {
+          background: linear-gradient(45deg, #007bff, #4dabf7);
+          border: none;
+          color: white;
+        }
+
+        .edit-button:hover {
+          background: linear-gradient(45deg, #e0a042, #e6b952);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .view-button:hover {
+          background: linear-gradient(45deg, #0069d9, #339af0);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
         @media (max-width: 768px) {
+          .merged-button-wrapper {
+            flex-direction: column;
+            width: 100%;
+          }
+
+          .merged-button {
+            width: 100%;
+            padding: 0.65rem 1rem;
+            font-size: 0.85rem;
+            border-radius: 6px !important;
+          }
+
           .modal-xl {
             max-width: 95% !important;
+          }
+        }
+
+        @media (min-width: 769px) {
+          .merged-button {
+            min-width: 180px;
           }
         }
       `}</style>
