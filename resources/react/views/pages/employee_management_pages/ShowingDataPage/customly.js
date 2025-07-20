@@ -76,7 +76,7 @@ function Customly() {
       employee_id: parseInt(id, 10),
       start_date: startDate,
       end_date: endDate,
-      working_hours: 8,
+    //   working_hours: 8,
     };
 
     try {
@@ -276,13 +276,13 @@ function Customly() {
                   onChange={(e) => setEndDate(e.target.value)}
                 />
               </CCol>
-              <CCol md={2}>
+              {/* <CCol md={2}>
                 <CFormLabel className="fw-semibold">{t('LABELS.workingHours')}</CFormLabel>
                 <CFormSelect disabled value="8">
                   <option value="8">8 Hours</option>
                 </CFormSelect>
-              </CCol>
-              <CCol md={2}>
+              </CCol> */}
+              &nbsp;<CCol md={2}>
                 <CButton
                   color="primary"
                   className="w-100"

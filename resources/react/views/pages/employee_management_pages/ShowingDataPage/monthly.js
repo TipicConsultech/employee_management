@@ -60,7 +60,7 @@ const Monthly = ({ id, employee }) => {
       employee_id: parseInt(id),
       start_date: startDate,
       end_date: endDate,
-      working_hours: 8,
+    //   working_hours: 8,
     };
 
     try {
@@ -208,12 +208,12 @@ const Monthly = ({ id, employee }) => {
                 </CFormSelect>
               </CCol>
 
-              <CCol xs={12} sm={6} md={3} className="mb-2">
+              {/* <CCol xs={12} sm={6} md={3} className="mb-2">
                 <label className="form-label fw-semibold">{t('LABELS.workingHours')}</label>
                 <select className="form-select" value={8} disabled>
                   <option value={8}>8 Hours</option>
                 </select>
-              </CCol>
+              </CCol> */}
 
               <CCol xs={12} sm={6} md={3} className="mb-2">
                 <CButton color="primary" className="w-100" onClick={handleCalculate}>
