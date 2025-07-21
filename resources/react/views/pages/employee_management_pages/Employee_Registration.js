@@ -8,6 +8,7 @@ import {
 import { cilUser, cilCheckCircle } from '@coreui/icons';
 import CIcon from '@coreui/icons-react';
 import { post, getAPICall } from '../../../util/api';
+import { useToast } from '../../common/toast/ToastContext';
 
 const NOTIFICATION_TIMEOUT = 3000;
 const INITIAL_FORM_DATA = {
@@ -41,6 +42,7 @@ const EmployeeRegistrationForm = () => {
     { value: 'hourly', label: t('LABELS.hourly') }, { value: 'fixed', label: t('LABELS.fixed') }
   ], [t]);
 
+  const { showToast } = useToast();
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
   const [notification, setNotification] = useState(INITIAL_NOTIFICATION);
   const [submitting, setSubmitting] = useState(false);
@@ -193,6 +195,10 @@ const EmployeeRegistrationForm = () => {
       showNotification('warning', t('MSG.fixErrorsBeforeSubmit'));
       return;
     }
+    if (!validateForm()) { 
+      // showNotification('warning', t('MSG.fixErrorsBeforeSubmit'));
+       showToast('warning', t('MSG.fixErrorsBeforeSubmit'));
+       return; }
     setSubmitting(true);
     try {
       const payload = { ...formData };
@@ -221,21 +227,24 @@ const EmployeeRegistrationForm = () => {
       }
 
       const response = await post('/api/employees', payload);
-      showNotification(
-        response.message === "Email already taken" || response.message === "Mobile number already taken" || response.message === "Aadhaar number already taken"
-          ? 'danger'
-          : response && response.employee?.id
-            ? 'success'
-            : 'danger',
-        response.message || (response && response.employee?.id ? t('MSG.employeeRegisteredSuccess') : t('MSG.employeeRegistrationFailed'))
-      );
+      // showNotification(
+      //   response.message === "Email already taken" || response.message === "Mobile number already taken" || response.message === "Aadhaar number already taken"
+      //     ? 'danger'
+      //     : response && response.employee?.id
+      //       ? 'success'
+      //       : 'danger',
+      //   response.message || (response && response.employee?.id ? t('MSG.employeeRegisteredSuccess') : t('MSG.employeeRegistrationFailed'))
+      // );
+      showNotification(response.message === "Email already taken" || response.message === "Mobile number already taken" || response.message === "Aadhaar number already taken" ? 'danger' : response && response.employee?.id ? 'success' : 'danger',
+        response.message || (response && response.employee?.id ? t('MSG.employeeRegisteredSuccess') : t('MSG.employeeRegistrationFailed')));
+        showToast(response.message === "Email already taken" || response.message === "Mobile number already taken" || response.message === "Aadhaar number already taken" ? 'danger' : response && response.employee?.id ? 'success' : 'danger',
+        response.message || (response && response.employee?.id ? t('MSG.employeeRegisteredSuccess') : t('MSG.employeeRegistrationFailed')));
       if (response && response.employee?.id) resetForm(), scrollToTop();
     } catch (error) {
       console.error('Error registering employee:', error);
       showNotification('danger', error.message || t('MSG.registrationError'));
-    } finally {
-      setSubmitting(false);
-    }
+      showToast('danger', error.message || t('MSG.registrationError'));
+    } finally { setSubmitting(false); }
   }, [formData, validateForm, showNotification, resetForm, t, isFullTimeWork, scrollToTop]);
 
   const isFormValid = useMemo(() => {

@@ -873,4 +873,161 @@ public function workSummary(Request $request)
         ]);
     }
 
+
+
+
+    public function monthlyPresenty(Request $request)
+{
+    $validated = $request->validate([
+        'month' => 'required|string|in:january,february,march,april,may,june,july,august,september,october,november,december',
+        'year' => 'required|integer|min:1900|max:2100',
+    ]);
+
+    $monthName = strtolower($validated['month']);
+    $year = $validated['year'];
+
+    // Convert month name to numeric month
+    $monthIndex = date('m', strtotime($monthName));
+
+    $startOfMonth = Carbon::createFromDate($year, $monthIndex, 1)->startOfDay();
+    $endOfMonth = Carbon::createFromDate($year, $monthIndex, 1)->endOfMonth()->endOfDay();
+
+    $employees = Employee::with([
+        'trackers' => function ($query) use ($startOfMonth, $endOfMonth) {
+            $query->whereBetween('created_at', [$startOfMonth, $endOfMonth]);
+        }
+    ])->get();
+
+    $result = [];
+
+    foreach ($employees as $employee) {
+        $attendance = [];
+        $standardMinutes = ($employee->working_hours ?? 8) * 60;
+
+        // Counters
+        $regularDays = 0;
+        $halfDays = 0;
+        $holidayDays = 0;
+        $totalOvertimeHours = 0;
+
+        for ($day = $startOfMonth->copy(); $day <= $endOfMonth; $day->addDay()) {
+            $dayKey = $day->format('Y-m-d');
+            $tracker = $employee->trackers->first(function ($t) use ($dayKey) {
+                return Carbon::parse($t->created_at)->format('Y-m-d') === $dayKey;
+            });
+
+            // HALF DAY
+            if ($tracker && $tracker->half_day == 1) {
+                $attendance[$dayKey] = ['status' => 'HF'];
+                $halfDays++;
+                continue;
+            }
+
+            if ($tracker) {
+                $status = strtolower($tracker->status);
+
+                if (in_array($status, ['sl', 'pl', 'cl'])) {
+                    $attendance[$dayKey] = ['status' => strtoupper($status)];
+                    $regularDays++;
+                    continue;
+                }
+
+                if ($status === 'h') {
+                    $workedMinutes = 0;
+                    if ($tracker->check_in && $tracker->check_out_time) {
+                        $checkIn = Carbon::parse($tracker->created_at);
+                        $checkOut = Carbon::parse($tracker->check_out_time);
+                        $workedMinutes = $checkIn->diffInMinutes($checkOut);
+                    }
+
+                    $overtime = max($workedMinutes - $standardMinutes, 0);
+                    $attendance[$dayKey] = [
+                        'status' => 'H',
+                        'holiday_overtime_hour' => round($overtime / 60, 2)
+                    ];
+                    $holidayDays++;
+                    $totalOvertimeHours += round($overtime / 60, 2);
+                    continue;
+                }
+
+                if ($status === 'na') {
+                    if ($tracker->check_in && $tracker->check_out_time) {
+                        $checkIn = Carbon::parse($tracker->created_at);
+                        $checkOut = Carbon::parse($tracker->check_out_time);
+                        $workedMinutes = $checkIn->diffInMinutes($checkOut);
+                        $overtime = max($workedMinutes - $standardMinutes, 0);
+
+                        $attendance[$dayKey] = [
+                            'status' => 'P',
+                            'overtime_hours' => round($overtime / 60, 2)
+                        ];
+                        $regularDays++;
+                        $totalOvertimeHours += round($overtime / 60, 2);
+                    } else {
+                        $attendance[$dayKey] = [
+                            'status' => 'A',
+                            'overtime_hours' => 0
+                        ];
+                        $regularDays++;
+                    }
+                    continue;
+                }
+            }
+
+            // DEFAULT A or P
+            if ($tracker && $tracker->check_in && $tracker->check_out_time) {
+                $checkIn = Carbon::parse($tracker->created_at);
+                $checkOut = Carbon::parse($tracker->check_out_time);
+                $workedMinutes = $checkIn->diffInMinutes($checkOut);
+                $overtime = max($workedMinutes - $standardMinutes, 0);
+
+                $attendance[$dayKey] = [
+                    'status' => 'P',
+                    'overtime_hours' => round($overtime / 60, 2)
+                ];
+                $regularDays++;
+                $totalOvertimeHours += round($overtime / 60, 2);
+            } else {
+                $attendance[$dayKey] = [
+                    'status' => 'A',
+                    'overtime_hours' => 0
+                ];
+                $regularDays++;
+            }
+        }
+
+        $regularPayment = $regularDays * ($employee->wage_hour ?? 0);
+        $overtimePayment = $totalOvertimeHours * ($employee->wage_overtime ?? 0);
+        $halfDayPayment = $halfDays * ($employee->half_day_rate ?? 0);
+        $holidayPayment = $holidayDays * ($employee->holiday_rate ?? 0);
+
+        $result[] = [
+            'employee_id' => $employee->id,
+            'employee_name' => $employee->name,
+            'wage_hour' => $employee->wage_hour ?? 0,
+            'wage_overtime' => $employee->wage_overtime ?? 0,
+            'half_day_rate' => $employee->half_day_rate ?? 0,
+            'holiday_day_rate' => $employee->holiday_rate ?? 0,
+            'working_hours' => $employee->working_hours ?? 0,
+            'attendance' => $attendance,
+            'payment_details' => [
+                'regular_day_payment' => $regularPayment,
+                'overtime_hr_payment' => $overtimePayment,
+                'half_day_payment' => $halfDayPayment,
+                'holiday_payment' => $holidayPayment
+            ]
+        ];
+    }
+
+    return response()->json([
+        'month' => ucfirst($monthName),
+        'year' => $year,
+        'month_start' => $startOfMonth->format('Y-m-d'),
+        'month_end' => $endOfMonth->format('Y-m-d'),
+        'data' => $result
+    ]);
+}
+
+
+
 }

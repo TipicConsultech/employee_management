@@ -6,9 +6,11 @@ import {
 import { useTranslation } from 'react-i18next';
 import { post } from '../../../../util/api';
 import WorkSummaryPayment from './WorkSummaryPayment ';
+import { useToast } from '../../../common/toast/ToastContext'
 
 function WeeklyView({ id, employee }) {
   const { t } = useTranslation('global');
+     const { showToast } = useToast();
 
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -71,10 +73,12 @@ function WeeklyView({ id, employee }) {
         pending_payment: response.pending_payment ?? 0,
       });
       setShowWeekGrid(true);
-      showNotification('success', t('MSG.workSummaryFetched'));
+      // showNotification('success', t('MSG.workSummaryFetched'));
+      showToast('success', t('MSG.workSummaryFetched'));
     } catch (err) {
       console.error('Work summary fetch error:', err);
-      showNotification('warning', `${t('MSG.errorFetchingWorkSummary')}: ${err.message}`);
+      // showNotification('warning', `${t('MSG.errorFetchingWorkSummary')}: ${err.message}`);
+      showToast('warning', `${t('MSG.errorFetchingWorkSummary')}: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -101,7 +105,8 @@ function WeeklyView({ id, employee }) {
     try {
       setLoading(true);
       await post('/api/payment', payloadData);
-      showNotification('success', t('MSG.paymentSubmittedSuccess'));
+      // showNotification('success', t('MSG.paymentSubmittedSuccess'));
+      showToast('success', t('MSG.paymentSubmittedSuccess'));
       setWorkSummary((prev) => ({
         ...prev,
         custom_regular_wage: '',
@@ -112,7 +117,8 @@ function WeeklyView({ id, employee }) {
       }));
     } catch (err) {
       console.error('Payment Error:', err);
-      showNotification('warning', `${t('MSG.paymentSubmissionError')}: ${err.message}`);
+      // showNotification('warning', `${t('MSG.paymentSubmissionError')}: ${err.message}`);
+      showToast('warning', `${t('MSG.paymentSubmissionError')}: ${err.message}`);
     } finally {
       setLoading(false);
     }

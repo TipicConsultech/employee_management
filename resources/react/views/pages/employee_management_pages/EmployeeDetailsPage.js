@@ -17,8 +17,11 @@ import Weekly from './ShowingDataPage/weekly';
 import Customly from './ShowingDataPage/customly';
 import Contract from './ShowingDataPage/contract';
 import { cilArrowLeft, cilPencil, cilMagnifyingGlass, cilPhone, cilMoney, cilWallet } from '@coreui/icons';
+import { useToast } from '../../common/toast/ToastContext';
 
 const EmployeeDetailsPage = () => {
+  const { showToast } = useToast();
+  
   const { t } = useTranslation("global");
   const { id } = useParams();
   const navigate = useNavigate();
@@ -62,11 +65,13 @@ const EmployeeDetailsPage = () => {
       if (data) {
         setEmployee(data);
       } else {
-        showNotification('warning', t('MSG.failedToFetchEmployee'));
+        // showNotification('warning', t('MSG.failedToFetchEmployee'));
+        showToast('warning', t('MSG.failedToFetchEmployee'));
       }
     } catch (error) {
       console.error('Error loading employee:', error);
-      showNotification('warning', `${t('MSG.error')}: ${error.message}`);
+      // showNotification('warning', `${t('MSG.error')}: ${error.message}`);
+      showToast('warning', `${t('MSG.error')}: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -78,7 +83,8 @@ const EmployeeDetailsPage = () => {
 
   const handleCalculate = async () => {
     if (!startDate || !endDate) {
-      showNotification('warning', t('MSG.selectBothDates'));
+      // showNotification('warning', t('MSG.selectBothDates'));
+      showToast('warning', t('MSG.selectBothDates'));
       return;
     }
 
@@ -94,11 +100,13 @@ const EmployeeDetailsPage = () => {
       if (response) {
         setWorkSummary(response);
       } else {
-        showNotification('warning', t('MSG.failedToFetchWorkSummary'));
+        // showNotification('warning', t('MSG.failedToFetchWorkSummary'));
+        showToast('warning', t('MSG.failedToFetchWorkSummary'));
       }
     } catch (error) {
       console.error('Error fetching work summary:', error);
-      showNotification('warning', `${t('MSG.error')}: ${error.message}`);
+      // showNotification('warning', `${t('MSG.error')}: ${error.message}`);
+      showToast('warning', `${t('MSG.error')}: ${error.message}`);
     }
   };
 
@@ -122,7 +130,8 @@ const EmployeeDetailsPage = () => {
     try {
       const res = await post('/api/payment', payload);
       if (res) {
-        showNotification('success', t('MSG.paymentSubmittedSuccess'));
+        // showNotification('success', t('MSG.paymentSubmittedSuccess'));
+        showToast('success', t('MSG.paymentSubmittedSuccess'));
         setWorkSummary((prev) => ({
           ...prev,
           custom_regular_wage: '',
@@ -132,11 +141,13 @@ const EmployeeDetailsPage = () => {
           payment_type: '',
         }));
       } else {
-        showNotification('warning', t('MSG.failedToSubmitPayment'));
+        // showNotification('warning', t('MSG.failedToSubmitPayment'));
+        showToast('warning', t('MSG.failedToSubmitPayment'));
       }
     } catch (error) {
       console.error('Payment Error:', error);
-      showNotification('warning', `${t('MSG.error')}: ${error.message}`);
+      // showNotification('warning', `${t('MSG.error')}: ${error.message}`);
+      showToast('warning', `${t('MSG.error')}: ${error.message}`);
     }
   };
 
@@ -169,7 +180,8 @@ const EmployeeDetailsPage = () => {
       });
     } catch (error) {
       console.error('Error fetching documents:', error);
-      showNotification('warning', `${t('MSG.error')}: ${error.message}`);
+      // showNotification('warning', `${t('MSG.error')}: ${error.message}`);
+      showToast('warning', `${t('MSG.error')}: ${error.message}`);
       return [];
     }
   };
@@ -182,7 +194,8 @@ const EmployeeDetailsPage = () => {
         setDocuments(docs);
       } catch (err) {
         console.error('Error fetching documents:', err);
-        showNotification('warning', `${t('MSG.error')}: ${err.message}`);
+        // showNotification('warning', `${t('MSG.error')}: ${err.message}`);
+        showToast('warning', `${t('MSG.error')}: ${err.message}`);
       }
     }
   };

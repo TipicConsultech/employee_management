@@ -1275,7 +1275,9 @@
     "partialPaymentSaved": "अर्धवट पेमेंट यशस्वीरित्या जतन केले",
     "pendingPaymentUpdated": "बाकी पेमेंट रक्कम अपडेट केली",
     "toleranceRequired":"टोलरन्स निवडणे आवश्यक आहे.",
-     "OutsideCompany":"तुम्ही कार्यालयापासून {{distance}} अंतरावर आहात."
+     "OutsideCompany":"तुम्ही कार्यालयापासून {{distance}} अंतरावर आहात.",
+
+    "selectedFile": "निवडलेली फाईल: {{fileName}}"
 
     }
    }

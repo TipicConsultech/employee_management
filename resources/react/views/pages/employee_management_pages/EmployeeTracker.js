@@ -15,8 +15,10 @@ import CIcon from '@coreui/icons-react';
 import { cilClock, cilLocationPin, cilCheckCircle, cilXCircle } from '@coreui/icons';
 import { getAPICall, post, postFormData, put } from '../../../util/api';
 import { useTranslation } from 'react-i18next';
+import { useToast } from '../../common/toast/ToastContext';
 
 function EmployeeCheckInOut() {
+     const { showToast } = useToast();
     const { t } = useTranslation("global");
 
     const [status, setStatus] = useState({ checkIn: false, checkOut: false });
@@ -50,11 +52,13 @@ function EmployeeCheckInOut() {
                 console.log('Company coordinates loaded:', coords);
             } else {
                 console.error('No coordinates found in response');
-                showNotification('warning', 'Failed to load office coordinates');
+                // showNotification('warning', 'Failed to load office coordinates');
+                showToast('warning', 'Failed to load office coordinates');
             }
         } catch (e) {
             console.error('Error fetching company coordinates:', e);
-            showNotification('warning', 'Failed to load office location settings');
+            // showNotification('warning', 'Failed to load office location settings');
+            showToast('warning', 'Failed to load office location settings');
         }
     }, []);
 
@@ -91,11 +95,13 @@ function EmployeeCheckInOut() {
                 }
             } else {
                 console.error('No response from status API');
-                showNotification('warning', t('MSG.failedToFetchStatus'));
+                // showNotification('warning', t('MSG.failedToFetchStatus'));
+                showToast('warning', t('MSG.failedToFetchStatus'));
             }
         } catch (error) {
             console.error('Error fetching employee status:', error);
-            showNotification('warning', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
+            // showNotification('warning', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
+            showToast('warning', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
         } finally {
             setLoading(false);
         }
@@ -179,14 +185,16 @@ function EmployeeCheckInOut() {
             setNotification({ show: false, type: '', message: '' });
 
             if (!coordinatesLoaded) {
-                showNotification('warning', 'Office location not loaded. Please refresh the page.');
+                // showNotification('warning', 'Office location not loaded. Please refresh the page.');
+                showToast('warning', 'Office location not loaded. Please refresh the page.');
                 return;
             }
 
             const location = await getCurrentLocation();
 
             if (!validateLocation(location.latitude, location.longitude)) {
-                showNotification('warning', t('MSG.mustBeAtOfficeLocation'));
+                // showNotification('warning', t('MSG.mustBeAtOfficeLocation'));
+                showToast('warning', t('MSG.mustBeAtOfficeLocation'));
                 return;
             }
 
@@ -203,15 +211,18 @@ function EmployeeCheckInOut() {
                 const id = response.tracker.id ;
                 setTrackerId(id);
                 console.log('Check-in successful, tracker ID:', id);
-                showNotification('success', t('MSG.checkInSuccess'));
+                // showNotification('success', t('MSG.checkInSuccess'));
+                showToast('success', t('MSG.checkInSuccess'));
                 await fetchEmployeeStatus();
             } else {
                 console.error('Check-in failed - no valid response:', response);
-                showNotification('warning', t('MSG.failedToProcessRequest'));
+                // showNotification('warning', t('MSG.failedToProcessRequest'));
+                showToast('warning', t('MSG.failedToProcessRequest'));
             }
         } catch (error) {
             console.error('Check-in error:', error);
-            showNotification('warning', `${t('MSG.error')}: ${error.message}`);
+            // showNotification('warning', `${t('MSG.error')}: ${error.message}`);
+            showToast('warning', `${t('MSG.error')}: ${error.message}`);
         } finally {
             setSubmitting(false);
         }
@@ -222,7 +233,8 @@ function EmployeeCheckInOut() {
             setNotification({ show: false, type: '', message: '' });
 
             if (!coordinatesLoaded) {
-                showNotification('warning', 'Office location not loaded. Please refresh the page.');
+                // showNotification('warning', 'Office location not loaded. Please refresh the page.');
+                showToast('warning', 'Office location not loaded. Please refresh the page.');
                 return;
             }
             // Enhanced tracker ID validation
@@ -236,7 +248,8 @@ function EmployeeCheckInOut() {
 
                 // Check again after refresh
                 if (!trackerId) {
-                    showNotification('warning', 'Unable to find check-in record. Please refresh the page.');
+                    // showNotification('warning', 'Unable to find check-in record. Please refresh the page.');
+                    showToast('warning', 'Unable to find check-in record. Please refresh the page.');
                     return;
                 }
             }
@@ -244,7 +257,8 @@ function EmployeeCheckInOut() {
             const location = await getCurrentLocation();
 
             if (!validateLocation(location.latitude, location.longitude)) {
-                showNotification('warning', t('MSG.mustBeAtOfficeLocation'));
+                // showNotification('warning', t('MSG.mustBeAtOfficeLocation'));
+                showToast('warning', t('MSG.mustBeAtOfficeLocation'));
                 return;
             }
 
@@ -266,15 +280,18 @@ function EmployeeCheckInOut() {
             // More flexible response validation
             if (response && (response.id || response.tracker_id || response.trackerId || response.success || response.message === 'success')) {
                 console.log('Check-out successful');
-                showNotification('success', t('MSG.checkOutSuccess'));
+                // showNotification('success', t('MSG.checkOutSuccess'));
+                showToast('success', t('MSG.checkOutSuccess'));
                 await fetchEmployeeStatus();
             } else {
                 console.error('Check-out failed - invalid response:', response);
-                showNotification('warning', t('MSG.failedToProcessRequest'));
+                // showNotification('warning', t('MSG.failedToProcessRequest'));
+                showToast('warning', t('MSG.failedToProcessRequest'));
             }
         } catch (error) {
             console.error('Check-out error:', error);
-            showNotification('warning', `${t('MSG.error')}: ${error.message}`);
+            // showNotification('warning', `${t('MSG.error')}: ${error.message}`);
+            showToast('warning', `${t('MSG.error')}: ${error.message}`);
         } finally {
             setSubmitting(false);
         }
