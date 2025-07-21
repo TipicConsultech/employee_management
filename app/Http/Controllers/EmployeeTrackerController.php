@@ -500,7 +500,7 @@ class EmployeeTrackerController extends Controller
 
 
 
-    public function checkTodayStatus(Request $request): JsonResponse
+     public function checkTodayStatus(Request $request): JsonResponse
     {
         // Step 1: Get employee ID from logged-in user’s mobile
         $employee = Employee::where('mobile', auth()->user()->mobile)->first();
@@ -518,18 +518,25 @@ class EmployeeTrackerController extends Controller
             ->whereDate('created_at', $today)
             ->first();
 
+        $companyCordinate=CompanyCordinate::where('company_id',auth()->user()->company_id)
+            ->where('product_id',auth()->user()->product_id)->first();
         if (!$tracker) {
             return response()->json([
+                'company_gps'=> $companyCordinate['required_lat'].",". $companyCordinate['required_lng'],
                 'checkIn' => false,
                 'checkOut' => false,
+                'tolerance'=> $employee['tolerance']
             ]);
         }
 
-        return response()->json([
-            'tracker_id' => $tracker->id,
-            'checkIn' => $tracker->check_in ?? false,
-            'checkOut' => $tracker->check_out ?? false,
-        ]);
+      return response()->json([
+    'company_gps'=> $companyCordinate['required_lat'].",". $companyCordinate['required_lng'],
+    'tracker_id' => $tracker->id,
+    'tolerance'  => $employee['tolerance'], // convert to float
+    'checkIn'    => $tracker->check_in ?? false,
+    'checkOut'   => $tracker->check_out ?? false,
+]);
+
     }
 
 

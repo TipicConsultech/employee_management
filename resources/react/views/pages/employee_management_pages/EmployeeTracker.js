@@ -18,7 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { useToast } from '../../common/toast/ToastContext';
 
 function EmployeeCheckInOut() {
-    const { showToast } = useToast();
+     const { showToast } = useToast();
     const { t } = useTranslation("global");
 
     const [status, setStatus] = useState({ checkIn: false, checkOut: false });
@@ -37,27 +37,6 @@ function EmployeeCheckInOut() {
     });
     const [coordinatesLoaded, setCoordinatesLoaded] = useState(false);
 
-    // Company coordinates from status API
-    const [companyCoordinates, setCompanyCoordinates] = useState({
-        companyLat: null,
-        companyLng: null,
-        tolerance: null
-    });
-
-    // Distance calculation using Haversine formula
-    const calculateDistance = useCallback((lat1, lon1, lat2, lon2) => {
-        const R = 6371; // Radius of the Earth in kilometers
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = 
-            Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-            Math.sin(dLon/2) * Math.sin(dLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        const distance = R * c; // Distance in kilometers
-        return distance;
-    }, []);
-
     const fetchCompanyCoordinates = useCallback(async () => {
         try {
             console.log('Fetching company coordinates...');
@@ -73,10 +52,12 @@ function EmployeeCheckInOut() {
                 console.log('Company coordinates loaded:', coords);
             } else {
                 console.error('No coordinates found in response');
+                // showNotification('warning', 'Failed to load office coordinates');
                 showToast('warning', 'Failed to load office coordinates');
             }
         } catch (e) {
             console.error('Error fetching company coordinates:', e);
+            // showNotification('warning', 'Failed to load office location settings');
             showToast('warning', 'Failed to load office location settings');
         }
     }, []);
@@ -90,64 +71,41 @@ function EmployeeCheckInOut() {
         }
     }, []);
 
-const fetchEmployeeStatus = useCallback(async () => {
-    try {
-        setLoading(true);
-        console.log('Fetching employee status...');
-        const response = await getAPICall('/api/employee-tracker/status');
+    const fetchEmployeeStatus = useCallback(async () => {
+        try {
+            setLoading(true);
+            console.log('Fetching employee status...');
+            const response = await getAPICall('/api/employee-tracker/status');
 
-        if (response) {
-            console.log('Employee status response:', response);
-            setStatus(response);
+            if (response) {
+                console.log('Employee status response:', response);
+                setStatus(response);
 
-            // Extract company coordinates from status API response
-            // Handle the string format "18.6712064,73.8820096"
-            if (response.company_gps && response.tolerance) {
-                let companyLat, companyLng;
-                
-                if (typeof response.company_gps === 'string') {
-                    // Parse the string format "lat,lng"
-                    const [lat, lng] = response.company_gps.split(',');
-                    companyLat = parseFloat(lat);
-                    companyLng = parseFloat(lng);
-                } else if (response.company_gps.lat || response.company_gps.latitude) {
-                    // Handle object format
-                    companyLat = parseFloat(response.company_gps.lat || response.company_gps.latitude);
-                    companyLng = parseFloat(response.company_gps.lng || response.company_gps.longitude);
+                // Try multiple possible ID fields
+                const id = response.id || response.tracker_id || response.trackerId;
+                if (id) {
+                    setTrackerId(id);
+                    console.log('Tracker ID set to:', id);
+                } else {
+                    console.warn('No tracker ID found in response:', response);
                 }
 
-                const companyCoords = {
-                    companyLat,
-                    companyLng,
-                    tolerance: parseFloat(response.tolerance)
-                };
-                setCompanyCoordinates(companyCoords);
-                console.log('Company coordinates from status API:', companyCoords);
-            }
-
-            // Set tracker ID from response
-            const id = response.tracker_id || response.id || response.trackerId;
-            if (id) {
-                setTrackerId(id);
-                console.log('Tracker ID set to:', id);
+                if (response.checkIn && response.checkOut) {
+                    setShowCompletedPopup(true);
+                }
             } else {
-                console.warn('No tracker ID found in response:', response);
+                console.error('No response from status API');
+                // showNotification('warning', t('MSG.failedToFetchStatus'));
+                showToast('warning', t('MSG.failedToFetchStatus'));
             }
-
-            if (response.checkIn && response.checkOut) {
-                setShowCompletedPopup(true);
-            }
-        } else {
-            console.error('No response from status API');
-            showToast('warning', t('MSG.failedToFetchStatus'));
+        } catch (error) {
+            console.error('Error fetching employee status:', error);
+            // showNotification('warning', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
+            showToast('warning', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
+        } finally {
+            setLoading(false);
         }
-    } catch (error) {
-        console.error('Error fetching employee status:', error);
-        showToast('warning', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
-    } finally {
-        setLoading(false);
-    }
-}, [showToast, t]);
+    }, [showNotification, t]);
 
     // Load data on component mount
     useEffect(() => {
@@ -192,38 +150,6 @@ const fetchEmployeeStatus = useCallback(async () => {
         });
     }, [t]);
 
-    const validateLocationWithDistance = useCallback((userLat, userLng) => {
-    // Use company coordinates from status API if available, otherwise use the old coordinates
-    const companyLat = companyCoordinates.companyLat || coordinates.requiredLat;
-    const companyLng = companyCoordinates.companyLng || coordinates.requiredLng;
-    const tolerance = companyCoordinates.tolerance || coordinates.locationTolerance;
-
-    if (companyLat === null || companyLng === null || tolerance === null || 
-        isNaN(companyLat) || isNaN(companyLng) || isNaN(tolerance)) {
-        console.error('Invalid coordinates configuration', {
-            companyLat, companyLng, tolerance
-        });
-        return { isValid: false, distance: null };
-    }
-
-    // Calculate distance using Haversine formula
-    const distance = calculateDistance(userLat, userLng, companyLat, companyLng);
-    // Convert tolerance to kilometers (assuming it's in meters)
-    const toleranceKm = tolerance / 1000;
-    
-    const isValid = distance <= toleranceKm;
-
-    console.log('Location validation with distance:', {
-        userLocation: `${userLat}, ${userLng}`,
-        companyLocation: `${companyLat}, ${companyLng}`,
-        distance: `${distance.toFixed(3)} km`,
-        tolerance: `${toleranceKm} km (${tolerance}m)`,
-        isValid
-    });
-
-    return { isValid, distance: distance * 1000 }; // Return distance in meters for display
-}, [coordinates, companyCoordinates, calculateDistance]);
-
     const validateLocation = useCallback((userLat, userLng) => {
         if (!coordinatesLoaded) {
             console.error('Coordinates not loaded yet');
@@ -254,16 +180,63 @@ const fetchEmployeeStatus = useCallback(async () => {
         return latDiff <= locationTolerance && lngDiff <= locationTolerance;
     }, [coordinates, coordinatesLoaded]);
 
-   
-    const handleCheckOut = useCallback(async () => {
+    const handleCheckIn = useCallback(async () => {
         try {
             setNotification({ show: false, type: '', message: '' });
 
-            if (!coordinatesLoaded && !companyCoordinates.companyLat) {
+            if (!coordinatesLoaded) {
+                // showNotification('warning', 'Office location not loaded. Please refresh the page.');
                 showToast('warning', 'Office location not loaded. Please refresh the page.');
                 return;
             }
 
+            const location = await getCurrentLocation();
+
+            if (!validateLocation(location.latitude, location.longitude)) {
+                // showNotification('warning', t('MSG.mustBeAtOfficeLocation'));
+                showToast('warning', t('MSG.mustBeAtOfficeLocation'));
+                return;
+            }
+
+            setSubmitting(true);
+            const gpsString = `${location.latitude},${location.longitude}`;
+          const formData = new FormData();
+
+          formData.append("check_in_gps",gpsString);
+
+            const response = await postFormData('/api/employee-tracker', formData);
+            console.log('Check-in response:', response);
+
+            if (response && (response.tracker.id || response.tracker)) {
+                const id = response.tracker.id ;
+                setTrackerId(id);
+                console.log('Check-in successful, tracker ID:', id);
+                // showNotification('success', t('MSG.checkInSuccess'));
+                showToast('success', t('MSG.checkInSuccess'));
+                await fetchEmployeeStatus();
+            } else {
+                console.error('Check-in failed - no valid response:', response);
+                // showNotification('warning', t('MSG.failedToProcessRequest'));
+                showToast('warning', t('MSG.failedToProcessRequest'));
+            }
+        } catch (error) {
+            console.error('Check-in error:', error);
+            // showNotification('warning', `${t('MSG.error')}: ${error.message}`);
+            showToast('warning', `${t('MSG.error')}: ${error.message}`);
+        } finally {
+            setSubmitting(false);
+        }
+    }, [coordinatesLoaded, getCurrentLocation, validateLocation, showNotification, t, fetchEmployeeStatus]);
+
+    const handleCheckOut = useCallback(async () => {
+        try {
+            setNotification({ show: false, type: '', message: '' });
+
+            if (!coordinatesLoaded) {
+                // showNotification('warning', 'Office location not loaded. Please refresh the page.');
+                showToast('warning', 'Office location not loaded. Please refresh the page.');
+                return;
+            }
             // Enhanced tracker ID validation
             if (!trackerId) {
                 console.error('No tracker ID available for check-out');
@@ -275,6 +248,7 @@ const fetchEmployeeStatus = useCallback(async () => {
 
                 // Check again after refresh
                 if (!trackerId) {
+                    // showNotification('warning', 'Unable to find check-in record. Please refresh the page.');
                     showToast('warning', 'Unable to find check-in record. Please refresh the page.');
                     return;
                 }
@@ -282,12 +256,9 @@ const fetchEmployeeStatus = useCallback(async () => {
 
             const location = await getCurrentLocation();
 
-            // Use the new distance validation
-            const { isValid, distance } = validateLocationWithDistance(location.latitude, location.longitude);
-            
-            if (!isValid) {
-                const distanceText = distance ? `${(distance * 1000).toFixed(0)}m` : 'unknown';
-                showToast('error', t('MSG.OutsideCompany', { distance: distanceText }));
+            if (!validateLocation(location.latitude, location.longitude)) {
+                // showNotification('warning', t('MSG.mustBeAtOfficeLocation'));
+                showToast('warning', t('MSG.mustBeAtOfficeLocation'));
                 return;
             }
 
@@ -297,7 +268,7 @@ const fetchEmployeeStatus = useCallback(async () => {
             const payload = {
                 check_out_gps: gpsString,
                 tracker_id: trackerId,
-                check_out: true
+                check_out: true // Add this field
             };
 
             console.log('Check-out payload:', payload);
@@ -309,19 +280,22 @@ const fetchEmployeeStatus = useCallback(async () => {
             // More flexible response validation
             if (response && (response.id || response.tracker_id || response.trackerId || response.success || response.message === 'success')) {
                 console.log('Check-out successful');
+                // showNotification('success', t('MSG.checkOutSuccess'));
                 showToast('success', t('MSG.checkOutSuccess'));
                 await fetchEmployeeStatus();
             } else {
                 console.error('Check-out failed - invalid response:', response);
+                // showNotification('warning', t('MSG.failedToProcessRequest'));
                 showToast('warning', t('MSG.failedToProcessRequest'));
             }
         } catch (error) {
             console.error('Check-out error:', error);
+            // showNotification('warning', `${t('MSG.error')}: ${error.message}`);
             showToast('warning', `${t('MSG.error')}: ${error.message}`);
         } finally {
             setSubmitting(false);
         }
-    }, [coordinatesLoaded, companyCoordinates, trackerId, getCurrentLocation, validateLocationWithDistance, showNotification, t, fetchEmployeeStatus]);
+    }, [coordinatesLoaded, trackerId, getCurrentLocation, validateLocation, showNotification, t, fetchEmployeeStatus]);
 
     const closePopup = () => {
         setShowCompletedPopup(false);
@@ -335,7 +309,7 @@ const fetchEmployeeStatus = useCallback(async () => {
                     color="primary"
                     className="w-100 py-3 py-sm-3"
                     onClick={handleCheckIn}
-                    disabled={status.checkIn || submitting || locationLoading || (!coordinatesLoaded && !companyCoordinates.companyLat)}
+                    disabled={status.checkIn || submitting || locationLoading || !coordinatesLoaded}
                     style={{ fontSize: '1rem', fontWeight: 'bold' }}
                 >
                     {submitting ? (
@@ -354,7 +328,7 @@ const fetchEmployeeStatus = useCallback(async () => {
                     color="success"
                     className="w-100 py-3 py-sm-3"
                     onClick={handleCheckOut}
-                    disabled={!status.checkIn || status.checkOut || submitting || locationLoading || (!coordinatesLoaded && !companyCoordinates.companyLat)}
+                    disabled={!status.checkIn || status.checkOut || submitting || locationLoading || !coordinatesLoaded}
                     style={{ fontSize: '1rem', fontWeight: 'bold' }}
                 >
                     {submitting ? (
@@ -492,6 +466,16 @@ const fetchEmployeeStatus = useCallback(async () => {
                                                     </div>
                                                 </div>
                                             </div>
+
+                                            {/* Security Notice */}
+                                            {/* <div className="p-3 p-sm-4 rounded-3 border-start border-success border-4" style={{ backgroundColor: '#e8f5e8' }}>
+                                                <div className="d-flex align-items-center">
+                                                    <div className="bg-success rounded-circle me-2 me-sm-3 flex-shrink-0" style={{ width: '12px', height: '12px' }}></div>
+                                                    <h6 className="mb-0 text-success fs-6">
+                                                        {t('MSG.allTransactionsSecure')}
+                                                    </h6>
+                                                </div>
+                                            </div> */}
                                         </div>
                                     </div>
 
@@ -563,6 +547,16 @@ const fetchEmployeeStatus = useCallback(async () => {
 
                                         {/* Action Buttons for Mobile */}
                                         <ActionButtons />
+
+                                        {/* Security Notice */}
+                                        {/* <div className="p-3 p-sm-4 rounded-3 border-start border-success border-4" style={{ backgroundColor: '#e8f5e8' }}>
+                                            <div className="d-flex align-items-center">
+                                                <div className="bg-success rounded-circle me-2 me-sm-3 flex-shrink-0" style={{ width: '12px', height: '12px' }}></div>
+                                                <h6 className="mb-0 text-success fs-6">
+                                                    {t('MSG.allTransactionsSecure')}
+                                                </h6>
+                                            </div>
+                                        </div> */}
                                     </div>
                                 </CCardBody>
                             </CCard>
