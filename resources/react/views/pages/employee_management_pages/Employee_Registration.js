@@ -14,9 +14,15 @@ const INITIAL_FORM_DATA = {
   name: '', gender: '', payment_type: '', contract_type: '', work_type: '', overtime_type: '',
   wage_hour: '', wage_overtime: '', credit: '0', debit: '0', half_day_payment: '', holiday_payment: '',
   adhaar_number: '', mobile: '', refferal_by: '', referral_by_number: '', is_login: false,
-  password: '', re_enter_password: '', email: '', attendance_type: ''
+  password: '', re_enter_password: '', email: '', attendance_type: '',tolerance:''
 };
 const INITIAL_NOTIFICATION = { show: false, type: '', message: '' };
+
+const metersToDecimalDegrees = (meters) => {
+  const metersPerDegreeLat = 111320;
+  return (meters / metersPerDegreeLat).toFixed(6);
+};
+
 
 const EmployeeRegistrationForm = () => {
   const { t } = useTranslation('global');
@@ -44,6 +50,26 @@ const EmployeeRegistrationForm = () => {
   const [loadingFaceAttendance, setLoadingFaceAttendance] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showReEnterPassword, setShowReEnterPassword] = useState(false);
+
+  const [toleranceType, setToleranceType] = useState('');
+  const [customTolerance, setCustomTolerance] = useState('');
+
+  
+
+  const toleranceOptions = [
+    { value: '', label: t('LABELS.selectTolerance') || 'Select Tolerance' },
+    { value: 'preset_25', label: '25 meters' },
+    { value: 'preset_50', label: '50 meters' },
+    { value: 'preset_100', label: '100 meters' },
+    { value: 'custom', label: t('LABELS.customTolerance') || 'Custom Tolerance' },
+    { value: 'no_limit', label: t('LABELS.noLimit') || 'No Limit' }
+  ];
+
+  const convertedDegree = () => {
+    const meters = parseFloat(customTolerance);
+    if (isNaN(meters) || meters <= 0) return null;
+    return metersToDecimalDegrees(meters);
+  };
 
   const PAYMENT_TYPE_OPTIONS = useMemo(() => formData.work_type === 'fulltime' ? [
     { value: 'weekly', label: t('LABELS.weekly') }, { value: 'monthly', label: t('LABELS.monthly') }
@@ -83,6 +109,7 @@ const EmployeeRegistrationForm = () => {
     else if (!/^\d{10}$/.test(formData.mobile)) newErrors.mobile = t('MSG.mobileInvalid');
     if (formData.referral_by_number && !/^\d{10}$/.test(formData.referral_by_number)) newErrors.referral_by_number = t('MSG.referralNumberInvalid');
     if (formData.is_login) {
+      if(!formData.tolerance) newErrors.tolerance=t('MSG.toleranceRequired')
       if (!formData.password) newErrors.password = t('MSG.passwordRequired');
       else if (formData.password.length < 6) newErrors.password = t('MSG.passwordMinLength');
       if (!formData.re_enter_password) newErrors.re_enter_password = t('MSG.reEnterPasswordRequired');
@@ -105,7 +132,7 @@ const EmployeeRegistrationForm = () => {
       ...prev, work_type: value, payment_type: value === 'fulltime' ? prev.payment_type : '',
       contract_type: value === 'contract' ? prev.contract_type : '', overtime_type: value === 'fulltime' ? prev.overtime_type : '',
       wage_hour: value === 'contract' ? '' : prev.wage_hour, wage_overtime: value === 'contract' ? '' : prev.wage_overtime,
-      credit: value === 'contract' ? '0' : prev.credit, debit: value === 'contract' ? '0' : prev.debit
+      credit: value === 'contract' ? '0' : prev.credit, debit: value === 'contract' ? '0' : prev.debit 
     }));
     validateForm();
   }, [validateForm]);
@@ -351,6 +378,55 @@ const EmployeeRegistrationForm = () => {
                             </CFormSelect>{errors.attendance_type && <div className="text-danger small">{errors.attendance_type}</div>}</>}
                           {loadingFaceAttendance && <div className="d-flex align-items-center"><CSpinner size="sm" className="me-2" /><span className="text-muted small">Loading...</span></div>}
                         </CCol>
+<CCol xs={12} md={4}>
+                        <CFormLabel htmlFor="toleranceType">
+        {t('LABELS.tolerance') || 'Tolerance'} <span className="text-danger">*</span>
+      </CFormLabel>
+      <CFormSelect
+        id="toleranceType"
+        value={toleranceType}
+        onChange={(e) => {
+          setToleranceType(e.target.value);
+          setCustomTolerance('');
+        }}
+      >
+        {toleranceOptions.map((option, index) => (
+          <option key={index} value={option.value}>{option.label}</option>
+        ))}
+      </CFormSelect>
+        {errors.tolerance && <div className="text-danger small">{errors.tolerance}</div>}
+</CCol>
+<CCol xs={12} md={4}>
+  {toleranceType === 'custom' && (
+        <>
+          <CFormLabel htmlFor="customTolerance" className="mt-0">
+            {t('LABELS.customToleranceValue') || 'Custom Tolerance (meters)'} <span className="text-danger">*</span>
+          </CFormLabel>
+          <CInputGroup>
+            <CFormInput
+              type="number"
+              id="customTolerance"
+              placeholder="Enter meters"
+              value={customTolerance}
+              onChange={(e) =>{
+                setCustomTolerance(e.target.value);
+                setFormData(e.target.value);
+              } }
+              min="1"
+              max="100000"
+            />
+            <CInputGroupText>m</CInputGroupText>
+          </CInputGroup>
+        </>
+      )}
+</CCol>
+<CCol xs={12} md={4}>
+ {convertedDegree() && (
+            <div className="mt-2 p-2 bg-light rounded">
+              <strong>{t('LABELS.tolerancePreview') || 'Tolerance Preview'}:</strong>{' '}
+              ≈ {customTolerance} meters ≈ <code>{convertedDegree()}°</code> latitude degrees
+            </div>
+          )}</CCol>
                       </CRow>
                     </CCardBody>
                   </CCard>

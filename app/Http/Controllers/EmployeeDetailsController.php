@@ -79,6 +79,8 @@ public function store(Request $request)
         // Create the document_type row (⚠️ same logic as before, not firstOrCreate)
         $documentType = DocumentType::create([
             'document_name' => $docName,
+            'product_id'=>auth()->user()->product_id,
+            'company_id'=>auth()->user()->company_id
         ]);
  
         $customDocId = $documentType->id;

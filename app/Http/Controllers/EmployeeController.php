@@ -15,8 +15,9 @@ class EmployeeController extends Controller
 {
     /* GET /api/employees */
     public function index(): JsonResponse
-    {
-        return response()->json(Employee::latest()->paginate(15));
+    {     $employee=Employee::where('product_id',auth()->user()->product_id)
+                            ->where('company_id',auth()->user()->company_id)->get();
+        return response()->json($employee);
     }
 
     /* POST /api/employees */

@@ -20,5 +20,7 @@ class DocumentType extends Model
      */
     protected $fillable = [
         'document_name',
+        'product_id',
+        'company_id'
     ];
 }

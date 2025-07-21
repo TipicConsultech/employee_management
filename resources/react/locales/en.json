@@ -873,7 +873,8 @@
     "basicInformation":"Basic Information",
     "additionalInfo":"Additional Info",
     "employeeConfiguration":"Employee Configuration",
-    "wageConfiguration":"Wage Configuration"
+    "wageConfiguration":"Wage Configuration",
+    "toleranceRequired":"Tolerance selection is required."
     },
 
 

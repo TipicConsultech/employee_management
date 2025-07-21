@@ -11,8 +11,10 @@ class DocumentTypeController extends Controller
      * GET /api/document-types
      */
     public function index()
-    {
-        return response()->json(DocumentType::all());
+    { 
+        $documentType=DocumentType::where('company_id',auth()->user()->company_id)
+                                   ->where('product_id',auth()->user()->product_id)->get();  
+        return response()->json($documentType);
     }
 
     /**
@@ -23,6 +25,9 @@ class DocumentTypeController extends Controller
         $validated = $request->validate([
             'document_name' => 'required|string|max:255',
         ]);
+
+        $validated['company_id']=auth()->user()->company_id;
+         $validated['product_id']=auth()->user()->product_id;
 
         $documentType = DocumentType::create($validated);
 

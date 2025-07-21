@@ -36,7 +36,8 @@ class Employee extends Model
         'attendance_type',
         'refferal_number',
         'user_id',
-        'working_hours'
+        'working_hours',
+        'tolerance'
     ];
 
     /* ───── Casts ───── */
