@@ -30,12 +30,12 @@ use App\Http\Controllers\DocumentTypeController;
 | Public (unauthenticated) routes
 |--------------------------------------------------------------------------
 */
-Route::post('/register',      [AuthController::class, 'register']);
-Route::post('/login',         [AuthController::class, 'login']);
-Route::post('/mobileLogin',   [AuthController::class, 'mobileLogin']);
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/mobileLogin', [AuthController::class, 'mobileLogin']);
 
 Route::post('/reset-password-link', [MailController::class, 'sendEmail']);
-Route::post('/newPassword',         [MailController::class, 'resetPassword']);
+Route::post('/newPassword', [MailController::class, 'resetPassword']);
 
 /*
 |--------------------------------------------------------------------------
@@ -54,26 +54,27 @@ Route::middleware('auth:sanctum')->post('/bulkCheckOut', [EmployeeTrackerControl
 Route::middleware('auth:sanctum')->post('/employeeCredit', [CommonController::class, 'employeeCredit']);
 Route::middleware('auth:sanctum')->get('/isface-attendance', [CompanyInfoController::class, 'isFaceAttendance']);
 Route::middleware('auth:sanctum')->post('/contractSummary', [EmployeeTrackerController::class, 'contractSummary']);
- Route::middleware('auth:sanctum')->post('/weeklyPresenty', [EmployeeTrackerController::class, 'weeklyPresenty']);
+Route::middleware('auth:sanctum')->post('/weeklyPresenty', [EmployeeTrackerController::class, 'weeklyPresenty']);
+Route::post('/monthlyPresenty', [EmployeeTrackerController::class, 'monthlyPresenty']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
-  /* ---------- EmployeeController APIs---------- */
+    /* ---------- EmployeeController APIs---------- */
     Route::apiResource('document-type', DocumentTypeController::class);
     Route::apiResource('employee-details', EmployeeDetailsController::class);
-    Route::apiResource('employee-transactions', EmployeeTransactionController::class);  
+    Route::apiResource('employee-transactions', EmployeeTransactionController::class);
     Route::apiResource('employee-tracker', EmployeeTrackerController::class);
     Route::apiResource('employees', EmployeeController::class);
-    Route::post('/employeeDtailsForDashboard',[EmployeeController::class, 'employeeDtailsForDashboard']);
+    Route::post('/employeeDtailsForDashboard', [EmployeeController::class, 'employeeDtailsForDashboard']);
     Route::get('/employee/{id}', [EmployeeController::class, 'showEmployeesDetails']);
- Route::put('/employees/{employee}', [EmployeeController::class, 'update']);
- Route::put('/employeetracker/{id}', [EmployeeTrackerController::class, 'updateTraker']);
+    Route::put('/employees/{employee}', [EmployeeController::class, 'update']);
+    Route::put('/employeetracker/{id}', [EmployeeTrackerController::class, 'updateTraker']);
 
     /* ---------- AuthController ---------- */
     Route::post('/changePassword', [AuthController::class, 'changePassword']);
-    Route::post('/logout',         [AuthController::class, 'logout']);
-    Route::post('/registerUser',   [AuthController::class, 'registerUser']);
-    Route::put ('/appUsers',       [AuthController::class, 'update']);
-    Route::get ('/appUsers',       [AuthController::class, 'allUsers']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/registerUser', [AuthController::class, 'registerUser']);
+    Route::put('/appUsers', [AuthController::class, 'update']);
+    Route::get('/appUsers', [AuthController::class, 'allUsers']);
 
     /* ---------- PlanController ---------- */
     Route::resource('plan', PlanController::class);
@@ -81,19 +82,19 @@ Route::middleware(['auth:sanctum'])->group(function () {
     /* ---------- FileUpload ---------- */
     Route::post('/fileUpload', [FileUpload::class, 'fileUpload']);
     Route::get('/documents/{employee_id}', [EmployeeDetailsController::class, 'documentView']);
- 
+
 
     /* ---------- CompanyInfoController ---------- */
     Route::resource('company', CompanyInfoController::class);
 
 
     /* ---------- RazorpayController ---------- */
-    Route::post('/create-order',  [RazorpayController::class, 'createOrder']);
+    Route::post('/create-order', [RazorpayController::class, 'createOrder']);
     Route::post('/verify-payment', [RazorpayController::class, 'verifyPayment']);
 
     /* ---------- CompanyReceiptController ---------- */
-    Route::post('/company-receipt',  [CompanyReceiptController::class, 'store']);
-    Route::get ('/company-receipts', [CompanyReceiptController::class, 'index']);
+    Route::post('/company-receipt', [CompanyReceiptController::class, 'store']);
+    Route::get('/company-receipts', [CompanyReceiptController::class, 'index']);
 });
 
 /*

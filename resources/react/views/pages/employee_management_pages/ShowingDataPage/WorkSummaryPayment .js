@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   CRow,
   CCol,
@@ -6,8 +6,8 @@ import {
   CButton,
   CFormSelect,
   CCard,
-  CCardBody,
   CCardHeader,
+  CCardBody,
 } from '@coreui/react';
 import { useTranslation } from 'react-i18next';
 
@@ -19,6 +19,7 @@ const WorkSummaryPayment = ({
   title = "LABELS.workSummaryPayment"
 }) => {
   const { t } = useTranslation('global');
+  const [paymentTypeError, setPaymentTypeError] = useState('');
 
   if (!workSummary) return null;
 
@@ -65,6 +66,36 @@ const WorkSummaryPayment = ({
         ...prev,
         [fieldName]: positiveValue,
       }));
+    }
+  };
+
+  // Handle payment type change with validation
+  const handlePaymentTypeChange = (value) => {
+    setWorkSummary((prev) => ({
+      ...prev,
+      payment_type: value,
+    }));
+    if (!value) {
+      setPaymentTypeError(t('LABELS.paymentMethodRequired'));
+    } else {
+      setPaymentTypeError('');
+    }
+  };
+
+  // Handle submit with validation
+  const handleSubmit = async () => {
+    if (!workSummary.payment_type) {
+      setPaymentTypeError(t('LABELS.paymentMethodRequired'));
+      return;
+    }
+    try {
+      await onSubmit();
+      window.scrollTo(0, 0);
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (error) {
+      console.error('Submission failed:', error);
     }
   };
 
@@ -305,6 +336,16 @@ const WorkSummaryPayment = ({
         .form-input[readonly] {
           background-color: #f9fafb;
           color: #6b7280;
+        }
+
+        .form-input.error {
+          border-color: #dc2626;
+        }
+
+        .error-message {
+          color: #dc2626;
+          font-size: 0.75rem;
+          margin-top: 4px;
         }
 
         .payment-details-grid {
@@ -658,22 +699,19 @@ const WorkSummaryPayment = ({
                 <div className="payment-details-grid">
                   <div className="form-grid-three">
                     <div className="form-group">
-                      <label className="form-label">{t('LABELS.paymentMethod')}</label>
+                      <label className="form-label">{t('LABELS.paymentMethod')} <span style={{ color: '#dc2626' }}>*</span></label>
                       <CFormSelect
-                        className="form-input"
+                        className={`form-input ${paymentTypeError ? 'error' : ''}`}
                         value={workSummary.payment_type || ''}
-                        onChange={(e) =>
-                          setWorkSummary((prev) => ({
-                            ...prev,
-                            payment_type: e.target.value,
-                          }))
-                        }
+                        onChange={(e) => handlePaymentTypeChange(e.target.value)}
+                        required
                       >
                         <option value="">{t('LABELS.selectPaymentMethod')}</option>
                         <option value="cash">{t('LABELS.cash')}</option>
                         <option value="upi">{t('LABELS.upi')}</option>
                         <option value="bank_transfer">{t('LABELS.bankTransfer')}</option>
                       </CFormSelect>
+                      {paymentTypeError && <div className="error-message">{paymentTypeError}</div>}
                     </div>
 
                     <div className="form-group">
@@ -703,7 +741,7 @@ const WorkSummaryPayment = ({
 
               {/* Submit Button */}
               <div className="submit-section">
-                <CButton className="submit-btn" onClick={onSubmit}>
+                <CButton className="submit-btn" onClick={handleSubmit}>
                   {t('LABELS.submitSavePayment')}
                 </CButton>
               </div>

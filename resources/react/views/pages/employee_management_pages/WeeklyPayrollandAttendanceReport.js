@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   CContainer,
   CRow,
@@ -27,30 +27,36 @@ import { useTranslation } from 'react-i18next';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
-const WeeklyPresentyPayroll = () => {
-  // Add translation hook
+const WeeklyMonthlyPresentyPayroll = () => {
   const { t } = useTranslation("global");
-
-  const [selectedWeekDay, setSelectedWeekDay] = useState('');
+  const [reportType, setReportType] = useState('');
+  const [selectedWeekDay, setSelectedWeekDay] = useState('monday');
   const [selectedWeek, setSelectedWeek] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState('');
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [employeeData, setEmployeeData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState({ show: false, type: '', message: '' });
   const [weekDates, setWeekDates] = useState([]);
+  const [monthlyWeeks, setMonthlyWeeks] = useState([]);
+  const [hasFetchedData, setHasFetchedData] = useState(false); // Track if data was fetched manually
   const tableRef = useRef(null);
 
-  // Memoized helper function for showing notifications
   const showNotification = useCallback((type, message) => {
     setNotification({ show: true, type, message });
-    // Auto hide success messages after 3 seconds
     if (type === 'success') {
       setTimeout(() => {
         setNotification({ show: false, type: '', message: '' });
       }, 3000);
     }
   }, []);
+
+  const reportTypes = [
+    { value: 'weekly', label: t('LABELS.weeklyReport') },
+    { value: 'monthly', label: t('LABELS.monthlyReport') }
+  ];
 
   const weekDays = [
     { value: 'monday', label: t('LABELS.monday') },
@@ -61,6 +67,27 @@ const WeeklyPresentyPayroll = () => {
     { value: 'saturday', label: t('LABELS.saturday') },
     { value: 'sunday', label: t('LABELS.sunday') }
   ];
+
+  const months = [
+    { value: 'January', label: t('LABELS.january') },
+    { value: 'February', label: t('LABELS.february') },
+    { value: 'March', label: t('LABELS.march') },
+    { value: 'April', label: t('LABELS.april') },
+    { value: 'May', label: t('LABELS.may') },
+    { value: 'June', label: t('LABELS.june') },
+    { value: 'July', label: t('LABELS.july') },
+    { value: 'August', label: t('LABELS.august') },
+    { value: 'September', label: t('LABELS.september') },
+    { value: 'October', label: t('LABELS.october') },
+    { value: 'November', label: t('LABELS.november') },
+    { value: 'December', label: t('LABELS.december') }
+  ];
+
+  const currentYear = new Date().getFullYear();
+  const years = [];
+  for (let year = currentYear - 5; year <= currentYear + 1; year++) {
+    years.push({ value: year.toString(), label: year.toString() });
+  }
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -99,15 +126,11 @@ const WeeklyPresentyPayroll = () => {
     };
 
     const targetDay = weekDayMap[weekStartDay];
-
-    // Calculate days to subtract to get to the start of the week
     let daysToSubtract = (dayOfWeek - targetDay + 7) % 7;
 
-    // Get the start of the week
     const weekStart = new Date(selectedDate);
     weekStart.setDate(selectedDate.getDate() - daysToSubtract);
 
-    // Get the end of the week (6 days after start for Monday-Sunday format)
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 6);
 
@@ -115,6 +138,82 @@ const WeeklyPresentyPayroll = () => {
       start: weekStart.toISOString().split('T')[0],
       end: weekEnd.toISOString().split('T')[0]
     };
+  };
+
+  const getMonthDates = (monthStart, monthEnd) => {
+    const dates = [];
+    const start = new Date(monthStart);
+    const end = new Date(monthEnd);
+
+    for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+      dates.push(date.toISOString().split('T')[0]);
+    }
+
+    return dates;
+  };
+
+  const getMonthlyWeeks = (monthStart, monthEnd, weekStartDay) => {
+    const weeks = [];
+    const startDate = new Date(monthStart);
+    const endDate = new Date(monthEnd);
+
+    const weekDayMap = {
+      'sunday': 0,
+      'monday': 1,
+      'tuesday': 2,
+      'wednesday': 3,
+      'thursday': 4,
+      'friday': 5,
+      'saturday': 6
+    };
+
+    const targetDay = weekDayMap[weekStartDay];
+    let currentWeekStart = new Date(startDate);
+    const dayOfWeek = currentWeekStart.getDay();
+    let daysToSubtract = (dayOfWeek - targetDay + 7) % 7;
+
+    currentWeekStart.setDate(currentWeekStart.getDate() - daysToSubtract);
+
+    while (currentWeekStart <= endDate) {
+      const weekEnd = new Date(currentWeekStart);
+      weekEnd.setDate(currentWeekStart.getDate() + 6);
+
+      const weekDates = [];
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(currentWeekStart);
+        date.setDate(currentWeekStart.getDate() + i);
+        const dateString = date.toISOString().split('T')[0];
+        if (date >= startDate && date <= endDate) {
+          weekDates.push(dateString);
+        }
+      }
+
+      if (weekDates.length > 0) {
+        weeks.push({
+          start: weekDates[0],
+          end: weekDates[weekDates.length - 1],
+          dates: weekDates
+        });
+      }
+
+      currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+    }
+
+    return weeks;
+  };
+
+  const handleReportTypeChange = (e) => {
+    const type = e.target.value;
+    setReportType(type);
+    setSelectedWeek('');
+    setStartDate('');
+    setEndDate('');
+    setSelectedMonth('');
+    setEmployeeData([]);
+    setWeekDates([]);
+    setMonthlyWeeks([]);
+    setHasFetchedData(false); // Reset fetch status on report type change
+    setNotification({ show: false, type: '', message: '' });
   };
 
   const handleWeekDayChange = (e) => {
@@ -138,7 +237,6 @@ const WeeklyPresentyPayroll = () => {
     setNotification({ show: false, type: '', message: '' });
     setSelectedWeek(selectedDate);
 
-    // Calculate the week range based on selected day and week start day
     const weekRange = getWeekFromDate(selectedDate, selectedWeekDay);
 
     setStartDate(weekRange.start);
@@ -146,9 +244,29 @@ const WeeklyPresentyPayroll = () => {
     setWeekDates(getWeekDates(weekRange.start, selectedWeekDay));
   };
 
+  const handleMonthChange = (e) => {
+    setSelectedMonth(e.target.value);
+    setNotification({ show: false, type: '', message: '' });
+  };
+
+  const handleYearChange = (e) => {
+    setSelectedYear(e.target.value);
+    setNotification({ show: false, type: '', message: '' });
+  };
+
   const handleGetEmployeeData = async () => {
-    if (!startDate || !endDate || !selectedWeekDay) {
-      showNotification('warning', t('MSG.pleaseSelectWeekAndDate'));
+    if (reportType === 'weekly') {
+      if (!startDate || !endDate || !selectedWeekDay) {
+        showNotification('warning', t('MSG.pleaseSelectWeekAndDate'));
+        return;
+      }
+    } else if (reportType === 'monthly') {
+      if (!selectedMonth || !selectedYear) {
+        showNotification('warning', t('MSG.pleaseSelectMonthAndYear'));
+        return;
+      }
+    } else {
+      showNotification('warning', t('MSG.pleaseSelectReportType'));
       return;
     }
 
@@ -156,80 +274,144 @@ const WeeklyPresentyPayroll = () => {
     setNotification({ show: false, type: '', message: '' });
 
     try {
-      // Use the selectedWeek date (any date in the week) and the week start day
-      const response = await post('/api/weeklyPresenty', {
-        date: selectedWeek, // This is the date user selected in the week
-        week_start_day: selectedWeekDay // This is the selected week starting day
-      });
+      let response;
 
-      if (response.data) {
-        setEmployeeData(response.data);
+      if (reportType === 'weekly') {
+        response = await post('/api/weeklyPresenty', {
+          date: selectedWeek,
+          week_start_day: selectedWeekDay
+        });
+        if (response.data.week_start) {
+          setWeekDates(getWeekDates(response.data.week_start, selectedWeekDay));
+          setStartDate(response.data.week_start);
+          setEndDate(response.data.week_end || getWeekFromDate(selectedWeek, selectedWeekDay).end);
+        } else {
+          throw new Error('No week_start in response');
+        }
+      } else {
+        response = await post('/api/monthlyPresenty', {
+          month: selectedMonth,
+          year: selectedYear,
+        });
+
+        console.log('API Response:', response.data); // Debugging log
+
+        if (response.data.month_start && response.data.month_end) {
+          const monthDates = getMonthDates(response.data.month_start, response.data.month_end);
+          setWeekDates(monthDates);
+          setStartDate(response.data.month_start);
+          setEndDate(response.data.month_end);
+          const weeks = getMonthlyWeeks(response.data.month_start, response.data.month_end, selectedWeekDay);
+          setMonthlyWeeks(weeks);
+        } else {
+          console.warn('No month_start or month_end in response, using fallback');
+          const monthIndex = months.findIndex(m => m.value.toLowerCase() === selectedMonth.toLowerCase()) + 1;
+          const monthStart = `${selectedYear}-${monthIndex.toString().padStart(2, '0')}-01`;
+          const lastDay = new Date(selectedYear, monthIndex, 0);
+          const monthEnd = lastDay.toISOString().split('T')[0];
+          const monthDates = getMonthDates(monthStart, monthEnd);
+          setWeekDates(monthDates);
+          setStartDate(monthStart);
+          setEndDate(monthEnd);
+          const weeks = getMonthlyWeeks(monthStart, monthEnd, selectedWeekDay);
+          setMonthlyWeeks(weeks);
+        }
+      }
+
+      const employees = response.data.employees || response.data;
+      if (Array.isArray(employees) && employees.length > 0) {
+        setEmployeeData(employees);
+        setHasFetchedData(true); // Mark that data has been fetched manually
         showNotification('success', t('MSG.employeeDataFetchedSuccess'));
       } else {
-        showNotification('warning', t('MSG.failedToFetchEmployeeData'));
+        console.warn('No valid employee data in response:', employees);
+        setEmployeeData([]);
+        showNotification('warning', t('MSG.noEmployeeDataAvailable'));
       }
     } catch (err) {
       console.error('API Error:', err);
       showNotification('warning', `${t('MSG.errorConnectingToServer')}: ${err.message}`);
+      setEmployeeData([]);
+      setWeekDates([]);
     } finally {
       setLoading(false);
     }
   };
 
+  // Auto-fetch data when relevant state changes after initial manual fetch
+  useEffect(() => {
+    if (hasFetchedData) {
+      if (reportType === 'weekly' && selectedWeek && selectedWeekDay && startDate && endDate) {
+        handleGetEmployeeData();
+      } else if (reportType === 'monthly' && selectedMonth && selectedYear) {
+        handleGetEmployeeData();
+      }
+    }
+  }, [reportType, selectedWeek, selectedWeekDay, startDate, endDate, selectedMonth, selectedYear, hasFetchedData]);
+
   const calculateTotalDays = (attendance) => {
-    return Object.values(attendance).filter(day => day.status === 'P').length;
+    if (!attendance) return 0;
+    return Object.values(attendance).filter(day => day?.status === 'P').length;
   };
 
   const calculateOvertimeHours = (attendance) => {
+    if (!attendance) return 0;
     return Object.values(attendance).reduce((total, day) => {
-      return total + (day.overtime_hours || 0);
+      return total + (day?.overtime_hours || 0);
     }, 0);
   };
 
   const calculateHolidayRate = (employee) => {
+    if (!employee?.attendance) return 0;
     const sundayAttendance = Object.entries(employee.attendance).find(([date, data]) => {
       const dayOfWeek = new Date(date).getDay();
-      return dayOfWeek === 0 && data.status === 'P'; // Sunday = 0
+      return dayOfWeek === 0 && data?.status === 'P';
     });
 
     if (sundayAttendance) {
-      return employee.wage_hour;
+      return employee.wage_hour || 0;
     }
     return 0;
   };
 
   const calculateHalfDayRate = (employee) => {
-    const halfDayAttendance = Object.values(employee.attendance).find(day => day.status === 'H');
+    if (!employee?.attendance) return 0;
+    const halfDayAttendance = Object.values(employee.attendance).find(day => day?.status === 'H');
     if (halfDayAttendance) {
-      return employee.half_day_rate || (employee.wage_hour / 2);
+      return employee.half_day_rate || (employee.wage_hour / 2) || 0;
     }
     return 0;
   };
 
   const calculateTotalAmount = (employee) => {
+    if (!employee?.attendance) return 0;
     const totalDays = calculateTotalDays(employee.attendance);
     const overtimeHours = calculateOvertimeHours(employee.attendance);
     const holidayRate = calculateHolidayRate(employee);
     const halfDayRate = calculateHalfDayRate(employee);
 
-    return (totalDays * employee.wage_hour) +
-           (overtimeHours * employee.wage_overtime) +
-           holidayRate +
-           halfDayRate;
+    return (
+      (totalDays * (employee.wage_hour || 0)) +
+      (overtimeHours * (employee.wage_overtime || 0)) +
+      holidayRate +
+      halfDayRate
+    );
   };
 
   const exportToPDF = () => {
     const doc = new jsPDF('landscape');
-
-    // Add title
     doc.setFontSize(16);
-    doc.text(t('LABELS.weeklyPresentyPayrollChart'), 14, 20);
+    const title = reportType === 'weekly'
+      ? t('LABELS.weeklyPresentyPayrollChart')
+      : t('LABELS.monthlyPresentyPayrollChart');
+    doc.text(title, 14, 20);
 
-    // Add date range
     doc.setFontSize(12);
-    doc.text(`${t('LABELS.week')}: ${formatDate(startDate)} ${t('LABELS.to')} ${formatDate(endDate)}`, 14, 30);
+    const dateRange = reportType === 'weekly'
+      ? `${t('LABELS.week')}: ${formatDate(startDate)} ${t('LABELS.to')} ${formatDate(endDate)}`
+      : `${t('LABELS.month')}: ${selectedMonth} ${selectedYear}`;
+    doc.text(dateRange, 14, 30);
 
-    // Prepare table data
     const tableHeaders = [
       t('LABELS.employeeName'),
       ...weekDates.map(date => new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })),
@@ -241,9 +423,9 @@ const WeeklyPresentyPayroll = () => {
     ];
 
     const tableData = employeeData.map(employee => [
-      employee.employee_name,
+      employee.employee_name || 'Unknown',
       ...weekDates.map(date => {
-        const attendance = employee.attendance[date];
+        const attendance = employee.attendance && employee.attendance[date];
         return attendance ? attendance.status : '-';
       }),
       calculateTotalDays(employee.attendance),
@@ -270,11 +452,23 @@ const WeeklyPresentyPayroll = () => {
       }
     });
 
-    doc.save(`weekly-presenty-${startDate}-to-${endDate}.pdf`);
+    const fileName = reportType === 'weekly'
+      ? `weekly-presenty-${startDate}-to-${endDate}.pdf`
+      : `monthly-presenty-${selectedMonth}-${selectedYear}.pdf`;
+
+    doc.save(fileName);
     showNotification('success', t('MSG.pdfExportedSuccess'));
   };
 
-  // Loading state
+  const getDateRangeDisplay = () => {
+    if (reportType === 'weekly' && startDate && endDate) {
+      return `${formatDate(startDate)} ${t('LABELS.to')} ${formatDate(endDate)}`;
+    } else if (reportType === 'monthly' && selectedMonth && selectedYear) {
+      return `${selectedMonth} ${selectedYear}`;
+    }
+    return '';
+  };
+
   if (loading && employeeData.length === 0) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
@@ -285,20 +479,13 @@ const WeeklyPresentyPayroll = () => {
 
   return (
     <CContainer fluid>
-      {/* <CRow className="mb-2">
-        <CCol>
-          <h4 className="text-center mb-2">{t('LABELS.weeklyPresentyPayrollChart')}</h4>
-        </CCol>
-      </CRow> */}
-
       <CRow className="mb-4">
         <CCol>
           <CCard className="mb-4 shadow-sm">
             <CCardHeader style={{ backgroundColor: "#E6E6FA" }}>
-              <strong>{t('LABELS.selectWeekParameters')}</strong>
+              <strong>{t('LABELS.selectReportParameters')}</strong>
             </CCardHeader>
 
-            {/* Notifications */}
             {notification.show && (
               <CAlert
                 color={notification.type}
@@ -313,50 +500,103 @@ const WeeklyPresentyPayroll = () => {
               <CForm>
                 <CRow className="mb-3">
                   <CCol md={4}>
-                    <CFormLabel htmlFor="weekDay">{t('LABELS.selectWeekStartingDay')}</CFormLabel>
+                    <CFormLabel htmlFor="reportType">{t('LABELS.selectReportType')}</CFormLabel>
                     <CFormSelect
-                      id="weekDay"
-                      value={selectedWeekDay}
-                      onChange={handleWeekDayChange}
+                      id="reportType"
+                      value={reportType}
+                      onChange={handleReportTypeChange}
                     >
-                      <option value="">{t('LABELS.chooseADay')}</option>
-                      {weekDays.map(day => (
-                        <option key={day.value} value={day.value}>
-                          {day.label}
+                      <option value="">{t('LABELS.chooseReportType')}</option>
+                      {reportTypes.map(type => (
+                        <option key={type.value} value={type.value}>
+                          {type.label}
                         </option>
                       ))}
                     </CFormSelect>
                   </CCol>
-
-                  <CCol md={4}>
-                    <CFormLabel htmlFor="weekPicker">{t('LABELS.selectAnyDateInWeek')}</CFormLabel>
-                    <CFormInput
-                      type="date"
-                      id="weekPicker"
-                      value={selectedWeek}
-                      onChange={handleWeekChange}
-                      disabled={!selectedWeekDay}
-                    />
-                  </CCol>
-
-                  <CCol md={4}>
-                    <CFormLabel htmlFor="weekRange">{t('LABELS.weekRange')}</CFormLabel>
-                    <CFormInput
-                      type="text"
-                      id="weekRange"
-                      value={startDate && endDate ? `${formatDate(startDate)} ${t('LABELS.to')} ${formatDate(endDate)}` : ''}
-                      disabled
-                      readOnly
-                    />
-                  </CCol>
                 </CRow>
+
+                {reportType === 'weekly' && (
+                  <CRow className="mb-3">
+                    <CCol md={4}>
+                      <CFormLabel htmlFor="weekDay">{t('LABELS.selectWeekStartingDay')}</CFormLabel>
+                      <CFormSelect
+                        id="weekDay"
+                        value={selectedWeekDay}
+                        onChange={handleWeekDayChange}
+                      >
+                        {weekDays.map(day => (
+                          <option key={day.value} value={day.value}>
+                            {day.label}
+                          </option>
+                        ))}
+                      </CFormSelect>
+                    </CCol>
+
+                    <CCol md={4}>
+                      <CFormLabel htmlFor="weekPicker">{t('LABELS.selectAnyDateInWeek')}</CFormLabel>
+                      <CFormInput
+                        type="date"
+                        id="weekPicker"
+                        value={selectedWeek}
+                        onChange={handleWeekChange}
+                      />
+                    </CCol>
+
+                    <CCol md={4}>
+                      <CFormLabel htmlFor="weekRange">{t('LABELS.weekRange')}</CFormLabel>
+                      <CFormInput
+                        type="text"
+                        id="weekRange"
+                        value={startDate && endDate ? `${formatDate(startDate)} ${t('LABELS.to')} ${formatDate(endDate)}` : ''}
+                        disabled
+                        readOnly
+                      />
+                    </CCol>
+                  </CRow>
+                )}
+
+                {reportType === 'monthly' && (
+                  <CRow className="mb-3">
+                    <CCol md={4}>
+                      <CFormLabel htmlFor="monthSelect">{t('LABELS.selectMonth')}</CFormLabel>
+                      <CFormSelect
+                        id="monthSelect"
+                        value={selectedMonth}
+                        onChange={handleMonthChange}
+                      >
+                        <option value="">{t('LABELS.chooseMonth')}</option>
+                        {months.map(month => (
+                          <option key={month.value} value={month.value}>
+                            {month.label}
+                          </option>
+                        ))}
+                      </CFormSelect>
+                    </CCol>
+
+                    <CCol md={4}>
+                      <CFormLabel htmlFor="yearSelect">{t('LABELS.selectYear')}</CFormLabel>
+                      <CFormSelect
+                        id="yearSelect"
+                        value={selectedYear}
+                        onChange={handleYearChange}
+                      >
+                        {years.map(year => (
+                          <option key={year.value} value={year.value}>
+                            {year.label}
+                          </option>
+                        ))}
+                      </CFormSelect>
+                    </CCol>
+                  </CRow>
+                )}
 
                 <CRow>
                   <CCol className="d-flex gap-2">
                     <CButton
                       color="primary"
                       onClick={handleGetEmployeeData}
-                      disabled={!startDate || !endDate || loading}
+                      disabled={!reportType || loading}
                     >
                       {loading ? <CSpinner size="sm" className="me-2" /> : <CIcon icon={cilCalendar} className="me-2" />}
                       {t('LABELS.getEmployeesData')}
@@ -380,14 +620,16 @@ const WeeklyPresentyPayroll = () => {
         </CCol>
       </CRow>
 
-      {employeeData.length > 0 && (
+      {employeeData.length > 0 && weekDates.length > 0 && (
         <CRow>
           <CCol>
             <CCard className="mb-4 shadow-sm">
               <CCardHeader style={{ backgroundColor: "#E6E6FA" }} className="d-flex justify-content-between align-items-center flex-wrap">
                 <strong>{t('LABELS.employeeAttendancePayrollReport')}</strong>
                 <small className="text-muted">
-                  {t('LABELS.week')}: {formatDate(startDate)} {t('LABELS.to')} {formatDate(endDate)}
+                  {reportType === 'weekly' && `${t('LABELS.week')}: `}
+                  {reportType === 'monthly' && `${t('LABELS.month')}: `}
+                  {getDateRangeDisplay()}
                 </small>
               </CCardHeader>
               <CCardBody>
@@ -401,8 +643,8 @@ const WeeklyPresentyPayroll = () => {
                         <CTableHeaderCell rowSpan="2" className="text-center align-middle">
                           {t('LABELS.employeeName')}
                         </CTableHeaderCell>
-                        <CTableHeaderCell colSpan="7" className="text-center">
-                          {t('LABELS.weekDays')}
+                        <CTableHeaderCell colSpan={weekDates.length} className="text-center">
+                          {reportType === 'weekly' ? t('LABELS.weekDays') : t('LABELS.monthDays')}
                         </CTableHeaderCell>
                         <CTableHeaderCell rowSpan="2" className="text-center align-middle">
                           {t('LABELS.totalDays')}
@@ -438,76 +680,65 @@ const WeeklyPresentyPayroll = () => {
                       </CTableRow>
                     </CTableHead>
                     <CTableBody>
-                      {employeeData.length > 0 ? (
-                        employeeData.map((employee, index) => (
-                          <React.Fragment key={employee.employee_id}>
-                            {/* Main Employee Row */}
-                            <CTableRow>
-                              <CTableDataCell className="text-center" rowSpan="2">{index + 1}</CTableDataCell>
-                              <CTableDataCell>
-                                <div>{employee.employee_name}</div>
-                              </CTableDataCell>
-                              {weekDates.map((date, dateIndex) => {
-                                const attendance = employee.attendance[date];
-                                return (
-                                  <CTableDataCell key={dateIndex} className="text-center">
-                                    <span className={`badge ${
-                                      attendance?.status === 'P' ? 'bg-success' :
-                                      attendance?.status === 'A' ? 'bg-danger' :
-                                      attendance?.status === 'H' ? 'bg-warning' : 'bg-secondary'
-                                    }`}>
-                                      {attendance?.status || '-'}
-                                    </span>
-                                  </CTableDataCell>
-                                );
-                              })}
-                              <CTableDataCell className="text-center" rowSpan="2">
-                                {calculateTotalDays(employee.attendance)}
-                              </CTableDataCell>
-                              <CTableDataCell className="text-center" rowSpan="2">
-                                {calculateOvertimeHours(employee.attendance)}
-                              </CTableDataCell>
-                              <CTableDataCell className="text-center" rowSpan="2">
-                                ₹{employee.wage_hour}
-                              </CTableDataCell>
-                              <CTableDataCell className="text-center" rowSpan="2">
-                                ₹{calculateHolidayRate(employee)}
-                              </CTableDataCell>
-                              <CTableDataCell className="text-center" rowSpan="2">
-                                ₹{calculateHalfDayRate(employee)}
-                              </CTableDataCell>
-                              <CTableDataCell className="text-center font-weight-bold" rowSpan="2">
-                                ₹{calculateTotalAmount(employee)}
-                              </CTableDataCell>
-                              <CTableDataCell className="text-center" rowSpan="2">
-                                ₹{calculateTotalAmount(employee)}
-                              </CTableDataCell>
-                            </CTableRow>
-
-                            {/* Overtime Row */}
-                            <CTableRow className="bg-light">
-                              <CTableDataCell className="small text-muted" style={{paddingLeft: '20px'}}>
-                                {t('LABELS.overTime')}
-                              </CTableDataCell>
-                              {weekDates.map((date, dateIndex) => {
-                                const attendance = employee.attendance[date];
-                                const overtimeHours = attendance?.overtime_hours || 0;
-                                return (
-                                  <CTableDataCell key={dateIndex} className="text-center small text-muted">
-                                    {overtimeHours > 0 ? `${overtimeHours}h` : '-'}
-                                  </CTableDataCell>
-                                );
-                              })}
-                            </CTableRow>
-                          </React.Fragment>
-                        ))
-                      ) : (
-                        <CTableRow>
-                          <CTableDataCell colSpan="17" className="text-center">
-                            {t('MSG.noEmployeeDataAvailable')}
-                          </CTableDataCell>
-                        </CTableRow>
-                      )}
+                      {employeeData.map((employee, index) => (
+                        <React.Fragment key={employee.employee_id || index}>
+                          <CTableRow>
+                            <CTableDataCell className="text-center" rowSpan="2">{index + 1}</CTableDataCell>
+                            <CTableDataCell>
+                              <div>{employee.employee_name || 'Unknown'}</div>
+                            </CTableDataCell>
+                            {weekDates.map((date, dateIndex) => {
+                              const attendance = employee.attendance && employee.attendance[date];
+                              return (
+                                <CTableDataCell key={dateIndex} className="text-center">
+                                  <span className={`badge ${
+                                    attendance?.status === 'P' ? 'bg-success' :
+                                    attendance?.status === 'A' ? 'bg-danger' :
+                                    attendance?.status === 'H' ? 'bg-warning' : 'bg-secondary'
+                                  }`}>
+                                    {attendance?.status || '-'}
+                                  </span>
+                                </CTableDataCell>
+                              );
+                            })}
+                            <CTableDataCell className="text-center" rowSpan="2">
+                              {calculateTotalDays(employee.attendance)}
+                            </CTableDataCell>
+                            <CTableDataCell className="text-center" rowSpan="2">
+                              {calculateOvertimeHours(employee.attendance)}
+                            </CTableDataCell>
+                            <CTableDataCell className="text-center" rowSpan="2">
+                              ₹{employee.wage_hour || 0}
+                            </CTableDataCell>
+                            <CTableDataCell className="text-center" rowSpan="2">
+                              ₹{calculateHolidayRate(employee)}
+                            </CTableDataCell>
+                            <CTableDataCell className="text-center" rowSpan="2">
+                              ₹{calculateHalfDayRate(employee)}
+                            </CTableDataCell>
+                            <CTableDataCell className="text-center font-weight-bold" rowSpan="2">
+                              ₹{calculateTotalAmount(employee)}
+                            </CTableDataCell>
+                            <CTableDataCell className="text-center" rowSpan="2">
+                              ₹{calculateTotalAmount(employee)}
+                            </CTableDataCell>
+                          </CTableRow>
+                          <CTableRow className="bg-light">
+                            <CTableDataCell className="small text-muted" style={{paddingLeft: '20px'}}>
+                              {t('LABELS.overTime')}
+                            </CTableDataCell>
+                            {weekDates.map((date, dateIndex) => {
+                              const attendance = employee.attendance && employee.attendance[date];
+                              const overtimeHours = attendance?.overtime_hours || 0;
+                              return (
+                                <CTableDataCell key={dateIndex} className="text-center small text-muted">
+                                  {overtimeHours > 0 ? `${overtimeHours}h` : '-'}
+                                </CTableDataCell>
+                              );
+                            })}
+                          </CTableRow>
+                        </React.Fragment>
+                      ))}
                     </CTableBody>
                   </CTable>
                 </div>
@@ -520,4 +751,4 @@ const WeeklyPresentyPayroll = () => {
   );
 };
 
-export default WeeklyPresentyPayroll;
+export default WeeklyMonthlyPresentyPayroll;
