@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState,useEffect, useCallback, useMemo } from 'react';
 import {
     CButton,
     CCard,
@@ -12,7 +12,6 @@ import {
     CRow,
     CSpinner,
     CAlert,
-    CFormFeedback,
     CInputGroup,
     CInputGroupText,
     CTooltip
@@ -51,7 +50,6 @@ function StoreCoordinates() {
     const { t } = useTranslation("global");
     const { showToast } = useToast();
 
-
     const [formData, setFormData] = useState({
         longitude: '',
         latitude: '',
@@ -59,8 +57,14 @@ function StoreCoordinates() {
         toleranceValue: '',
         customTolerance: ''
     });
-
     const [errors, setErrors] = useState({});
+    const [touched, setTouched] = useState({
+        longitude: false,
+        latitude: false,
+        toleranceType: false,
+        customTolerance: false
+    });
+    const [formSubmitted, setFormSubmitted] = useState(false);
     const [loading, setLoading] = useState(false);
     const [notification, setNotification] = useState({
         show: false,
@@ -135,10 +139,11 @@ function StoreCoordinates() {
         }
     }, [selectedToleranceOption, formData.customTolerance, formData.latitude]);
 
+    const scrollToTop = useCallback(() => window.scrollTo({ top: 0, behavior: 'smooth' }), []);
+
     // Enhanced notification system
     const showNotification = useCallback((type, message, autoHide = true) => {
         setNotification({ show: true, type, message, autoHide });
-
         if (autoHide && type === 'success') {
             setTimeout(() => {
                 setNotification(prev => ({ ...prev, show: false }));
@@ -192,9 +197,15 @@ function StoreCoordinates() {
             }
         }
 
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        return newErrors;
     }, [formData, t]);
+
+    // Run validation on formData change, but only set errors for touched fields or after submission
+    useEffect(() => {
+        if (formSubmitted || Object.values(touched).some(v => v)) {
+            setErrors(validateForm());
+        }
+    }, [formData, formSubmitted, touched, validateForm]);
 
     // Handle input changes with debounced validation
     const handleInputChange = useCallback((field, value) => {
@@ -202,14 +213,7 @@ function StoreCoordinates() {
             ...prev,
             [field]: value
         }));
-
-        // Clear related errors
-        if (errors[field]) {
-            setErrors(prev => ({
-                ...prev,
-                [field]: ''
-            }));
-        }
+        setTouched(prev => ({ ...prev, [field]: true }));
 
         // Clear custom tolerance when changing tolerance type
         if (field === 'toleranceType' && value !== 'custom') {
@@ -217,27 +221,31 @@ function StoreCoordinates() {
                 ...prev,
                 customTolerance: ''
             }));
-            setErrors(prev => ({
-                ...prev,
-                customTolerance: ''
-            }));
+            setTouched(prev => ({ ...prev, customTolerance: false }));
         }
-    }, [errors]);
+    }, []);
 
     // Enhanced form submission with better error handling and response messages
     const handleSubmit = useCallback(async (e) => {
         e.preventDefault();
+        setFormSubmitted(true);
+        const newErrors = validateForm();
+        setErrors(newErrors);
 
-        if (!validateForm()) {
-            // showNotification('danger', t('MSG.pleaseCorrectErrors') || 'Please correct the errors below', false);
+        if (Object.keys(newErrors).length > 0) {
+            const firstErrorField = Object.keys(newErrors)[0];
+            const firstErrorElement = document.querySelector(`[id="${firstErrorField}"]`);
+            if (firstErrorElement) {
+                firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                firstErrorElement.focus();
+            }
             showToast('danger', t('MSG.pleaseCorrectErrors') || 'Please correct the errors below', false);
             return;
         }
 
         const finalToleranceValue = getFinalToleranceValue();
         if (finalToleranceValue === null) {
-            // showNotification('danger', t('MSG.invalidTolerance') || 'Invalid tolerance configuration', false);
-             showToast('danger', t('MSG.invalidTolerance') || 'Invalid tolerance configuration', false);
+            showToast('danger', t('MSG.invalidTolerance') || 'Invalid tolerance configuration', false);
             return;
         }
 
@@ -252,9 +260,7 @@ function StoreCoordinates() {
 
             const response = await post('/api/storeCordinates', payload);
 
-            console.log('API Response:', response); // Debug log to see actual response structure
-
-            // Handle successful response - check multiple possible success indicators
+            // Handle successful response
             const isSuccess = response.success === true ||
                              response.status === 'success' ||
                              response.success === 'true' ||
@@ -263,22 +269,13 @@ function StoreCoordinates() {
 
             if (isSuccess) {
                 let successMessage = t('MSG.coordinatesStoredSuccess') || 'Coordinates stored successfully';
-
-                // Check if ID is created and include it in success message
                 if (response.id) {
-                    successMessage = t('MSG.coordinatesStoredWithId') ||
-                        `Coordinates stored successfully `;
+                    successMessage = t('MSG.coordinatesStoredWithId') || `Coordinates stored successfully`;
                 }
-
-                // Include any additional success details from response
                 if (response.message && !response.message.toLowerCase().includes('error') && !response.message.toLowerCase().includes('fail')) {
                     successMessage += `. ${response.message}`;
                 }
-
-                // showNotification('success', successMessage, true);
                 showToast('success', successMessage, true);
-
-                // Reset form on success
                 setFormData({
                     longitude: '',
                     latitude: '',
@@ -287,11 +284,16 @@ function StoreCoordinates() {
                     customTolerance: ''
                 });
                 setErrors({});
+                setTouched({
+                    longitude: false,
+                    latitude: false,
+                    toleranceType: false,
+                    customTolerance: false
+                });
+                setFormSubmitted(false);
+                scrollToTop();
             } else {
-                // Handle failure response
                 let errorMessage = t('MSG.failedToStoreCoordinates') || 'Failed to store coordinates';
-
-                // Use specific error message from response if available
                 if (response.message) {
                     errorMessage = response.message;
                 } else if (response.error) {
@@ -299,26 +301,18 @@ function StoreCoordinates() {
                 } else if (response.msg) {
                     errorMessage = response.msg;
                 }
-
-                // Handle validation errors from server
                 if (response.errors && Array.isArray(response.errors)) {
                     errorMessage += ': ' + response.errors.join(', ');
                 } else if (response.errors && typeof response.errors === 'object') {
                     const serverErrors = Object.values(response.errors).flat().join(', ');
                     errorMessage += ': ' + serverErrors;
                 }
-
-                // showNotification('danger', errorMessage, false);
                 showToast('danger', errorMessage, false);
             }
         } catch (error) {
             console.error('Error storing coordinates:', error);
-
-            // Handle different types of errors
             let errorMessage = t('MSG.error') || 'Error';
-
             if (error.response) {
-                // Server responded with error status
                 if (error.response.data && error.response.data.message) {
                     errorMessage = error.response.data.message;
                 } else if (error.response.data && error.response.data.error) {
@@ -327,25 +321,20 @@ function StoreCoordinates() {
                     errorMessage = `${errorMessage}: ${error.response.status} - ${error.response.statusText}`;
                 }
             } else if (error.request) {
-                // Network error
                 errorMessage = t('MSG.networkError') || 'Network error: Please check your connection';
             } else {
-                // Other error
                 errorMessage = `${errorMessage}: ${error.message || 'An unexpected error occurred'}`;
             }
-
-            // showNotification('danger', errorMessage, false);
             showToast('danger', errorMessage, false);
         } finally {
             setLoading(false);
         }
-    }, [formData, validateForm, getFinalToleranceValue, selectedToleranceOption, t, showNotification]);
+    }, [formData, validateForm, getFinalToleranceValue, selectedToleranceOption, t, showToast, scrollToTop]);
 
     // Get current location (optional feature)
     const getCurrentLocation = useCallback(() => {
         if (!navigator.geolocation) {
-            // showNotification('warning', t('MSG.geolocationNotSupported') || 'Geolocation is not supported by this browser', false);
-             showToast('warning', t('MSG.geolocationNotSupported') || 'Geolocation is not supported by this browser', false);
+            showToast('warning', t('MSG.geolocationNotSupported') || 'Geolocation is not supported by this browser', false);
             return;
         }
 
@@ -357,8 +346,8 @@ function StoreCoordinates() {
                     longitude: position.coords.longitude.toString(),
                     latitude: position.coords.latitude.toString()
                 }));
+                setTouched(prev => ({ ...prev, longitude: true, latitude: true }));
                 setLoading(false);
-                // showNotification('success', t('MSG.locationDetected') || 'Current location detected');
                 showToast('success', t('MSG.locationDetected') || 'Current location detected');
             },
             (error) => {
@@ -375,12 +364,11 @@ function StoreCoordinates() {
                         errorMessage = t('MSG.locationTimeout') || 'Location request timed out';
                         break;
                 }
-                // showNotification('danger', errorMessage, false);
                 showToast('danger', errorMessage, false);
             },
             { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
         );
-    }, [showNotification, t]);
+    }, [showToast, t]);
 
     return (
         <CRow>
@@ -424,20 +412,19 @@ function StoreCoordinates() {
                                         <CFormInput
                                             type="number"
                                             id="longitude"
+                                            name="longitude"
                                             placeholder={t('PLACEHOLDERS.enterLongitude') || 'Enter longitude (-180 to 180)'}
                                             value={formData.longitude}
                                             onChange={(e) => handleInputChange('longitude', e.target.value)}
-                                            invalid={!!errors.longitude}
+                                            onBlur={() => setTouched(prev => ({ ...prev, longitude: true }))}
                                             step="any"
                                             min="-180"
                                             max="180"
                                         />
                                         <CInputGroupText>°</CInputGroupText>
                                     </CInputGroup>
-                                    {errors.longitude && (
-                                        <CFormFeedback invalid className="d-block">
-                                            {errors.longitude}
-                                        </CFormFeedback>
+                                    {(touched.longitude || formSubmitted) && errors.longitude && (
+                                        <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.longitude}</div>
                                     )}
                                 </CCol>
                                 <CCol md={6}>
@@ -448,20 +435,19 @@ function StoreCoordinates() {
                                         <CFormInput
                                             type="number"
                                             id="latitude"
+                                            name="latitude"
                                             placeholder={t('PLACEHOLDERS.enterLatitude') || 'Enter latitude (-90 to 90)'}
                                             value={formData.latitude}
                                             onChange={(e) => handleInputChange('latitude', e.target.value)}
-                                            invalid={!!errors.latitude}
+                                            onBlur={() => setTouched(prev => ({ ...prev, latitude: true }))}
                                             step="any"
                                             min="-90"
                                             max="90"
                                         />
                                         <CInputGroupText>°</CInputGroupText>
                                     </CInputGroup>
-                                    {errors.latitude && (
-                                        <CFormFeedback invalid className="d-block">
-                                            {errors.latitude}
-                                        </CFormFeedback>
+                                    {(touched.latitude || formSubmitted) && errors.latitude && (
+                                        <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.latitude}</div>
                                     )}
                                 </CCol>
                             </CRow>
@@ -473,9 +459,10 @@ function StoreCoordinates() {
                                     </CFormLabel>
                                     <CFormSelect
                                         id="toleranceType"
+                                        name="toleranceType"
                                         value={formData.toleranceType}
                                         onChange={(e) => handleInputChange('toleranceType', e.target.value)}
-                                        invalid={!!errors.toleranceType}
+                                        onBlur={() => setTouched(prev => ({ ...prev, toleranceType: true }))}
                                     >
                                         {toleranceOptions.map((option, index) => (
                                             <option key={index} value={option.value}>
@@ -483,10 +470,8 @@ function StoreCoordinates() {
                                             </option>
                                         ))}
                                     </CFormSelect>
-                                    {errors.toleranceType && (
-                                        <CFormFeedback invalid className="d-block">
-                                            {errors.toleranceType}
-                                        </CFormFeedback>
+                                    {(touched.toleranceType || formSubmitted) && errors.toleranceType && (
+                                        <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.toleranceType}</div>
                                     )}
                                 </CCol>
 
@@ -499,20 +484,19 @@ function StoreCoordinates() {
                                             <CFormInput
                                                 type="number"
                                                 id="customTolerance"
+                                                name="customTolerance"
                                                 placeholder="100"
                                                 value={formData.customTolerance}
                                                 onChange={(e) => handleInputChange('customTolerance', e.target.value)}
-                                                invalid={!!errors.customTolerance}
+                                                onBlur={() => setTouched(prev => ({ ...prev, customTolerance: true }))}
                                                 step="1"
                                                 min="1"
                                                 max="100000"
                                             />
                                             <CInputGroupText>m</CInputGroupText>
                                         </CInputGroup>
-                                        {errors.customTolerance && (
-                                            <CFormFeedback invalid className="d-block">
-                                                {errors.customTolerance}
-                                            </CFormFeedback>
+                                        {(touched.customTolerance || formSubmitted) && errors.customTolerance && (
+                                            <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.customTolerance}</div>
                                         )}
                                         <small className="text-muted">
                                             {t('LABELS.customToleranceHelp') || 'Enter tolerance distance in meters (e.g., 25, 50, 100)'}
@@ -575,6 +559,13 @@ function StoreCoordinates() {
                                                 customTolerance: ''
                                             });
                                             setErrors({});
+                                            setTouched({
+                                                longitude: false,
+                                                latitude: false,
+                                                toleranceType: false,
+                                                customTolerance: false
+                                            });
+                                            setFormSubmitted(false);
                                             setNotification({ show: false, type: '', message: '', autoHide: true });
                                         }}
                                     >

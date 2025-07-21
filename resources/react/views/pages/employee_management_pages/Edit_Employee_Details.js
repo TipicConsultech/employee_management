@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
   CContainer, CRow, CCol, CCard, CCardHeader, CCardBody, CForm, CFormSelect,
   CFormInput, CFormLabel, CButton, CAlert, CSpinner, CFormCheck, CModal,
-  CModalHeader, CModalTitle, CModalBody, CModalFooter,
+  CModalHeader, CModalTitle, CModalBody, CModalFooter, CInputGroup, CInputGroupText
 } from '@coreui/react';
 import { cilUser, cilCheckCircle, cilArrowLeft } from '@coreui/icons';
 import CIcon from '@coreui/icons-react';
@@ -16,9 +16,14 @@ const INITIAL_FORM_DATA = {
   name: '', gender: '', payment_type: '', contract_type: '', work_type: '', overtime_type: '',
   wage_hour: '', wage_overtime: '', credit: '0', debit: '0', half_day_payment: '',
   holiday_payment: '', adhaar_number: '', mobile: '', referral_by: '', referral_by_number: '',
-  is_login: false, email: '', attendance_type: ''
+  is_login: false, email: '', attendance_type: '', tolerance: ''
 };
 const INITIAL_NOTIFICATION = { show: false, type: '', message: '' };
+const INITIAL_TOUCHED = {
+  name: false, gender: false, payment_type: false, contract_type: false, work_type: false, overtime_type: false,
+  wage_hour: false, wage_overtime: false, credit: false, debit: false, half_day_payment: false, holiday_payment: false,
+  adhaar_number: false, mobile: false, referral_by_number: false, email: false, attendance_type: false, tolerance: false
+};
 
 const EmployeeEditForm = () => {
   const { t } = useTranslation('global');
@@ -34,20 +39,43 @@ const EmployeeEditForm = () => {
   ], [t]);
   const ATTENDANCE_TYPE_OPTIONS = useMemo(() => [
     { value: 'face_attendance', label: t('LABELS.faceAttendance') },
-    { value: 'location', label: t('LABELS.location') }, { value: 'both', label: t('LABELS.both') }
+    { value: 'location', label: t('LABELS.location') }
   ], [t]);
   const OVERTIME_TYPE_OPTIONS = useMemo(() => [
     { value: 'hourly', label: t('LABELS.hourly') }, { value: 'fixed', label: t('LABELS.fixed') }
   ], [t]);
+  const toleranceOptions = [
+    { value: '', label: t('LABELS.selectTolerance') || 'Select Tolerance' },
+    { value: '25', label: '25 meters' },
+    { value: '50', label: '50 meters' },
+    { value: '100', label: '100 meters' },
+    { value: 'custom', label: t('LABELS.customTolerance') || 'Custom Tolerance' },
+    { value: 'no_limit', label: t('LABELS.noLimit') || 'No Limit' }
+  ];
 
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
   const [notification, setNotification] = useState(INITIAL_NOTIFICATION);
   const [submitting, setSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState(INITIAL_TOUCHED);
   const [faceAttendanceEnabled, setFaceAttendanceEnabled] = useState(false);
   const [loadingFaceAttendance, setLoadingFaceAttendance] = useState(true);
   const [loadingEmployee, setLoadingEmployee] = useState(true);
+  const [toleranceType, setToleranceType] = useState('');
+  const [customTolerance, setCustomTolerance] = useState('');
+  const [formSubmitted, setFormSubmitted] = useState(false);
+
+  const metersToDecimalDegrees = (meters) => {
+    const metersPerDegreeLat = 111320;
+    return (meters / metersPerDegreeLat).toFixed(6);
+  };
+
+  const convertedDegree = () => {
+    const meters = parseFloat(customTolerance);
+    if (isNaN(meters) || meters <= 0) return null;
+    return metersToDecimalDegrees(meters);
+  };
 
   const PAYMENT_TYPE_OPTIONS = useMemo(() => formData.work_type === 'fulltime' ? [
     { value: 'weekly', label: t('LABELS.weekly') }, { value: 'monthly', label: t('LABELS.monthly') }
@@ -57,6 +85,8 @@ const EmployeeEditForm = () => {
     { value: 'fixed', label: t('LABELS.fixedContract') }
   ] : [], [formData.work_type, t]);
   const isFullTimeWork = formData.work_type === 'fulltime';
+
+  const scrollToTop = useCallback(() => window.scrollTo({ top: 0, behavior: 'smooth' }), []);
 
   const showNotification = useCallback((type, message) => {
     setNotification({ show: true, type, message });
@@ -71,39 +101,66 @@ const EmployeeEditForm = () => {
   const closeNotification = useCallback(() => setNotification(INITIAL_NOTIFICATION), []);
 
   const validateForm = useCallback(() => {
-    const newErrors = {};
-    if (!formData.name.trim()) newErrors.name = t('MSG.nameRequired');
-    if (!formData.gender) newErrors.gender = t('MSG.genderRequired');
-    if (!formData.work_type) newErrors.work_type = t('MSG.workTypeRequired');
-    if (formData.work_type === 'fulltime' && !formData.payment_type) newErrors.payment_type = t('MSG.paymentTypeRequired');
-    if (formData.work_type === 'fulltime' && !formData.overtime_type) newErrors.overtime_type = t('MSG.overtimeTypeRequired');
-    if (formData.work_type === 'contract' && !formData.contract_type) newErrors.contract_type = t('MSG.contractTypeRequired');
-    if (isFullTimeWork) {
-      if (!formData.wage_hour) newErrors.wage_hour = t('MSG.wageHourRequired');
-      if (formData.wage_hour && (isNaN(formData.wage_hour) || parseFloat(formData.wage_hour) < 0)) newErrors.wage_hour = t('MSG.wageHourPositiveNumber');
-      if (formData.wage_overtime && (isNaN(formData.wage_overtime) || parseFloat(formData.wage_overtime) < 0)) newErrors.wage_overtime = t('MSG.wageOvertimePositiveNumber');
-      if (formData.credit && (isNaN(formData.credit) || parseFloat(formData.credit) < 0)) newErrors.credit = t('MSG.creditPositiveNumber');
-      if (formData.debit && (isNaN(formData.debit) || parseFloat(formData.debit) < 0)) newErrors.debit = t('MSG.debitPositiveNumber');
-      if (formData.half_day_payment && (isNaN(formData.half_day_payment) || parseFloat(formData.half_day_payment) < 0)) newErrors.half_day_payment = t('MSG.halfDayPaymentPositiveNumber');
-      if (formData.holiday_payment && (isNaN(formData.holiday_payment) || parseFloat(formData.holiday_payment) < 0)) newErrors.holiday_payment = t('MSG.holidayPaymentPositiveNumber');
+  const newErrors = {};
+
+  // Basic Information validations
+  if (!formData.name.trim()) newErrors.name = t('MSG.nameRequired');
+  if (!formData.gender) newErrors.gender = t('MSG.genderRequired');
+  if (!formData.work_type) newErrors.work_type = t('MSG.workTypeRequired');
+  if (formData.work_type === 'fulltime' && !formData.payment_type) newErrors.payment_type = t('MSG.paymentTypeRequired');
+  if (formData.work_type === 'fulltime' && !formData.overtime_type) newErrors.overtime_type = t('MSG.overtimeTypeRequired');
+  if (formData.work_type === 'contract' && !formData.contract_type) newErrors.contract_type = t('MSG.contractTypeRequired');
+
+  // Wage-related validations (only for fulltime)
+  if (formData.work_type === 'fulltime') {
+    if (!formData.wage_hour) newErrors.wage_hour = t('MSG.wageHourRequired');
+    if (formData.wage_hour && (isNaN(formData.wage_hour) || parseFloat(formData.wage_hour) < 0)) newErrors.wage_hour = t('MSG.wageHourPositiveNumber');
+    if (formData.wage_overtime && (isNaN(formData.wage_overtime) || parseFloat(formData.wage_overtime) < 0)) newErrors.wage_overtime = t('MSG.wageOvertimePositiveNumber');
+    if (formData.credit && (isNaN(formData.credit) || parseFloat(formData.credit) < 0)) newErrors.credit = t('MSG.creditPositiveNumber');
+    if (formData.debit && (isNaN(formData.debit) || parseFloat(formData.debit) < 0)) newErrors.debit = t('MSG.debitPositiveNumber');
+    if (formData.half_day_payment && (isNaN(formData.half_day_payment) || parseFloat(formData.half_day_payment) < 0)) newErrors.half_day_payment = t('MSG.halfDayPaymentPositiveNumber');
+    if (formData.holiday_payment && (isNaN(formData.holiday_payment) || parseFloat(formData.holiday_payment) < 0)) newErrors.holiday_payment = t('MSG.holidayPaymentPositiveNumber');
+  }
+
+  // Contact Information validations
+  if (!formData.adhaar_number) newErrors.adhaar_number = t('MSG.adhaarRequired');
+  else if (!/^\d{12}$/.test(formData.adhaar_number)) newErrors.adhaar_number = t('MSG.adhaarInvalid');
+  if (!formData.mobile) newErrors.mobile = t('MSG.mobileRequired');
+  else if (!/^\d{10}$/.test(formData.mobile)) newErrors.mobile = t('MSG.mobileInvalid');
+  if (formData.referral_by_number && !/^\d{10}$/.test(formData.referral_by_number)) newErrors.referral_by_number = t('MSG.referralNumberInvalid');
+  if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) newErrors.email = t('MSG.emailInvalid');
+
+  // Login-related validations (only if is_login is true)
+  if (formData.is_login) {
+    if (!formData.attendance_type) newErrors.attendance_type = t('MSG.attendanceTypeRequired');
+    if (!formData.tolerance && toleranceType !== 'no_limit') newErrors.tolerance = t('MSG.toleranceRequired');
+    else if (toleranceType === 'custom' && (!customTolerance || isNaN(customTolerance) || parseFloat(customTolerance) <= 0)) {
+      newErrors.tolerance = t('MSG.customToleranceInvalid');
     }
-    if (!formData.adhaar_number) newErrors.adhaar_number = t('MSG.adhaarRequired');
-    else if (!/^\d{12}$/.test(formData.adhaar_number)) newErrors.adhaar_number = t('MSG.adhaarInvalid');
-    if (!formData.mobile) newErrors.mobile = t('MSG.mobileRequired');
-    else if (!/^\d{10}$/.test(formData.mobile)) newErrors.mobile = t('MSG.mobileInvalid');
-    if (formData.referral_by_number && !/^\d{10}$/.test(formData.referral_by_number)) newErrors.referral_by_number = t('MSG.referralNumberInvalid');
-    if (formData.is_login && !formData.attendance_type) newErrors.attendance_type = t('MSG.attendanceTypeRequired');
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) newErrors.email = t('MSG.emailInvalid');
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }, [formData, t, isFullTimeWork]);
+  }
+
+  return newErrors;
+}, [formData, t, isFullTimeWork, toleranceType, customTolerance]);
 
   const handleInputChange = useCallback((field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
-  }, [errors]);
-  const handleNumberInput = useCallback((field, value) => (/^\d*\.?\d*$/.test(value) || value === '') && handleInputChange(field, value), [handleInputChange]);
-  const handleDigitOnlyInput = useCallback((field, value, maxLength) => (/^\d*$/.test(value) && value.length <= maxLength || value === '') && handleInputChange(field, value), [handleInputChange]);
+    setTouched(prev => ({ ...prev, [field]: true }));
+  }, []);
+
+  const handleNumberInput = useCallback((field, value) => {
+    if (/^\d*\.?\d*$/.test(value) || value === '') {
+      setFormData(prev => ({ ...prev, [field]: value }));
+      setTouched(prev => ({ ...prev, [field]: true }));
+    }
+  }, []);
+
+  const handleDigitOnlyInput = useCallback((field, value, maxLength) => {
+    if (/^\d*$/.test(value) && value.length <= maxLength || value === '') {
+      setFormData(prev => ({ ...prev, [field]: value }));
+      setTouched(prev => ({ ...prev, [field]: true }));
+    }
+  }, []);
+
   const handleWorkTypeChange = useCallback((value) => {
     setFormData(prev => ({
       ...prev, work_type: value, payment_type: value === 'fulltime' ? prev.payment_type : '',
@@ -112,24 +169,44 @@ const EmployeeEditForm = () => {
       credit: value === 'contract' ? '0' : prev.credit, debit: value === 'contract' ? '0' : prev.debit,
       half_day_payment: value === 'contract' ? '' : prev.half_day_payment, holiday_payment: value === 'contract' ? '' : prev.holiday_payment
     }));
-    setErrors(prev => {
-      const newErrors = { ...prev };
-      delete newErrors.work_type; delete newErrors.payment_type; delete newErrors.contract_type; delete newErrors.overtime_type;
-      if (value === 'contract') { 
-        delete newErrors.wage_hour; delete newErrors.wage_overtime; delete newErrors.credit; 
-        delete newErrors.debit; delete newErrors.half_day_payment; delete newErrors.holiday_payment; 
-      }
-      return newErrors;
-    });
+    setTouched(prev => ({ ...prev, work_type: true }));
   }, []);
+
   const handleCheckboxChange = useCallback((checked) => {
     setFormData(prev => ({
-      ...prev, is_login: checked, attendance_type: checked ? prev.attendance_type : ''
+      ...prev, is_login: checked, attendance_type: checked ? prev.attendance_type : '', tolerance: checked ? prev.tolerance : ''
     }));
-    if (!checked) setErrors(prev => { const newErrors = { ...prev }; delete newErrors.attendance_type; return newErrors; });
+    setTouched(prev => ({ ...prev, is_login: true, attendance_type: false, tolerance: false }));
+    if (!checked) {
+      setToleranceType('');
+      setCustomTolerance('');
+      setTouched(prev => ({ ...prev, tolerance: false }));
+    }
   }, []);
+
+  const handleToleranceChange = useCallback((type, customValue) => {
+    let toleranceValue = '';
+    if (type === 'custom') {
+      const meters = parseFloat(customValue);
+      toleranceValue = isNaN(meters) || meters <= 0 ? '' : metersToDecimalDegrees(meters);
+    } else if (type === 'no_limit') {
+      toleranceValue = 'no_limit';
+    } else if (type) {
+      const meters = parseFloat(type);
+      toleranceValue = isNaN(meters) ? '' : metersToDecimalDegrees(meters);
+    }
+    setFormData(prev => ({ ...prev, tolerance: toleranceValue }));
+    setTouched(prev => ({ ...prev, tolerance: true }));
+  }, []);
+
   const resetForm = useCallback(() => {
-    setFormData(INITIAL_FORM_DATA); setErrors({}); setShowModal(false);
+    setFormData(INITIAL_FORM_DATA);
+    setErrors({});
+    setTouched(INITIAL_TOUCHED);
+    setShowModal(false);
+    setToleranceType('');
+    setCustomTolerance('');
+    setFormSubmitted(false);
   }, []);
 
   useEffect(() => {
@@ -138,6 +215,20 @@ const EmployeeEditForm = () => {
         setLoadingEmployee(true);
         const response = await getAPICall(`/api/employees/${id}`);
         if (response) {
+          const tolerance = response.tolerance || '';
+          let toleranceType = '';
+          let customTolerance = '';
+          if (tolerance === 'no_limit') {
+            toleranceType = 'no_limit';
+          } else if (tolerance) {
+            const meters = (parseFloat(tolerance) * 111320).toFixed(0);
+            if (['25', '50', '100'].includes(meters)) {
+              toleranceType = meters;
+            } else {
+              toleranceType = 'custom';
+              customTolerance = meters;
+            }
+          }
           setFormData({
             ...INITIAL_FORM_DATA,
             name: response.name || '',
@@ -158,8 +249,11 @@ const EmployeeEditForm = () => {
             referral_by_number: response.refferal_number || '',
             is_login: response.isActive || false,
             email: response.user?.[0]?.email || '',
-            attendance_type: response.attendance_type || ''
+            attendance_type: response.attendance_type || '',
+            tolerance: tolerance
           });
+          setToleranceType(toleranceType);
+          setCustomTolerance(customTolerance);
         } else {
           showNotification('danger', t('MSG.employeeFetchFailed'));
         }
@@ -190,11 +284,31 @@ const EmployeeEditForm = () => {
     fetchFaceAttendanceStatus();
   }, []);
 
+  useEffect(() => {
+    if (formSubmitted || Object.values(touched).some(v => v)) {
+      setErrors(validateForm());
+    }
+  }, [formData, toleranceType, customTolerance, formSubmitted, touched, validateForm]);
+
   const handleSubmit = useCallback(async () => {
-    if (!validateForm()) {
+    setFormSubmitted(true);
+    const newErrors = validateForm();
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+      const firstErrorField = Object.keys(newErrors)[0];
+      const firstErrorElement = document.querySelector(`[name="${firstErrorField}"]`) || 
+        document.querySelector(`#${firstErrorField}`) || 
+        document.querySelector(`input[placeholder*="${t(`LABELS.${firstErrorField}`)}"]`);
+      
+      if (firstErrorElement) {
+        firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstErrorElement.focus();
+      }
       showNotification('warning', t('MSG.fixErrorsBeforeSubmit'));
       return;
     }
+
     setSubmitting(true);
     try {
       const payload = {
@@ -204,9 +318,13 @@ const EmployeeEditForm = () => {
         wage_overtime: formData.wage_overtime || '0',
         refferal_by: formData.referral_by,
         refferal_number: formData.referral_by_number,
-        isActive: formData.is_login
+        isActive: formData.is_login,
+        tolerance: formData.is_login && !formData.tolerance ? 'no_limit' : formData.tolerance
       };
-      if (!formData.is_login) delete payload.attendance_type;
+      if (!formData.is_login) {
+        delete payload.attendance_type;
+        delete payload.tolerance;
+      }
       if (!isFullTimeWork) {
         delete payload.wage_hour;
         delete payload.wage_overtime;
@@ -218,6 +336,7 @@ const EmployeeEditForm = () => {
       const response = await put(`/api/employees/${id}`, payload);
       if (response && response.data.id) {
         showNotification('success', response.message || t('MSG.employeeUpdatedSuccess'));
+        scrollToTop();
       } else {
         showNotification('danger', response.message || t('MSG.employeeUpdateFailed'));
       }
@@ -227,15 +346,22 @@ const EmployeeEditForm = () => {
     } finally {
       setSubmitting(false);
     }
-  }, [formData, validateForm, showNotification, id, t, isFullTimeWork]);
+  }, [formData, validateForm, showNotification, id, t, isFullTimeWork, scrollToTop]);
 
   const isFormValid = useMemo(() => {
     const base = formData.name.trim() && formData.gender && formData.work_type && formData.adhaar_number && formData.mobile;
-    return base && (formData.work_type === 'fulltime' ? formData.payment_type && formData.overtime_type && formData.wage_hour : formData.work_type === 'contract' ? formData.contract_type : true);
-  }, [formData]);
+    const loginValid = !formData.is_login || (formData.attendance_type && (formData.tolerance || toleranceType === 'no_limit'));
+    return base && loginValid && (formData.work_type === 'fulltime' ? formData.payment_type && formData.overtime_type && formData.wage_hour : formData.work_type === 'contract' ? formData.contract_type : true);
+  }, [formData, toleranceType]);
 
-  const openModal = useCallback(() => setShowModal(true), []);
+  const openModal = useCallback(() => {
+    setFormSubmitted(true);
+    setErrors(validateForm());
+    setShowModal(true);
+  }, [validateForm]);
+
   const closeModal = useCallback(() => setShowModal(false), []);
+
   const confirmSubmit = useCallback(() => { closeModal(); handleSubmit(); }, [closeModal, handleSubmit]);
 
   if (loadingEmployee) {
@@ -287,26 +413,30 @@ const EmployeeEditForm = () => {
                         <CFormInput
                           placeholder={t('LABELS.employeeName')}
                           value={formData.name}
+                          name="name"
                           onChange={e => handleInputChange('name', e.target.value)}
-                          invalid={!!errors.name}
+                          onBlur={() => setTouched(prev => ({ ...prev, name: true }))}
                           disabled={submitting}
-                          className={errors.name ? 'border-danger' : ''}
                         />
-                        {errors.name && <div className="text-danger small">{errors.name}</div>}
+                        {(touched.name || formSubmitted) && errors.name && (
+                          <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.name}</div>
+                        )}
                       </CCol>
                       <CCol xs={12} md={4}>
                         <CFormLabel className="fw-semibold small">{t('LABELS.gender')}<span className="text-danger">*</span></CFormLabel>
                         <CFormSelect
                           value={formData.gender}
+                          name="gender"
                           onChange={e => handleInputChange('gender', e.target.value)}
-                          invalid={!!errors.gender}
+                          onBlur={() => setTouched(prev => ({ ...prev, gender: true }))}
                           disabled={submitting}
-                          className={errors.gender ? 'border-danger' : ''}
                         >
                           <option value="">{t('LABELS.selectGender')}</option>
                           {GENDER_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </CFormSelect>
-                        {errors.gender && <div className="text-danger small">{errors.gender}</div>}
+                        {(touched.gender || formSubmitted) && errors.gender && (
+                          <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.gender}</div>
+                        )}
                       </CCol>
                       <CCol xs={12} md={4}>
                         <CFormLabel className="fw-semibold small">{t('LABELS.adhaarNumber')}<span className="text-danger">*</span></CFormLabel>
@@ -314,12 +444,14 @@ const EmployeeEditForm = () => {
                           type="text"
                           placeholder={t('LABELS.adhaarNumberPlaceholder')}
                           value={formData.adhaar_number}
+                          name="adhaar_number"
                           onChange={e => handleDigitOnlyInput('adhaar_number', e.target.value, 12)}
-                          invalid={!!errors.adhaar_number}
+                          onBlur={() => setTouched(prev => ({ ...prev, adhaar_number: true }))}
                           disabled={submitting}
-                          className={errors.adhaar_number ? 'border-danger' : ''}
                         />
-                        {errors.adhaar_number && <div className="text-danger small">{errors.adhaar_number}</div>}
+                        {(touched.adhaar_number || formSubmitted) && errors.adhaar_number && (
+                          <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.adhaar_number}</div>
+                        )}
                       </CCol>
                       <CCol xs={12} md={4}>
                         <CFormLabel className="fw-semibold small">{t('LABELS.mobile')}<span className="text-danger">*</span></CFormLabel>
@@ -327,26 +459,30 @@ const EmployeeEditForm = () => {
                           type="text"
                           placeholder={t('LABELS.mobileNumberPlaceholder')}
                           value={formData.mobile}
+                          name="mobile"
                           onChange={e => handleDigitOnlyInput('mobile', e.target.value, 10)}
-                          invalid={!!errors.mobile}
+                          onBlur={() => setTouched(prev => ({ ...prev, mobile: true }))}
                           disabled={submitting}
-                          className={errors.mobile ? 'border-danger' : ''}
                         />
-                        {errors.mobile && <div className="text-danger small">{errors.mobile}</div>}
+                        {(touched.mobile || formSubmitted) && errors.mobile && (
+                          <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.mobile}</div>
+                        )}
                       </CCol>
                       <CCol xs={12} md={4}>
                         <CFormLabel className="fw-semibold small">{t('LABELS.workType')}<span className="text-danger">*</span></CFormLabel>
                         <CFormSelect
                           value={formData.work_type}
+                          name="work_type"
                           onChange={e => handleWorkTypeChange(e.target.value)}
-                          invalid={!!errors.work_type}
+                          onBlur={() => setTouched(prev => ({ ...prev, work_type: true }))}
                           disabled={submitting}
-                          className={errors.work_type ? 'border-danger' : ''}
                         >
                           <option value="">{t('LABELS.selectWorkType')}</option>
                           {WORK_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </CFormSelect>
-                        {errors.work_type && <div className="text-danger small">{errors.work_type}</div>}
+                        {(touched.work_type || formSubmitted) && errors.work_type && (
+                          <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.work_type}</div>
+                        )}
                       </CCol>
                       <CCol xs={12} md={4}>
                         {formData.work_type === 'contract' && (
@@ -354,15 +490,17 @@ const EmployeeEditForm = () => {
                             <CFormLabel className="fw-semibold small">{t('LABELS.contractType')}<span className="text-danger">*</span></CFormLabel>
                             <CFormSelect
                               value={formData.contract_type}
+                              name="contract_type"
                               onChange={e => handleInputChange('contract_type', e.target.value)}
-                              invalid={!!errors.contract_type}
+                              onBlur={() => setTouched(prev => ({ ...prev, contract_type: true }))}
                               disabled={submitting}
-                              className={errors.contract_type ? 'border-danger' : ''}
                             >
                               <option value="">{t('LABELS.selectContractType')}</option>
                               {CONTRACT_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </CFormSelect>
-                            {errors.contract_type && <div className="text-danger small">{errors.contract_type}</div>}
+                            {(touched.contract_type || formSubmitted) && errors.contract_type && (
+                              <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.contract_type}</div>
+                            )}
                           </>
                         )}
                       </CCol>
@@ -382,29 +520,33 @@ const EmployeeEditForm = () => {
                           <CFormLabel className="fw-semibold small">{t('LABELS.paymentType')}<span className="text-danger">*</span></CFormLabel>
                           <CFormSelect
                             value={formData.payment_type}
+                            name="payment_type"
                             onChange={e => handleInputChange('payment_type', e.target.value)}
-                            invalid={!!errors.payment_type}
+                            onBlur={() => setTouched(prev => ({ ...prev, payment_type: true }))}
                             disabled={submitting}
-                            className={errors.payment_type ? 'border-danger' : ''}
                           >
                             <option value="">{t('LABELS.selectPaymentType')}</option>
                             {PAYMENT_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                           </CFormSelect>
-                          {errors.payment_type && <div className="text-danger small">{errors.payment_type}</div>}
+                          {(touched.payment_type || formSubmitted) && errors.payment_type && (
+                            <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.payment_type}</div>
+                          )}
                         </CCol>
                         <CCol xs={12} md={4}>
                           <CFormLabel className="fw-semibold small">{t('LABELS.overtimeType')}<span className="text-danger">*</span></CFormLabel>
                           <CFormSelect
                             value={formData.overtime_type}
+                            name="overtime_type"
                             onChange={e => handleInputChange('overtime_type', e.target.value)}
-                            invalid={!!errors.overtime_type}
+                            onBlur={() => setTouched(prev => ({ ...prev, overtime_type: true }))}
                             disabled={submitting}
-                            className={errors.overtime_type ? 'border-danger' : ''}
                           >
                             <option value="">{t('LABELS.selectOvertimeType')}</option>
                             {OVERTIME_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                           </CFormSelect>
-                          {errors.overtime_type && <div className="text-danger small">{errors.overtime_type}</div>}
+                          {(touched.overtime_type || formSubmitted) && errors.overtime_type && (
+                            <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.overtime_type}</div>
+                          )}
                         </CCol>
                         <CCol xs={12} md={4}>
                           <CFormLabel className="fw-semibold small">{t('LABELS.wageHour')}<span className="text-danger">*</span></CFormLabel>
@@ -412,12 +554,14 @@ const EmployeeEditForm = () => {
                             type="text"
                             placeholder={t('LABELS.priceZero')}
                             value={formData.wage_hour}
+                            name="wage_hour"
                             onChange={e => handleNumberInput('wage_hour', e.target.value)}
-                            invalid={!!errors.wage_hour}
+                            onBlur={() => setTouched(prev => ({ ...prev, wage_hour: true }))}
                             disabled={submitting}
-                            className={errors.wage_hour ? 'border-danger' : ''}
                           />
-                          {errors.wage_hour && <div className="text-danger small">{errors.wage_hour}</div>}
+                          {(touched.wage_hour || formSubmitted) && errors.wage_hour && (
+                            <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.wage_hour}</div>
+                          )}
                         </CCol>
                         <CCol xs={12} md={4}>
                           <CFormLabel className="fw-semibold small">{t('LABELS.wageOvertime')}</CFormLabel>
@@ -425,26 +569,29 @@ const EmployeeEditForm = () => {
                             type="text"
                             placeholder={t('LABELS.priceZero')}
                             value={formData.wage_overtime}
+                            name="wage_overtime"
                             onChange={e => handleNumberInput('wage_overtime', e.target.value)}
-                            invalid={!!errors.wage_overtime}
+                            onBlur={() => setTouched(prev => ({ ...prev, wage_overtime: true }))}
                             disabled={submitting}
-                            className={errors.wage_overtime ? 'border-danger' : ''}
                           />
-                          {errors.wage_overtime && <div className="text-danger small">{errors.wage_overtime}</div>}
+                          {(touched.wage_overtime || formSubmitted) && errors.wage_overtime && (
+                            <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.wage_overtime}</div>
+                          )}
                         </CCol>
-                        
                         <CCol xs={12} md={4}>
                           <CFormLabel className="fw-semibold small">{t('LABELS.halfDayPayment')}</CFormLabel>
                           <CFormInput
                             type="text"
                             placeholder={t('LABELS.priceZero')}
                             value={formData.half_day_payment}
+                            name="half_day_payment"
                             onChange={e => handleNumberInput('half_day_payment', e.target.value)}
-                            invalid={!!errors.half_day_payment}
+                            onBlur={() => setTouched(prev => ({ ...prev, half_day_payment: true }))}
                             disabled={submitting}
-                            className={errors.half_day_payment ? 'border-danger' : ''}
                           />
-                          {errors.half_day_payment && <div className="text-danger small">{errors.half_day_payment}</div>}
+                          {(touched.half_day_payment || formSubmitted) && errors.half_day_payment && (
+                            <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.half_day_payment}</div>
+                          )}
                         </CCol>
                         <CCol xs={12} md={4}>
                           <CFormLabel className="fw-semibold small">{t('LABELS.holidayPayment')}</CFormLabel>
@@ -452,12 +599,14 @@ const EmployeeEditForm = () => {
                             type="text"
                             placeholder={t('LABELS.priceZero')}
                             value={formData.holiday_payment}
+                            name="holiday_payment"
                             onChange={e => handleNumberInput('holiday_payment', e.target.value)}
-                            invalid={!!errors.holiday_payment}
+                            onBlur={() => setTouched(prev => ({ ...prev, holiday_payment: true }))}
                             disabled={submitting}
-                            className={errors.holiday_payment ? 'border-danger' : ''}
                           />
-                          {errors.holiday_payment && <div className="text-danger small">{errors.holiday_payment}</div>}
+                          {(touched.holiday_payment || formSubmitted) && errors.holiday_payment && (
+                            <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.holiday_payment}</div>
+                          )}
                         </CCol>
                       </CRow>
                     </CCardBody>
@@ -477,12 +626,14 @@ const EmployeeEditForm = () => {
                           type="email"
                           placeholder={t('LABELS.email')}
                           value={formData.email}
+                          name="email"
                           onChange={e => handleInputChange('email', e.target.value)}
-                          invalid={!!errors.email}
+                          onBlur={() => setTouched(prev => ({ ...prev, email: true }))}
                           disabled={submitting}
-                          className={errors.email ? 'border-danger' : ''}
                         />
-                        {errors.email && <div className="text-danger small">{errors.email}</div>}
+                        {(touched.email || formSubmitted) && errors.email && (
+                          <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.email}</div>
+                        )}
                       </CCol>
                       <CCol xs={12} md={4}>
                         <CFormLabel className="fw-semibold small">{t('LABELS.referralBy')}</CFormLabel>
@@ -500,39 +651,45 @@ const EmployeeEditForm = () => {
                           type="text"
                           placeholder={t('LABELS.referralByNumberPlaceholder')}
                           value={formData.referral_by_number}
+                          name="referral_by_number"
                           onChange={e => handleDigitOnlyInput('referral_by_number', e.target.value, 10)}
-                          invalid={!!errors.referral_by_number}
+                          onBlur={() => setTouched(prev => ({ ...prev, referral_by_number: true }))}
                           disabled={submitting}
-                          className={errors.referral_by_number ? 'border-danger' : ''}
                         />
-                        {errors.referral_by_number && <div className="text-danger small">{errors.referral_by_number}</div>}
+                        {(touched.referral_by_number || formSubmitted) && errors.referral_by_number && (
+                          <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.referral_by_number}</div>
+                        )}
                       </CCol>
                       <CCol xs={12} md={4}>
-                          <CFormLabel className="fw-semibold small">{t('LABELS.credit')}</CFormLabel>
-                          <CFormInput
-                            type="text"
-                            placeholder="0"
-                            value={formData.credit}
-                            onChange={e => handleNumberInput('credit', e.target.value)}
-                            invalid={!!errors.credit}
-                            disabled={submitting}
-                            className={errors.credit ? 'border-danger' : ''}
-                          />
-                          {errors.credit && <div className="text-danger small">{errors.credit}</div>}
-                        </CCol>
-                        <CCol xs={12} md={4}>
-                          <CFormLabel className="fw-semibold small">{t('LABELS.debit')}</CFormLabel>
-                          <CFormInput
-                            type="text"
-                            placeholder="0"
-                            value={formData.debit}
-                            onChange={e => handleNumberInput('debit', e.target.value)}
-                            invalid={!!errors.debit}
-                            disabled={submitting}
-                            className={errors.debit ? 'border-danger' : ''}
-                          />
-                          {errors.debit && <div className="text-danger small">{errors.debit}</div>}
-                        </CCol>
+                        <CFormLabel className="fw-semibold small">{t('LABELS.credit')}</CFormLabel>
+                        <CFormInput
+                          type="text"
+                          placeholder="0"
+                          value={formData.credit}
+                          name="credit"
+                          onChange={e => handleNumberInput('credit', e.target.value)}
+                          onBlur={() => setTouched(prev => ({ ...prev, credit: true }))}
+                          disabled={submitting}
+                        />
+                        {(touched.credit || formSubmitted) && errors.credit && (
+                          <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.credit}</div>
+                        )}
+                      </CCol>
+                      <CCol xs={12} md={4}>
+                        <CFormLabel className="fw-semibold small">{t('LABELS.debit')}</CFormLabel>
+                        <CFormInput
+                          type="text"
+                          placeholder="0"
+                          value={formData.debit}
+                          name="debit"
+                          onChange={e => handleNumberInput('debit', e.target.value)}
+                          onBlur={() => setTouched(prev => ({ ...prev, debit: true }))}
+                          disabled={submitting}
+                        />
+                        {(touched.debit || formSubmitted) && errors.debit && (
+                          <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.debit}</div>
+                        )}
+                      </CCol>
                     </CRow>
                   </CCardBody>
                 </CCard>
@@ -559,21 +716,87 @@ const EmployeeEditForm = () => {
                     </CCardHeader>
                     <CCardBody>
                       <CRow className="g-2">
+                    
+                        <CCol xs={12} md={4}>
+                          <CFormLabel htmlFor="toleranceType" className="fw-semibold small">
+                            {t('LABELS.tolerance') || 'Tolerance'} <span className="text-danger">*</span>
+                          </CFormLabel>
+                          <CFormSelect
+                            id="toleranceType"
+                            value={toleranceType}
+                            name="tolerance"
+                            onChange={e => {
+                              setToleranceType(e.target.value);
+                              handleToleranceChange(e.target.value, customTolerance);
+                            }}
+                            onBlur={() => setTouched(prev => ({ ...prev, tolerance: true }))}
+                            disabled={submitting}
+                          >
+                            {toleranceOptions.map((option, index) => (
+                              <option key={index} value={option.value}>{option.label}</option>
+                            ))}
+                          </CFormSelect>
+                          {(touched.tolerance || formSubmitted) && errors.tolerance && (
+                            <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.tolerance}</div>
+                          )}
+                        </CCol>
+                        <CCol xs={12} md={4}>
+                          {toleranceType === 'custom' && (
+                            <>
+                              <CFormLabel htmlFor="customTolerance" className="mt-0 fw-semibold small">
+                                {t('LABELS.customToleranceValue') || 'Custom Tolerance (meters)'} <span className="text-danger">*</span>
+                              </CFormLabel>
+                              <CInputGroup>
+                                <CFormInput
+                                  type="number"
+                                  id="customTolerance"
+                                  placeholder="Enter meters"
+                                  value={customTolerance}
+                                  name="customTolerance"
+                                  onChange={e => {
+                                    setCustomTolerance(e.target.value);
+                                    handleToleranceChange('custom', e.target.value);
+                                  }}
+                                  onBlur={() => setTouched(prev => ({ ...prev, tolerance: true }))}
+                                  disabled={submitting}
+                                  min="1"
+                                  max="100000"
+                                />
+                                <CInputGroupText>m</CInputGroupText>
+                              </CInputGroup>
+                              {(touched.tolerance || formSubmitted) && errors.tolerance && (
+                                <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.tolerance}</div>
+                              )}
+                            </>
+                          )}
+                        </CCol>
+                        <CCol xs={12} md={4}>
+                          {(convertedDegree()&& toleranceType === 'custom' )&& (
+                            <div className="mt-2 p-2 bg-light rounded">
+                              <strong>{t('LABELS.tolerancePreview') || 'Tolerance Preview'}:</strong>{' '}
+                              ≈ {customTolerance} meters ≈ <code>{convertedDegree()}°</code> latitude degrees
+                            </div>
+                          )}
+                        </CCol>
+                      </CRow>
+                       <CRow className="g-2">
                         <CCol xs={12} md={4}>
                           {faceAttendanceEnabled && !loadingFaceAttendance && (
                             <>
                               <CFormLabel className="fw-semibold small">{t('LABELS.attendanceType')}<span className="text-danger">*</span></CFormLabel>
                               <CFormSelect
                                 value={formData.attendance_type}
+                                name="attendance_type"
                                 onChange={e => handleInputChange('attendance_type', e.target.value)}
-                                invalid={!!errors.attendance_type}
+                                onBlur={() => setTouched(prev => ({ ...prev, attendance_type: true }))}
                                 disabled={submitting}
-                                className={errors.attendance_type ? 'border-danger' : ''}
                               >
                                 <option value="">{t('LABELS.selectAttendanceType')}</option>
                                 {ATTENDANCE_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                               </CFormSelect>
-                              {errors.attendance_type && <div className="text-danger small">{errors.attendance_type}</div>}
+                              {(touched.attendance_type || formSubmitted) && errors.attendance_type && (
+                                <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.attendance_type}</div>
+                              )}
                             </>
                           )}
                           {loadingFaceAttendance && (
@@ -583,7 +806,7 @@ const EmployeeEditForm = () => {
                             </div>
                           )}
                         </CCol>
-                      </CRow>
+                        </CRow>
                     </CCardBody>
                   </CCard>
                 )}
@@ -647,7 +870,10 @@ const EmployeeEditForm = () => {
                 <p className="mb-2"><strong>{t('LABELS.mobile')}:</strong> {formData.mobile}</p>
                 <p className="mb-2"><strong>{t('LABELS.loginAccess')}:</strong> {formData.is_login ? t('LABELS.yes') : t('LABELS.no')}</p>
                 {formData.is_login && (
-                  <p className="mb-0"><strong>{t('LABELS.attendanceType')}:</strong> {formData.attendance_type}</p>
+                  <>
+                    <p className="mb-2"><strong>{t('LABELS.attendanceType')}:</strong> {formData.attendance_type}</p>
+                    <p className="mb-2"><strong>{t('LABELS.tolerance')}:</strong> {formData.tolerance === 'no_limit' ? 'No Limit' : formData.tolerance}</p>
+                  </>
                 )}
                 {formData.referral_by_number && (
                   <p className="mb-2"><strong>{t('LABELS.referralByNumber')}:</strong> {formData.referral_by_number}</p>

@@ -420,7 +420,7 @@
   "fri": "Fri",
   "sat": "Sat",
   "dailyTallyReport": "Daily Tally Report",
-  "selectDate": "Select Date",
+  "selectDate": "Date",
   "dataAvailable": "Data Available",
   "selected": "Selected",
   "refreshData": "Refresh Data",
@@ -735,7 +735,7 @@
     "noCheckInImageUploaded": "User did not upload the image for check-in / do not have right to check-In With Selfie",
     "noCheckOutImageUploaded": "User did not upload the image for check-out / do not have right to check-Out With Selfie",
 
-    "faceAttendance": "Face Attendance",
+    "faceAttendance": "Face and Location",
     "location": "Location",
     "both": "Both",
     "hourly": "Hourly",
@@ -759,13 +759,13 @@
     "selectAttendanceType": "Select Attendance Type",
 
     "weeklyPresentyPayrollChart": "Weekly Presenty and Payroll Chart",
-    "selectWeekParameters": "Payroll Report",
+    "selectWeekParameters": "Payment Report",
     "selectWeekStartingDay": "Select Week Starting Day",
     "selectAnyDateInWeek": "Select Any Date in Week",
     "weekRange": "Week Range",
     "getEmployeesData": "Get Employees Data",
     "exportToPDF": "Export to PDF",
-    "employeeAttendancePayrollReport": "Employee Payroll Report",
+    "employeeAttendancePayrollReport": "Employee Payment Report",
     "week": "Week",
     "to": "to",
     "monday": "Monday",
@@ -874,7 +874,54 @@
     "additionalInfo":"Additional Info",
     "employeeConfiguration":"Employee Configuration",
     "wageConfiguration":"Wage Configuration",
-    "toleranceRequired":"Tolerance selection is required."
+    "toleranceRequired":"Tolerance selection is required.",
+    "selectReportParameters": "Select Report Parameters",
+      "selectReportType": "Select Report Type",
+      "chooseReportType": "Choose Report Type",
+      "weeklyReport": "Weekly Report",
+      "monthlyReport": "Monthly Report",
+      "selectMonth": "Select Month",
+      "chooseMonth": "Choose Month",
+      "selectYear": "Select Year",
+      "monthDays": "Month Days",
+      "monthlyPresentyPayrollChart": "Monthly Attendance & Payroll Chart",
+      "customToleranceInvalid": "Custom tolerance must be a positive number.",
+      "employeeFetchFailed": "Failed to fetch employee data.",
+      "employeeFetchError": "An error occurred while fetching employee data.",
+      "employeeUpdatedSuccess": "Employee details updated successfully.",
+      "employeeUpdateFailed": "Failed to update employee details.",
+      "updateError": "An error occurred during update.",
+      "nameRequired": "Employee name is required.",
+      "genderRequired": "Gender is required.",
+      "workTypeRequired": "Work type is required.",
+      "paymentTypeRequired": "Payment type is required.",
+      "overtimeTypeRequired": "Overtime type is required.",
+      "contractTypeRequired": "Contract type is required.",
+      "wageHourRequired": "Wage per hour is required.",
+      "wageHourPositiveNumber": "Wage per hour must be a positive number.",
+      "wageOvertimePositiveNumber": "Overtime wage must be a positive number.",
+      "creditPositiveNumber": "Credit amount must be a positive number.",
+      "debitPositiveNumber": "Debit amount must be a positive number.",
+      "halfDayPaymentPositiveNumber": "Half-day payment must be a positive number.",
+      "holidayPaymentPositiveNumber": "Holiday payment must be a positive number.",
+      "adhaarRequired": "Aadhaar number is required.",
+      "adhaarInvalid": "Aadhaar number must be a valid 12-digit number.",
+      "mobileRequired": "Mobile number is required.",
+      "mobileInvalid": "Mobile number must be a valid 10-digit number.",
+      "referralNumberInvalid": "Referral number must be a valid 10-digit number.",
+      "passwordRequired": "Password is required.",
+      "passwordMinLength": "Password must be at least 6 characters long.",
+      "reEnterPasswordRequired": "Re-enter password is required.",
+      "passwordMismatch": "Passwords do not match.",
+      "attendanceTypeRequired": "Attendance type is required.",
+
+      "emailInvalid": "Email format is invalid.",
+      "fixErrorsBeforeSubmit": "Please fix the errors before submitting.",
+      "employeeRegisteredSuccess": "Employee registered successfully.",
+      "employeeRegistrationFailed": "Failed to register employee.",
+      "registrationError": "An error occurred during registration.",
+      "confirmEmployeeCreationMessage": "Are you sure you want to create this employee?",
+      "confirmEmployeeUpdateMessage": "Are you sure you want to update this employee's details?"
     },
 
 
@@ -1276,8 +1323,11 @@
     "pendingPaymentUpdated": "Pending payment amount updated",
     "OutsideCompany":"You are {{distance}} away from your office location",
 
-    "selectedFile": "Selected file: {{fileName}}"
-
+    "selectedFile": "Selected file: {{fileName}}",
+  
+      "pleaseSelectMonthAndYear": "Please select a month and year.",
+      "pleaseSelectReportType": "Please select a report type."
+     
 
     }
    }

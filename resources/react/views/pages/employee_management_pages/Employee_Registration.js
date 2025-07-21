@@ -18,6 +18,12 @@ const INITIAL_FORM_DATA = {
   password: '', re_enter_password: '', email: '', attendance_type: '', tolerance: ''
 };
 const INITIAL_NOTIFICATION = { show: false, type: '', message: '' };
+const INITIAL_TOUCHED = {
+  name: false, gender: false, payment_type: false, contract_type: false, work_type: false, overtime_type: false,
+  wage_hour: false, wage_overtime: false, credit: false, debit: false, half_day_payment: false, holiday_payment: false,
+  adhaar_number: false, mobile: false, referral_by_number: false, password: false, re_enter_password: false,
+  email: false, attendance_type: false, tolerance: false
+};
 
 const metersToDecimalDegrees = (meters) => {
   const metersPerDegreeLat = 111320;
@@ -36,7 +42,7 @@ const EmployeeRegistrationForm = () => {
   const ATTENDANCE_TYPE_OPTIONS = useMemo(() => [
     { value: 'face_attendance', label: t('LABELS.faceAttendance') },
     { value: 'location', label: t('LABELS.location') },
-    { value: 'both', label: t('LABELS.both') }
+    
   ], [t]);
   const OVERTIME_TYPE_OPTIONS = useMemo(() => [
     { value: 'hourly', label: t('LABELS.hourly') }, { value: 'fixed', label: t('LABELS.fixed') }
@@ -48,13 +54,14 @@ const EmployeeRegistrationForm = () => {
   const [submitting, setSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState(INITIAL_TOUCHED);
   const [faceAttendanceEnabled, setFaceAttendanceEnabled] = useState(false);
   const [loadingFaceAttendance, setLoadingFaceAttendance] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showReEnterPassword, setShowReEnterPassword] = useState(false);
   const [toleranceType, setToleranceType] = useState('');
   const [customTolerance, setCustomTolerance] = useState('');
-  const [toleranceTouched, setToleranceTouched] = useState(false);
+  const [formSubmitted, setFormSubmitted] = useState(false);
 
   const toleranceOptions = [
     { value: '', label: t('LABELS.selectTolerance') || 'Select Tolerance' },
@@ -70,6 +77,8 @@ const EmployeeRegistrationForm = () => {
     if (isNaN(meters) || meters <= 0) return null;
     return metersToDecimalDegrees(meters);
   };
+
+  
 
   const PAYMENT_TYPE_OPTIONS = useMemo(() => formData.work_type === 'fulltime' ? [
     { value: 'weekly', label: t('LABELS.weekly') }, { value: 'monthly', label: t('LABELS.monthly') }
@@ -119,26 +128,25 @@ const EmployeeRegistrationForm = () => {
         newErrors.tolerance = t('MSG.customToleranceInvalid');
       }
     }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return newErrors;
   }, [formData, t, isFullTimeWork, toleranceType, customTolerance]);
 
   const handleInputChange = useCallback((field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    if (field !== 'tolerance') setToleranceTouched(true);
+    setTouched(prev => ({ ...prev, [field]: true }));
   }, []);
 
   const handleNumberInput = useCallback((field, value) => {
     if (/^\d*\.?\d*$/.test(value) || value === '') {
       setFormData(prev => ({ ...prev, [field]: value }));
-      if (field !== 'tolerance') setToleranceTouched(true);
+      setTouched(prev => ({ ...prev, [field]: true }));
     }
   }, []);
 
   const handleDigitOnlyInput = useCallback((field, value, maxLength) => {
     if (/^\d*$/.test(value) && value.length <= maxLength || value === '') {
       setFormData(prev => ({ ...prev, [field]: value }));
-      if (field !== 'tolerance') setToleranceTouched(true);
+      setTouched(prev => ({ ...prev, [field]: true }));
     }
   }, []);
 
@@ -149,7 +157,7 @@ const EmployeeRegistrationForm = () => {
       wage_hour: value === 'contract' ? '' : prev.wage_hour, wage_overtime: value === 'contract' ? '' : prev.wage_overtime,
       credit: value === 'contract' ? '0' : prev.credit, debit: value === 'contract' ? '0' : prev.debit
     }));
-    setToleranceTouched(true);
+    setTouched(prev => ({ ...prev, work_type: true }));
   }, []);
 
   const handleCheckboxChange = useCallback((checked) => {
@@ -159,7 +167,7 @@ const EmployeeRegistrationForm = () => {
     }));
     setToleranceType('');
     setCustomTolerance('');
-    setToleranceTouched(false);
+    setTouched(prev => ({ ...prev, is_login: true, password: false, re_enter_password: false, attendance_type: false, tolerance: false }));
   }, []);
 
   const handleToleranceChange = useCallback((type, customValue) => {
@@ -174,31 +182,40 @@ const EmployeeRegistrationForm = () => {
       toleranceValue = isNaN(meters) ? '' : metersToDecimalDegrees(meters);
     }
     setFormData(prev => ({ ...prev, tolerance: toleranceValue }));
-    setToleranceTouched(true);
-    validateForm();
-  }, [validateForm, metersToDecimalDegrees]);
+    setTouched(prev => ({ ...prev, tolerance: true }));
+  }, []);
 
   const resetForm = useCallback(() => {
     setFormData(INITIAL_FORM_DATA);
     setErrors({});
+    setTouched(INITIAL_TOUCHED);
     setShowModal(false);
     setShowPassword(false);
     setShowReEnterPassword(false);
     setToleranceType('');
     setCustomTolerance('');
-    setToleranceTouched(false);
+    setFormSubmitted(false);
   }, []);
 
   const handleSubmit = useCallback(async () => {
-    setToleranceTouched(true);
-    if (!validateForm()) {
-      showNotification('warning', t('MSG.fixErrorsBeforeSubmit'));
+    setFormSubmitted(true);
+    const newErrors = validateForm();
+    setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length > 0) {
+      const firstErrorField = Object.keys(newErrors)[0];
+      const firstErrorElement = document.querySelector(`[name="${firstErrorField}"]`) || 
+        document.querySelector(`#${firstErrorField}`) || 
+        document.querySelector(`input[placeholder*="${t(`LABELS.${firstErrorField}`)}"]`);
+      
+      if (firstErrorElement) {
+        firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstErrorElement.focus();
+      }
+      showToast('warning', t('MSG.fixErrorsBeforeSubmit'));
       return;
     }
-    if (!validateForm()) { 
-      // showNotification('warning', t('MSG.fixErrorsBeforeSubmit'));
-       showToast('warning', t('MSG.fixErrorsBeforeSubmit'));
-       return; }
+
     setSubmitting(true);
     try {
       const payload = { ...formData };
@@ -206,8 +223,6 @@ const EmployeeRegistrationForm = () => {
         delete payload.password;
         delete payload.re_enter_password;
         delete payload.attendance_type;
-        // Comment out to include tolerance even when is_login is false, if required
-        // delete payload.tolerance;
       }
       delete payload.re_enter_password;
       if (!isFullTimeWork) {
@@ -228,24 +243,33 @@ const EmployeeRegistrationForm = () => {
 
       const response = await post('/api/employees', payload);
       // showNotification(
-      //   response.message === "Email already taken" || response.message === "Mobile number already taken" || response.message === "Aadhaar number already taken"
-      //     ? 'danger'
-      //     : response && response.employee?.id
-      //       ? 'success'
+      //   response.message === "Email already taken" || response.message === "Mobile number already taken" || response.message === "Aadhaar number already taken" 
+      //     ? 'danger' 
+      //     : response && response.employee?.id 
+      //       ? 'success' 
       //       : 'danger',
       //   response.message || (response && response.employee?.id ? t('MSG.employeeRegisteredSuccess') : t('MSG.employeeRegistrationFailed'))
       // );
-      showNotification(response.message === "Email already taken" || response.message === "Mobile number already taken" || response.message === "Aadhaar number already taken" ? 'danger' : response && response.employee?.id ? 'success' : 'danger',
-        response.message || (response && response.employee?.id ? t('MSG.employeeRegisteredSuccess') : t('MSG.employeeRegistrationFailed')));
-        showToast(response.message === "Email already taken" || response.message === "Mobile number already taken" || response.message === "Aadhaar number already taken" ? 'danger' : response && response.employee?.id ? 'success' : 'danger',
-        response.message || (response && response.employee?.id ? t('MSG.employeeRegisteredSuccess') : t('MSG.employeeRegistrationFailed')));
-      if (response && response.employee?.id) resetForm(), scrollToTop();
+      showToast(
+        response.message === "Email already taken" || response.message === "Mobile number already taken" || response.message === "Aadhaar number already taken" 
+          ? 'danger' 
+          : response && response.employee?.id 
+            ? 'success' 
+            : 'danger',
+        response.message || (response && response.employee?.id ? t('MSG.employeeRegisteredSuccess') : t('MSG.employeeRegistrationFailed'))
+      );
+      if (response && response.employee?.id) {
+        resetForm();
+        scrollToTop();
+      }
     } catch (error) {
       console.error('Error registering employee:', error);
-      showNotification('danger', error.message || t('MSG.registrationError'));
+      // showNotification('danger', error.message || t('MSG.registrationError'));
       showToast('danger', error.message || t('MSG.registrationError'));
-    } finally { setSubmitting(false); }
-  }, [formData, validateForm, showNotification, resetForm, t, isFullTimeWork, scrollToTop]);
+    } finally {
+      setSubmitting(false);
+    }
+  }, [formData, validateForm, showNotification, showToast, resetForm, t, isFullTimeWork, scrollToTop]);
 
   const isFormValid = useMemo(() => {
     const base = formData.name.trim() && formData.gender && formData.work_type && formData.adhaar_number && formData.mobile;
@@ -254,9 +278,10 @@ const EmployeeRegistrationForm = () => {
   }, [formData, toleranceType]);
 
   const openModal = useCallback(() => {
-    setToleranceTouched(true);
+    setFormSubmitted(true);
+    setErrors(validateForm());
     setShowModal(true);
-  }, []);
+  }, [validateForm]);
 
   const closeModal = useCallback(() => setShowModal(false), []);
   const confirmSubmit = useCallback(() => {
@@ -282,6 +307,12 @@ const EmployeeRegistrationForm = () => {
     };
     fetchFaceAttendanceStatus();
   }, []);
+
+  useEffect(() => {
+    if (formSubmitted || Object.values(touched).some(v => v)) {
+      setErrors(validateForm());
+    }
+  }, [formData, toleranceType, customTolerance, formSubmitted, touched, validateForm]);
 
   return (
     <CContainer fluid className="min-h-screen bg-light py-0 p-1">
@@ -316,26 +347,30 @@ const EmployeeRegistrationForm = () => {
                         <CFormInput
                           placeholder={t('LABELS.employeeName')}
                           value={formData.name}
+                          name="name"
                           onChange={e => handleInputChange('name', e.target.value)}
-                          invalid={!!errors.name}
+                          onBlur={() => setTouched(prev => ({ ...prev, name: true }))}
                           disabled={submitting}
-                          className={errors.name ? 'border-danger' : ''}
                         />
-                        {errors.name && <div className="text-danger small">{errors.name}</div>}
+                        {(touched.name || formSubmitted) && errors.name && (
+                          <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.name}</div>
+                        )}
                       </CCol>
                       <CCol xs={12} md={4}>
                         <CFormLabel className="fw-semibold small">{t('LABELS.gender')}<span className="text-danger">*</span></CFormLabel>
                         <CFormSelect
                           value={formData.gender}
+                          name="gender"
                           onChange={e => handleInputChange('gender', e.target.value)}
-                          invalid={!!errors.gender}
+                          onBlur={() => setTouched(prev => ({ ...prev, gender: true }))}
                           disabled={submitting}
-                          className={errors.gender ? 'border-danger' : ''}
                         >
                           <option value="">{t('LABELS.selectGender')}</option>
                           {GENDER_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </CFormSelect>
-                        {errors.gender && <div className="text-danger small">{errors.gender}</div>}
+                        {(touched.gender || formSubmitted) && errors.gender && (
+                          <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.gender}</div>
+                        )}
                       </CCol>
                       <CCol xs={12} md={4}>
                         <CFormLabel className="fw-semibold small">{t('LABELS.adhaarNumber')}<span className="text-danger">*</span></CFormLabel>
@@ -343,12 +378,14 @@ const EmployeeRegistrationForm = () => {
                           type="text"
                           placeholder={t('LABELS.adhaarNumberPlaceholder')}
                           value={formData.adhaar_number}
+                          name="adhaar_number"
                           onChange={e => handleDigitOnlyInput('adhaar_number', e.target.value, 12)}
-                          invalid={!!errors.adhaar_number}
+                          onBlur={() => setTouched(prev => ({ ...prev, adhaar_number: true }))}
                           disabled={submitting}
-                          className={errors.adhaar_number ? 'border-danger' : ''}
                         />
-                        {errors.adhaar_number && <div className="text-danger small">{errors.adhaar_number}</div>}
+                        {(touched.adhaar_number || formSubmitted) && errors.adhaar_number && (
+                          <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.adhaar_number}</div>
+                        )}
                       </CCol>
                       <CCol xs={12} md={4}>
                         <CFormLabel className="fw-semibold small">{t('LABELS.mobile')}<span className="text-danger">*</span></CFormLabel>
@@ -356,26 +393,30 @@ const EmployeeRegistrationForm = () => {
                           type="text"
                           placeholder={t('LABELS.mobileNumberPlaceholder')}
                           value={formData.mobile}
+                          name="mobile"
                           onChange={e => handleDigitOnlyInput('mobile', e.target.value, 10)}
-                          invalid={!!errors.mobile}
+                          onBlur={() => setTouched(prev => ({ ...prev, mobile: true }))}
                           disabled={submitting}
-                          className={errors.mobile ? 'border-danger' : ''}
                         />
-                        {errors.mobile && <div className="text-danger small">{errors.mobile}</div>}
+                        {(touched.mobile || formSubmitted) && errors.mobile && (
+                          <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.mobile}</div>
+                        )}
                       </CCol>
                       <CCol xs={12} md={4}>
                         <CFormLabel className="fw-semibold small">{t('LABELS.workType')}<span className="text-danger">*</span></CFormLabel>
                         <CFormSelect
                           value={formData.work_type}
+                          name="work_type"
                           onChange={e => handleWorkTypeChange(e.target.value)}
-                          invalid={!!errors.work_type}
+                          onBlur={() => setTouched(prev => ({ ...prev, work_type: true }))}
                           disabled={submitting}
-                          className={errors.work_type ? 'border-danger' : ''}
                         >
                           <option value="">{t('LABELS.selectWorkType')}</option>
                           {WORK_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </CFormSelect>
-                        {errors.work_type && <div className="text-danger small">{errors.work_type}</div>}
+                        {(touched.work_type || formSubmitted) && errors.work_type && (
+                          <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.work_type}</div>
+                        )}
                       </CCol>
                       <CCol xs={12} md={4}>
                         {formData.work_type === 'contract' && (
@@ -383,15 +424,17 @@ const EmployeeRegistrationForm = () => {
                             <CFormLabel className="fw-semibold small">{t('LABELS.contractType')}<span className="text-danger">*</span></CFormLabel>
                             <CFormSelect
                               value={formData.contract_type}
+                              name="contract_type"
                               onChange={e => handleInputChange('contract_type', e.target.value)}
-                              invalid={!!errors.contract_type}
+                              onBlur={() => setTouched(prev => ({ ...prev, contract_type: true }))}
                               disabled={submitting}
-                              className={errors.contract_type ? 'border-danger' : ''}
                             >
                               <option value="">{t('LABELS.selectContractType')}</option>
                               {CONTRACT_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </CFormSelect>
-                            {errors.contract_type && <div className="text-danger small">{errors.contract_type}</div>}
+                            {(touched.contract_type || formSubmitted) && errors.contract_type && (
+                              <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.contract_type}</div>
+                            )}
                           </>
                         )}
                       </CCol>
@@ -411,29 +454,33 @@ const EmployeeRegistrationForm = () => {
                           <CFormLabel className="fw-semibold small">{t('LABELS.paymentType')}<span className="text-danger">*</span></CFormLabel>
                           <CFormSelect
                             value={formData.payment_type}
+                            name="payment_type"
                             onChange={e => handleInputChange('payment_type', e.target.value)}
-                            invalid={!!errors.payment_type}
+                            onBlur={() => setTouched(prev => ({ ...prev, payment_type: true }))}
                             disabled={submitting}
-                            className={errors.payment_type ? 'border-danger' : ''}
                           >
                             <option value="">{t('LABELS.selectPaymentType')}</option>
                             {PAYMENT_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                           </CFormSelect>
-                          {errors.payment_type && <div className="text-danger small">{errors.payment_type}</div>}
+                          {(touched.payment_type || formSubmitted) && errors.payment_type && (
+                            <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.payment_type}</div>
+                          )}
                         </CCol>
                         <CCol xs={12} md={4}>
                           <CFormLabel className="fw-semibold small">{t('LABELS.overtimeType')}<span className="text-danger">*</span></CFormLabel>
                           <CFormSelect
                             value={formData.overtime_type}
+                            name="overtime_type"
                             onChange={e => handleInputChange('overtime_type', e.target.value)}
-                            invalid={!!errors.overtime_type}
+                            onBlur={() => setTouched(prev => ({ ...prev, overtime_type: true }))}
                             disabled={submitting}
-                            className={errors.overtime_type ? 'border-danger' : ''}
                           >
                             <option value="">{t('LABELS.selectOvertimeType')}</option>
                             {OVERTIME_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                           </CFormSelect>
-                          {errors.overtime_type && <div className="text-danger small">{errors.overtime_type}</div>}
+                          {(touched.overtime_type || formSubmitted) && errors.overtime_type && (
+                            <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.overtime_type}</div>
+                          )}
                         </CCol>
                         <CCol xs={12} md={4}>
                           <CFormLabel className="fw-semibold small">{t('LABELS.wageHour')}</CFormLabel>
@@ -441,12 +488,14 @@ const EmployeeRegistrationForm = () => {
                             type="text"
                             placeholder={t('LABELS.priceZero')}
                             value={formData.wage_hour}
+                            name="wage_hour"
                             onChange={e => handleNumberInput('wage_hour', e.target.value)}
-                            invalid={!!errors.wage_hour}
+                            onBlur={() => setTouched(prev => ({ ...prev, wage_hour: true }))}
                             disabled={submitting}
-                            className={errors.wage_hour ? 'border-danger' : ''}
                           />
-                          {errors.wage_hour && <div className="text-danger small">{errors.wage_hour}</div>}
+                          {(touched.wage_hour || formSubmitted) && errors.wage_hour && (
+                            <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.wage_hour}</div>
+                          )}
                         </CCol>
                         <CCol xs={12} md={4}>
                           <CFormLabel className="fw-semibold small">{t('LABELS.wageOvertime')}</CFormLabel>
@@ -454,12 +503,14 @@ const EmployeeRegistrationForm = () => {
                             type="text"
                             placeholder={t('LABELS.priceZero')}
                             value={formData.wage_overtime}
+                            name="wage_overtime"
                             onChange={e => handleNumberInput('wage_overtime', e.target.value)}
-                            invalid={!!errors.wage_overtime}
+                            onBlur={() => setTouched(prev => ({ ...prev, wage_overtime: true }))}
                             disabled={submitting}
-                            className={errors.wage_overtime ? 'border-danger' : ''}
                           />
-                          {errors.wage_overtime && <div className="text-danger small">{errors.wage_overtime}</div>}
+                          {(touched.wage_overtime || formSubmitted) && errors.wage_overtime && (
+                            <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.wage_overtime}</div>
+                          )}
                         </CCol>
                         <CCol xs={12} md={4}>
                           <CFormLabel className="fw-semibold small">{t('LABELS.halfDayPayment')}</CFormLabel>
@@ -467,12 +518,14 @@ const EmployeeRegistrationForm = () => {
                             type="text"
                             placeholder={t('LABELS.priceZero')}
                             value={formData.half_day_payment}
+                            name="half_day_payment"
                             onChange={e => handleNumberInput('half_day_payment', e.target.value)}
-                            invalid={!!errors.half_day_payment}
+                            onBlur={() => setTouched(prev => ({ ...prev, half_day_payment: true }))}
                             disabled={submitting}
-                            className={errors.half_day_payment ? 'border-danger' : ''}
                           />
-                          {errors.half_day_payment && <div className="text-danger small">{errors.half_day_payment}</div>}
+                          {(touched.half_day_payment || formSubmitted) && errors.half_day_payment && (
+                            <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.half_day_payment}</div>
+                          )}
                         </CCol>
                         <CCol xs={12} md={4}>
                           <CFormLabel className="fw-semibold small">{t('LABELS.holidayPayment')}</CFormLabel>
@@ -480,12 +533,14 @@ const EmployeeRegistrationForm = () => {
                             type="text"
                             placeholder={t('LABELS.priceZero')}
                             value={formData.holiday_payment}
+                            name="holiday_payment"
                             onChange={e => handleNumberInput('holiday_payment', e.target.value)}
-                            invalid={!!errors.holiday_payment}
+                            onBlur={() => setTouched(prev => ({ ...prev, holiday_payment: true }))}
                             disabled={submitting}
-                            className={errors.holiday_payment ? 'border-danger' : ''}
                           />
-                          {errors.holiday_payment && <div className="text-danger small">{errors.holiday_payment}</div>}
+                          {(touched.holiday_payment || formSubmitted) && errors.holiday_payment && (
+                            <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.holiday_payment}</div>
+                          )}
                         </CCol>
                       </CRow>
                     </CCardBody>
@@ -505,12 +560,14 @@ const EmployeeRegistrationForm = () => {
                           type="email"
                           placeholder={t('LABELS.email')}
                           value={formData.email}
+                          name="email"
                           onChange={e => handleInputChange('email', e.target.value)}
-                          invalid={!!errors.email}
+                          onBlur={() => setTouched(prev => ({ ...prev, email: true }))}
                           disabled={submitting}
-                          className={errors.email ? 'border-danger' : ''}
                         />
-                        {errors.email && <div className="text-danger small">{errors.email}</div>}
+                        {(touched.email || formSubmitted) && errors.email && (
+                          <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.email}</div>
+                        )}
                       </CCol>
                       <CCol xs={12} md={4}>
                         <CFormLabel className="fw-semibold small">{t('LABELS.referralBy')}</CFormLabel>
@@ -528,12 +585,14 @@ const EmployeeRegistrationForm = () => {
                           type="text"
                           placeholder={t('LABELS.referralByNumberPlaceholder')}
                           value={formData.referral_by_number}
+                          name="referral_by_number"
                           onChange={e => handleDigitOnlyInput('referral_by_number', e.target.value, 10)}
-                          invalid={!!errors.referral_by_number}
+                          onBlur={() => setTouched(prev => ({ ...prev, referral_by_number: true }))}
                           disabled={submitting}
-                          className={errors.referral_by_number ? 'border-danger' : ''}
                         />
-                        {errors.referral_by_number && <div className="text-danger small">{errors.referral_by_number}</div>}
+                        {(touched.referral_by_number || formSubmitted) && errors.referral_by_number && (
+                          <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.referral_by_number}</div>
+                        )}
                       </CCol>
                       <CCol xs={12} md={4}>
                         <CFormLabel className="fw-semibold small">{t('LABELS.credit')}</CFormLabel>
@@ -541,12 +600,14 @@ const EmployeeRegistrationForm = () => {
                           type="text"
                           placeholder="0"
                           value={formData.credit}
+                          name="credit"
                           onChange={e => handleNumberInput('credit', e.target.value)}
-                          invalid={!!errors.credit}
+                          onBlur={() => setTouched(prev => ({ ...prev, credit: true }))}
                           disabled={submitting}
-                          className={errors.credit ? 'border-danger' : ''}
                         />
-                        {errors.credit && <div className="text-danger small">{errors.credit}</div>}
+                        {(touched.credit || formSubmitted) && errors.credit && (
+                          <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.credit}</div>
+                        )}
                       </CCol>
                       <CCol xs={12} md={4}>
                         <CFormLabel className="fw-semibold small">{t('LABELS.debit')}</CFormLabel>
@@ -554,12 +615,14 @@ const EmployeeRegistrationForm = () => {
                           type="text"
                           placeholder="0"
                           value={formData.debit}
+                          name="debit"
                           onChange={e => handleNumberInput('debit', e.target.value)}
-                          invalid={!!errors.debit}
+                          onBlur={() => setTouched(prev => ({ ...prev, debit: true }))}
                           disabled={submitting}
-                          className={errors.debit ? 'border-danger' : ''}
                         />
-                        {errors.debit && <div className="text-danger small">{errors.debit}</div>}
+                        {(touched.debit || formSubmitted) && errors.debit && (
+                          <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.debit}</div>
+                        )}
                       </CCol>
                     </CRow>
                   </CCardBody>
@@ -594,10 +657,10 @@ const EmployeeRegistrationForm = () => {
                               type={showPassword ? "text" : "password"}
                               placeholder={t('LABELS.password')}
                               value={formData.password}
+                              name="password"
                               onChange={e => handleInputChange('password', e.target.value)}
-                              invalid={!!errors.password}
+                              onBlur={() => setTouched(prev => ({ ...prev, password: true }))}
                               disabled={submitting}
-                              className={errors.password ? 'border-danger' : ''}
                             />
                             <CInputGroupText
                               onClick={togglePasswordVisibility}
@@ -606,7 +669,9 @@ const EmployeeRegistrationForm = () => {
                               <span className="text-muted">{showPassword ? '🔒' : '👁️'}</span>
                             </CInputGroupText>
                           </CInputGroup>
-                          {errors.password && <div className="text-danger small">{errors.password}</div>}
+                          {(touched.password || formSubmitted) && errors.password && (
+                            <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.password}</div>
+                          )}
                         </CCol>
                         <CCol xs={12} md={4}>
                           <CFormLabel className="fw-semibold small">{t('LABELS.reEnterPassword')}<span className="text-danger">*</span></CFormLabel>
@@ -615,10 +680,10 @@ const EmployeeRegistrationForm = () => {
                               type={showReEnterPassword ? "text" : "password"}
                               placeholder={t('LABELS.reEnterPassword')}
                               value={formData.re_enter_password}
+                              name="re_enter_password"
                               onChange={e => handleInputChange('re_enter_password', e.target.value)}
-                              invalid={!!errors.re_enter_password}
+                              onBlur={() => setTouched(prev => ({ ...prev, re_enter_password: true }))}
                               disabled={submitting}
-                              className={errors.re_enter_password ? 'border-danger' : ''}
                             />
                             <CInputGroupText
                               onClick={toggleReEnterPasswordVisibility}
@@ -627,7 +692,9 @@ const EmployeeRegistrationForm = () => {
                               <span className="text-muted">{showReEnterPassword ? '🔒' : '👁️'}</span>
                             </CInputGroupText>
                           </CInputGroup>
-                          {errors.re_enter_password && <div className="text-danger small">{errors.re_enter_password}</div>}
+                          {(touched.re_enter_password || formSubmitted) && errors.re_enter_password && (
+                            <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.re_enter_password}</div>
+                          )}
                         </CCol>
                         <CCol xs={12} md={4}>
                           {faceAttendanceEnabled && !loadingFaceAttendance && (
@@ -635,15 +702,17 @@ const EmployeeRegistrationForm = () => {
                               <CFormLabel className="fw-semibold small">{t('LABELS.attendanceType')}<span className="text-danger">*</span></CFormLabel>
                               <CFormSelect
                                 value={formData.attendance_type}
+                                name="attendance_type"
                                 onChange={e => handleInputChange('attendance_type', e.target.value)}
-                                invalid={!!errors.attendance_type}
+                                onBlur={() => setTouched(prev => ({ ...prev, attendance_type: true }))}
                                 disabled={submitting}
-                                className={errors.attendance_type ? 'border-danger' : ''}
                               >
                                 <option value="">{t('LABELS.selectAttendanceType')}</option>
                                 {ATTENDANCE_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                               </CFormSelect>
-                              {errors.attendance_type && <div className="text-danger small">{errors.attendance_type}</div>}
+                              {(touched.attendance_type || formSubmitted) && errors.attendance_type && (
+                                <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.attendance_type}</div>
+                              )}
                             </>
                           )}
                           {loadingFaceAttendance && (
@@ -660,19 +729,21 @@ const EmployeeRegistrationForm = () => {
                           <CFormSelect
                             id="toleranceType"
                             value={toleranceType}
+                            name="tolerance"
                             onChange={e => {
                               setToleranceType(e.target.value);
                               handleToleranceChange(e.target.value, customTolerance);
                             }}
-                            invalid={toleranceTouched && !!errors.tolerance}
+                            onBlur={() => setTouched(prev => ({ ...prev, tolerance: true }))}
                             disabled={submitting}
-                            className={toleranceTouched && errors.tolerance ? 'border-danger' : ''}
                           >
                             {toleranceOptions.map((option, index) => (
                               <option key={index} value={option.value}>{option.label}</option>
                             ))}
                           </CFormSelect>
-                          {toleranceTouched && errors.tolerance && <div className="text-danger small">{errors.tolerance}</div>}
+                          {(touched.tolerance || formSubmitted) && errors.tolerance && (
+                            <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.tolerance}</div>
+                          )}
                         </CCol>
                         <CCol xs={12} md={4}>
                           {toleranceType === 'custom' && (
@@ -690,16 +761,16 @@ const EmployeeRegistrationForm = () => {
                                     setCustomTolerance(e.target.value);
                                     handleToleranceChange('custom', e.target.value);
                                   }}
-                                  onBlur={() => setToleranceTouched(true)}
-                                  invalid={toleranceTouched && !!errors.tolerance}
+                                  onBlur={() => setTouched(prev => ({ ...prev, tolerance: true }))}
                                   disabled={submitting}
                                   min="1"
                                   max="100000"
-                                  className={toleranceTouched && errors.tolerance ? 'border-danger' : ''}
                                 />
                                 <CInputGroupText>m</CInputGroupText>
                               </CInputGroup>
-                              {toleranceTouched && errors.tolerance && <div className="text-danger small">{errors.tolerance}</div>}
+                              {(touched.tolerance || formSubmitted) && errors.tolerance && (
+                                <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.tolerance}</div>
+                              )}
                             </>
                           )}
                         </CCol>
