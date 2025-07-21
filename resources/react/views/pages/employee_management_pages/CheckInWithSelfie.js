@@ -14,16 +14,20 @@ import {
     CModalBody,
     CModalHeader,
     CModalTitle,
-    CModalFooter
+    CModalFooter,
+    CToast, 
+    CToaster, 
+    CToastBody
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
 import { cilClock, cilLocationPin, cilCheckCircle, cilXCircle } from '@coreui/icons';
 import { getAPICall, postFormData, put } from '../../../util/api';
 import { useTranslation } from 'react-i18next';
+import { useToast } from '../../common/toast/ToastContext';
 
 function CheckInWithSelfie() {
     const { t } = useTranslation("global");
-
+const { showToast } = useToast();
     // State management
     const [status, setStatus] = useState({ checkIn: false, checkOut: false });
     const [loading, setLoading] = useState(true);
@@ -37,11 +41,17 @@ function CheckInWithSelfie() {
     const [capturedImage, setCapturedImage] = useState(null);
     const [compressedImage, setCompressedImage] = useState(null);
     const [gpsCoordinates, setGpsCoordinates] = useState(null);
-
+  
     // Camera refs
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const streamRef = useRef(null);
+
+    const toaster = useRef();
+
+const toasterElement = (
+    <CToaster ref={toaster} placement="top-end" />
+);
 
     // Notification helper
     const showNotification = useCallback((type, message) => {
@@ -66,43 +76,46 @@ function CheckInWithSelfie() {
             }
         } catch (error) {
             console.error('Error fetching employee status:', error);
-            showNotification('warning', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
+           showNotification('warning', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
+            // showToast('warning', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
         } finally {
             setLoading(false);
         }
     }, [showNotification, t]);
 
     // Get GPS coordinates
-    const getCurrentLocation = useCallback(() => {
-        return new Promise((resolve, reject) => {
-            if (!navigator.geolocation) {
-                reject(new Error('Geolocation is not supported by this browser'));
-                return;
-            }
+const getCurrentLocationFresh = useCallback(() => {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            reject(new Error('Geolocation is not supported by this browser'));
+            return;
+        }
 
-            setLocationLoading(true);
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const coords = {
-                        latitude: position.coords.latitude,
-                        longitude: position.coords.longitude
-                    };
-                    setGpsCoordinates(coords);
-                    setLocationLoading(false);
-                    resolve(coords);
-                },
-                (error) => {
-                    setLocationLoading(false);
-                    reject(error);
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 60000
-                }
-            );
-        });
-    }, []);
+        console.log('🔄 Fetching fresh GPS location...');
+        
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const coords = {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                    accuracy: position.coords.accuracy,
+                    timestamp: Date.now()
+                };
+                console.log('📍 Fresh location obtained:', coords);
+                resolve(coords);
+            },
+            (error) => {
+                console.error('❌ GPS Error:', error);
+                reject(error);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 15000,  // Increased timeout
+                maximumAge: 0    // Force fresh location (no cache)
+            }
+        );
+    });
+}, []);
 
     // Image compression
     const compressImage = useCallback((file, quality = 0.7, maxWidth = 800, maxHeight = 600) => {
@@ -147,7 +160,8 @@ function CheckInWithSelfie() {
             }
         } catch (error) {
             console.error('Error accessing camera:', error);
-            showNotification('danger', t('MSG.cameraAccessError') || 'Camera access is required. Please allow camera access to continue.');
+            showToast('danger', t('MSG.cameraAccessError') || 'Camera access is required. Please allow camera access to continue.');
+            // showNotification('danger', t('MSG.cameraAccessError') || 'Camera access is required. Please allow camera access to continue.');
         }
     }, [showNotification, t]);
 
@@ -175,6 +189,7 @@ function CheckInWithSelfie() {
                 const compressedFile = await compressImage(blob);
                 setCompressedImage(compressedFile);
                 showNotification('success', t('MSG.photoCapturepd') || 'Photo captured successfully');
+                 //showToast('success', t('MSG.photoCapturepd') || 'Photo captured successfully');
             }
         }, 'image/jpeg', 0.8);
     }, [compressImage, showNotification, t]);
@@ -182,7 +197,8 @@ function CheckInWithSelfie() {
     // Handle check-in/check-out submission
     const handleSubmit = useCallback(async () => {
         if (!compressedImage) {
-            showNotification('warning', t('MSG.pleaseUploadImage') || 'Please capture or upload an image');
+             showNotification('warning', t('MSG.pleaseUploadImage') || 'Please capture or upload an image');
+            //showToast('warning', t('MSG.pleaseUploadImage') || 'Please capture or upload an image');
             return;
         }
 
@@ -195,6 +211,7 @@ function CheckInWithSelfie() {
                 } catch (gpsError) {
                     console.error('GPS Error:', gpsError);
                     showNotification('warning', 'Could not get GPS coordinates. Using default location.');
+                     //showToast('warning', 'Could not get GPS coordinates. Using default location.');
                     currentCoords = { latitude: 18.5597952, longitude: 73.8033664 };
                 }
             }
@@ -218,6 +235,7 @@ function CheckInWithSelfie() {
                     (actionType === 'checkin' ? t('MSG.checkinSuccess') || 'Check-in successful' : t('MSG.checkoutSuccess') || 'Check-out successful');
 
                 showNotification('success', successMessage);
+                 //showToast('success', successMessage);
                 
                 if (response.tracker && response.tracker.id) {
                     setTrackerId(response.tracker.id);
@@ -228,6 +246,7 @@ function CheckInWithSelfie() {
             } else {
                 const errorMessage = response?.message || response?.error || t('MSG.operationFailed') || 'Operation failed';
                 showNotification('danger', errorMessage);
+                //showToast('danger', errorMessage);
             }
         } catch (error) {
             console.error('Error submitting:', error);
@@ -238,10 +257,11 @@ function CheckInWithSelfie() {
                 errorMessage = `${errorMessage}: ${error.message}`;
             }
             showNotification('danger', errorMessage);
+            //showToast('danger', errorMessage);
         } finally {
             setSubmitting(false);
         }
-    }, [compressedImage, actionType, gpsCoordinates, getCurrentLocation, showNotification, t, fetchEmployeeStatus, trackerId]);
+    }, [compressedImage, actionType, gpsCoordinates, getCurrentLocationFresh, showNotification, t, fetchEmployeeStatus, trackerId]);
 
     // Reset camera state
     const resetCameraState = useCallback(() => {
@@ -252,36 +272,153 @@ function CheckInWithSelfie() {
         setCameraModal(false);
     }, [stopCamera]);
 
-    // Open camera modal
-    const openCameraModal = useCallback((type) => {
-        const { checkIn, checkOut } = status;
-        
-        if (type === 'checkin' && checkIn) {
-            showNotification('warning', t('MSG.alreadyCheckedIn') || 'You have already checked in today');
-            return;
-        }
-        
-        if (type === 'checkout' && !checkIn) {
-            showNotification('warning', t('MSG.checkInFirst') || 'Please check in first before checking out');
-            return;
-        }
-        
-        if (type === 'checkout' && checkOut) {
-            showNotification('warning', t('MSG.alreadyCheckedOut') || 'You have already checked out today');
-            return;
-        }
 
+
+const calculateDistance = useCallback((lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Radius of the Earth in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c; // Distance in kilometers
+    return distance;
+}, []);
+
+    // Open camera modal
+const openCameraModal = useCallback(async (type) => {
+    const { checkIn, checkOut, company_gps, tolerance } = status;
+    
+    console.log('🚀 Button clicked for:', type);
+    console.log('📊 Status data:', { checkIn, checkOut, company_gps, tolerance });
+    
+    // Validate check-in/check-out conditions
+    if (type === 'checkin' && checkIn) {
+        showNotification('warning', t('MSG.alreadyCheckedIn') || 'Already checked in for today');
+            // showToast('warning', t('MSG.alreadyCheckedIn') || 'You have already checked in today');
+        return;
+    }
+    
+    if (type === 'checkout' && !checkIn) {
+        showNotification('warning', t('MSG.checkInFirst') || 'Please check in first');
+            //showToast('warning', t('MSG.checkInFirst') || 'Please check in first before checking out');
+        return;
+    }
+    
+    if (type === 'checkout' && checkOut) {
+       showNotification('warning', t('MSG.alreadyCheckedOut') || 'Already checked out for today');
+        return;
+    }
+
+    // Validate company GPS and tolerance data
+    if (!company_gps || !tolerance) {
+        showNotification('danger', t('MSG.companyLocationNotConfigured') || 'Company location not configured');
+        return;
+    }
+
+    try {
+        setLocationLoading(true);
+        showNotification('info', t('MSG.gettingLocation') || 'Getting your current location...');
+        
+        // ALWAYS get fresh location - never use cached coordinates
+        console.log('🔄 Starting fresh location fetch...');
+        const coords = await getCurrentLocationFresh();
+        
+        // Update state with fresh coordinates
+        setGpsCoordinates(coords);
+        
+        // Parse company GPS coordinates
+        const companyGpsArray = company_gps.split(',');
+        if (companyGpsArray.length !== 2) {
+            throw new Error('Invalid company GPS format');
+        }
+        
+        const companyLat = parseFloat(companyGpsArray[0]);
+        const companyLon = parseFloat(companyGpsArray[1]);
+        const toleranceKm = parseFloat(tolerance);
+        
+        // Validate parsed values
+        if (isNaN(companyLat) || isNaN(companyLon) || isNaN(toleranceKm)) {
+            throw new Error('Invalid GPS or tolerance values');
+        }
+        
+        console.log('📍 Current Location:', coords.latitude, coords.longitude);
+        console.log('🏢 Company Location:', companyLat, companyLon);
+        console.log('📏 Tolerance (degrees):', toleranceKm);
+        console.log('⏰ Location Age: Fresh (just fetched)');
+        
+        // Calculate distance between current location and company location
+        const distance = calculateDistance(coords.latitude, coords.longitude, companyLat, companyLon);
+        const distanceInMeters = distance * 1000;
+        
+        // Convert tolerance from degrees to approximate meters (1 degree ≈ 111,320 meters)
+        const toleranceInMeters = toleranceKm * 111320;
+        
+        console.log('📐 Distance:', distanceInMeters, 'meters');
+        console.log('✅ Allowed Tolerance:', toleranceInMeters, 'meters');
+        console.log('🎯 Within Range?', distanceInMeters <= toleranceInMeters);
+        
+        // Check if user is within tolerance
+        if (distanceInMeters > toleranceInMeters) {
+            let distance;
+            if (distanceInMeters >= 1000) {
+                distance = `${(distanceInMeters / 1000).toFixed(2)} km`;
+            } else {
+                distance = `${Math.round(distanceInMeters)} meters`;
+            }
+            
+            const errorMessage = t('MSG.OutsideCompany',{distance}) || 
+                `❌ You are outside company premises. You are ${distance} away from your office location. Please move closer to your workplace.`;
+            
+            console.log('❌ Location validation failed:', errorMessage);
+            
+            // Show toast notification
+            if (toaster?.current) {
+                toaster.current.add({
+                    body: <CToastBody>{errorMessage}</CToastBody>,
+                    autohide: 5000,
+                });
+            } else {
+                showNotification('danger', errorMessage);
+            }
+            
+            setLocationLoading(false);
+            // showToast('warning', t('MSG.alreadyCheckedOut') || 'You have already checked out today');
+            return;
+        }
+        
+        console.log('✅ Location validation passed!');
+        
+        // Location validation passed - proceed with camera modal
         setActionType(type);
         setCameraModal(true);
         setCapturedImage(null);
         setCompressedImage(null);
-        setGpsCoordinates(null);
         
-        getCurrentLocation().catch(error => {
-            console.error('Error getting GPS:', error);
-            showNotification('warning', 'Could not get GPS coordinates. Will use default location.');
-        });
-    }, [status, getCurrentLocation, showNotification, t]);
+        showNotification('success', t('MSG.locationVerified') || '✅ Location verified successfully');
+        
+    } catch (error) {
+        console.error('❌ Error getting GPS or validating location:', error);
+        
+        let errorMessage = t('MSG.locationError') || 'Could not verify your location. ';
+        
+        if (error.code === 1) {
+            errorMessage += 'Location access denied. Please allow location access and try again.';
+        } else if (error.code === 2) {
+            errorMessage += 'Location unavailable. Please check your GPS settings.';
+        } else if (error.code === 3) {
+            errorMessage += 'Location request timeout. Please try again.';
+        } else {
+            errorMessage += error.message || 'Please try again.';
+        }
+        
+        showNotification('danger', errorMessage);
+    } finally {
+        setLocationLoading(false);
+    }
+}, [status, getCurrentLocationFresh, showNotification, t, toaster, calculateDistance]);
 
     // Effects
     useEffect(() => {
@@ -353,6 +490,7 @@ function CheckInWithSelfie() {
 
     return (
         <div className="min-vh-100 d-flex flex-column" style={{ backgroundColor: '#f8f9fa' }}>
+            {toasterElement}
             <CContainer fluid className="flex-grow-1 d-flex align-items-center justify-content-center py-2 py-sm-3 py-md-4">
                 <CRow className="w-100 h-100">
                     <CCol xs={12} sm={11} md={10} lg={8} xl={6} xxl={5} className="mx-auto d-flex align-items-center">

@@ -503,9 +503,9 @@ class EmployeeTrackerController extends Controller
     public function checkTodayStatus(Request $request): JsonResponse
     {
         // Step 1: Get employee ID from logged-in user’s mobile
-        $employeeId = Employee::where('mobile', auth()->user()->mobile)->value('id');
+        $employee = Employee::where('mobile', auth()->user()->mobile)->first();
 
-        if (!$employeeId) {
+        if (!$employee['id']) {
             return response()->json([
                 'message' => 'Employee not found for this user.',
             ], 404);
@@ -514,7 +514,7 @@ class EmployeeTrackerController extends Controller
         // Step 2: Check for today's tracker entry
         $today = Carbon::today()->toDateString(); // e.g. "2025-07-07"
 
-        $tracker = EmployeeTracker::where('employee_id', $employeeId)
+        $tracker = EmployeeTracker::where('employee_id', $employee['id'])
             ->whereDate('created_at', $today)
             ->first();
 

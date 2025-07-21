@@ -19,6 +19,7 @@ import {
 } from '@coreui/react';
 import { post } from '../../../util/api';
 import { useTranslation } from 'react-i18next';
+import { useToast } from '../../common/toast/ToastContext';
 
 // Constants for better maintainability
 const COORDINATE_LIMITS = {
@@ -48,6 +49,8 @@ const metersToDecimalDegrees = (meters, latitude = 0) => {
 
 function StoreCoordinates() {
     const { t } = useTranslation("global");
+    const { showToast } = useToast();
+
 
     const [formData, setFormData] = useState({
         longitude: '',
@@ -226,13 +229,15 @@ function StoreCoordinates() {
         e.preventDefault();
 
         if (!validateForm()) {
-            showNotification('danger', t('MSG.pleaseCorrectErrors') || 'Please correct the errors below', false);
+            // showNotification('danger', t('MSG.pleaseCorrectErrors') || 'Please correct the errors below', false);
+            showToast('danger', t('MSG.pleaseCorrectErrors') || 'Please correct the errors below', false);
             return;
         }
 
         const finalToleranceValue = getFinalToleranceValue();
         if (finalToleranceValue === null) {
-            showNotification('danger', t('MSG.invalidTolerance') || 'Invalid tolerance configuration', false);
+            // showNotification('danger', t('MSG.invalidTolerance') || 'Invalid tolerance configuration', false);
+             showToast('danger', t('MSG.invalidTolerance') || 'Invalid tolerance configuration', false);
             return;
         }
 
@@ -270,7 +275,8 @@ function StoreCoordinates() {
                     successMessage += `. ${response.message}`;
                 }
 
-                showNotification('success', successMessage, true);
+                // showNotification('success', successMessage, true);
+                showToast('success', successMessage, true);
 
                 // Reset form on success
                 setFormData({
@@ -302,7 +308,8 @@ function StoreCoordinates() {
                     errorMessage += ': ' + serverErrors;
                 }
 
-                showNotification('danger', errorMessage, false);
+                // showNotification('danger', errorMessage, false);
+                showToast('danger', errorMessage, false);
             }
         } catch (error) {
             console.error('Error storing coordinates:', error);
@@ -327,7 +334,8 @@ function StoreCoordinates() {
                 errorMessage = `${errorMessage}: ${error.message || 'An unexpected error occurred'}`;
             }
 
-            showNotification('danger', errorMessage, false);
+            // showNotification('danger', errorMessage, false);
+            showToast('danger', errorMessage, false);
         } finally {
             setLoading(false);
         }
@@ -336,7 +344,8 @@ function StoreCoordinates() {
     // Get current location (optional feature)
     const getCurrentLocation = useCallback(() => {
         if (!navigator.geolocation) {
-            showNotification('warning', t('MSG.geolocationNotSupported') || 'Geolocation is not supported by this browser', false);
+            // showNotification('warning', t('MSG.geolocationNotSupported') || 'Geolocation is not supported by this browser', false);
+             showToast('warning', t('MSG.geolocationNotSupported') || 'Geolocation is not supported by this browser', false);
             return;
         }
 
@@ -349,7 +358,8 @@ function StoreCoordinates() {
                     latitude: position.coords.latitude.toString()
                 }));
                 setLoading(false);
-                showNotification('success', t('MSG.locationDetected') || 'Current location detected');
+                // showNotification('success', t('MSG.locationDetected') || 'Current location detected');
+                showToast('success', t('MSG.locationDetected') || 'Current location detected');
             },
             (error) => {
                 setLoading(false);
@@ -365,7 +375,8 @@ function StoreCoordinates() {
                         errorMessage = t('MSG.locationTimeout') || 'Location request timed out';
                         break;
                 }
-                showNotification('danger', errorMessage, false);
+                // showNotification('danger', errorMessage, false);
+                showToast('danger', errorMessage, false);
             },
             { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
         );

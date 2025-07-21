@@ -26,11 +26,13 @@ import { getAPICall, post } from '../../../util/api';
 import { useTranslation } from 'react-i18next';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { useToast } from '../../common/toast/ToastContext';
 
 const WeeklyMonthlyPresentyPayroll = () => {
   const { t } = useTranslation("global");
-  const [reportType, setReportType] = useState('');
-  const [selectedWeekDay, setSelectedWeekDay] = useState('monday');
+const { showToast } = useToast();
+
+  const [selectedWeekDay, setSelectedWeekDay] = useState('');
   const [selectedWeek, setSelectedWeek] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -43,6 +45,7 @@ const WeeklyMonthlyPresentyPayroll = () => {
   const [monthlyWeeks, setMonthlyWeeks] = useState([]);
   const [hasFetchedData, setHasFetchedData] = useState(false); // Track if data was fetched manually
   const tableRef = useRef(null);
+  const [reportType, setReportType] = useState('');
 
   const showNotification = useCallback((type, message) => {
     setNotification({ show: true, type, message });
@@ -231,6 +234,7 @@ const WeeklyMonthlyPresentyPayroll = () => {
 
     if (!selectedWeekDay) {
       showNotification('warning', t('MSG.pleaseSelectWeekdayFirst'));
+    //    showToast('warning', t('MSG.pleaseSelectWeekdayFirst'));
       return;
     }
 
@@ -266,8 +270,8 @@ const WeeklyMonthlyPresentyPayroll = () => {
         return;
       }
     } else {
-      showNotification('warning', t('MSG.pleaseSelectReportType'));
-      return;
+  showNotification('warning', t('MSG.pleaseSelectReportType'));
+  return;
     }
 
     setLoading(true);
@@ -476,7 +480,6 @@ const WeeklyMonthlyPresentyPayroll = () => {
       </div>
     );
   }
-
   return (
     <CContainer fluid>
       <CRow className="mb-4">
@@ -748,7 +751,7 @@ const WeeklyMonthlyPresentyPayroll = () => {
         </CRow>
       )}
     </CContainer>
-  );
+);
 };
 
 export default WeeklyMonthlyPresentyPayroll;

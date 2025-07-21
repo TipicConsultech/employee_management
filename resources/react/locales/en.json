@@ -1227,7 +1227,7 @@
     "noDocumentTypesFound": "No document types found",
     "documentTypesLoaded": "{{count}} document types loaded successfully",
     "failedToFetchDocumentTypes": "Failed to fetch document types",
-    "fileSelected": "File \"{fileName}\" selected successfully",
+    "fileSelected": "File \"{{fileName}}\" selected successfully",
     "selectFileToPreview": "Please select a file to preview",
     "previewNotAvailable": "Preview not available for this file type",
     "selectEmployee": "Please select an employee",
@@ -1273,7 +1273,10 @@
     "dataValidationError": "Please check all required fields",
     "paymentCompleted": "Payment completed successfully",
     "partialPaymentSaved": "Partial payment saved successfully",
-    "pendingPaymentUpdated": "Pending payment amount updated"
+    "pendingPaymentUpdated": "Pending payment amount updated",
+    "OutsideCompany":"You are {{distance}} away from your office location",
+
+    "selectedFile": "Selected file: {{fileName}}"
 
 
     }
