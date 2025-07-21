@@ -8,9 +8,11 @@ import './calendarStyles.css';
 import { useTranslation } from 'react-i18next';
 import { post } from '../../../../util/api';
 import WorkSummaryPayment from './WorkSummaryPayment ';
+import { useToast } from '../../../common/toast/ToastContext';
 
 const Monthly = ({ id, employee }) => {
   const { t } = useTranslation('global');
+  const { showToast } = useToast()
 
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -52,7 +54,8 @@ const Monthly = ({ id, employee }) => {
 
   const handleCalculate = useCallback(async () => {
     if (!startDate || !endDate) {
-      showNotification('warning', t('MSG.pleaseSelectDates'));
+      // showNotification('warning', t('MSG.pleaseSelectDates'));
+      showToast('warning', t('MSG.pleaseSelectDates'));
       return;
     }
 
@@ -68,10 +71,12 @@ const Monthly = ({ id, employee }) => {
       setAttendance(response.attendance || []);
       setWorkSummary(response);
       setShowCalendar(true);
-      showNotification('success', t('MSG.workSummaryFetched'));
+      // showNotification('success', t('MSG.workSummaryFetched'));
+      showToast('success', t('MSG.workSummaryFetched'));
     } catch (error) {
       console.error('Error fetching work summary:', error);
-      showNotification('warning', `${t('MSG.error')}: ${error.message}`);
+      // showNotification('warning', `${t('MSG.error')}: ${error.message}`);
+      showToast('warning', `${t('MSG.error')}: ${error.message}`);
     }
   }, [startDate, endDate, id, t]);
 
@@ -150,7 +155,8 @@ const Monthly = ({ id, employee }) => {
 
     try {
       await post('/api/payment', payload);
-      showNotification('success', t('MSG.paymentSubmittedSuccess'));
+      // showNotification('success', t('MSG.paymentSubmittedSuccess'));
+      showToast('success', t('MSG.paymentSubmittedSuccess'));
       setWorkSummary((prev) => ({
         ...prev,
         custom_regular_wage: '',
@@ -161,7 +167,8 @@ const Monthly = ({ id, employee }) => {
       }));
     } catch (err) {
       console.error('Payment Error:', err);
-      showNotification('warning', `${t('MSG.error')}: ${err.message}`);
+      // showNotification('warning', `${t('MSG.error')}: ${err.message}`);
+      showToast('warning', `${t('MSG.error')}: ${err.message}`);
     }
   }, [workSummary, employee, startDate, endDate, id, t]);
 

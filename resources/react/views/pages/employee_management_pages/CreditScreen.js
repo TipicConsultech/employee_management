@@ -31,10 +31,11 @@ import {
 import CIcon from '@coreui/icons-react';
 import { useTranslation } from 'react-i18next';
 import { getAPICall, post } from '../../../util/api';
+import { useToast } from '../../common/toast/ToastContext';
 
 const CreditSalaryScreen = () => {
   const { t } = useTranslation("global");
-
+const { showToast } = useToast();
   // State management
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -82,15 +83,19 @@ const CreditSalaryScreen = () => {
 
     if (!isValid) {
       if (!formData.selectedEmployee) {
-        showNotification('warning', t('MSG.pleaseSelectEmployee') || 'Please select an employee');
+        // showNotification('warning', t('MSG.pleaseSelectEmployee') || 'Please select an employee');
+         showToast('warning', t('MSG.pleaseSelectEmployee') || 'Please select an employee');
       } else if (!formData.creditAmount) {
-        showNotification('warning', t('MSG.pleaseEnterCreditAmount') || 'Please enter credit amount');
+        // showNotification('warning', t('MSG.pleaseEnterCreditAmount') || 'Please enter credit amount');
+        showToast('warning', t('MSG.pleaseEnterCreditAmount') || 'Please enter credit amount');
       } else {
         const amount = parseFloat(formData.creditAmount);
         if (isNaN(amount)) {
-          showNotification('warning', t('MSG.pleaseEnterValidNumber') || 'Please enter a valid number');
+          // showNotification('warning', t('MSG.pleaseEnterValidNumber') || 'Please enter a valid number');
+          showToast('warning', t('MSG.pleaseEnterValidNumber') || 'Please enter a valid number');
         } else if (amount <= 0) {
-          showNotification('warning', t('MSG.amountMustBeGreaterThanZero') || 'Amount must be greater than zero');
+          // showNotification('warning', t('MSG.amountMustBeGreaterThanZero') || 'Amount must be greater than zero');
+           showToast('warning', t('MSG.amountMustBeGreaterThanZero') || 'Amount must be greater than zero');
         }
       }
     }
@@ -129,16 +134,19 @@ const CreditSalaryScreen = () => {
       } else {
         setEmployees([]);
         if (employeeData.length === 0) {
-          showNotification('info', t('MSG.noEmployeesFound') || 'No employees found');
+          // showNotification('info', t('MSG.noEmployeesFound') || 'No employees found');
+           showToast('info', t('MSG.noEmployeesFound') || 'No employees found');
         } else {
-          showNotification('info', t('MSG.noActiveEmployeesFound') || 'No active employees found');
+          // showNotification('info', t('MSG.noActiveEmployeesFound') || 'No active employees found');
+          showToast('info', t('MSG.noActiveEmployeesFound') || 'No active employees found');
         }
       }
     } catch (err) {
       console.error('Error fetching employees:', err);
       setEmployees([]);
       setError(err.message);
-      showNotification('danger', `${t('MSG.errorConnectingToServer') || 'Error connecting to server'}: ${err.message}`);
+      // showNotification('danger', `${t('MSG.errorConnectingToServer') || 'Error connecting to server'}: ${err.message}`);
+      showToast('danger', `${t('MSG.errorConnectingToServer') || 'Error connecting to server'}: ${err.message}`);
     }
   }, [showNotification, t]);
 
@@ -150,7 +158,8 @@ const CreditSalaryScreen = () => {
     } catch (err) {
       console.error('Error during initialization:', err);
       setError(err.message);
-      showNotification('danger', `${t('MSG.errorInitializingData') || 'Error initializing data'}: ${err.message}`);
+      // showNotification('danger', `${t('MSG.errorInitializingData') || 'Error initializing data'}: ${err.message}`);
+      showToast('danger', `${t('MSG.errorInitializingData') || 'Error initializing data'}: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -188,7 +197,8 @@ const CreditSalaryScreen = () => {
       const selectedEmployee = employees.find(emp => emp.id.toString() === formData.selectedEmployee);
 
       if (!selectedEmployee) {
-        showNotification('warning', t('MSG.selectedEmployeeNotFound') || 'Selected employee not found');
+        // showNotification('warning', t('MSG.selectedEmployeeNotFound') || 'Selected employee not found');
+        showToast('warning', t('MSG.selectedEmployeeNotFound') || 'Selected employee not found');
         return;
       }
 
@@ -203,17 +213,21 @@ const CreditSalaryScreen = () => {
       const response = await post('/api/employeeCredit', data);
 
       if (response && response.id) {
-        showNotification('success', t('MSG.advanceCreditedSuccess') || 'Advance Payment credited successfully');
+        // showNotification('success', t('MSG.advanceCreditedSuccess') || 'Advance Payment credited successfully');
+         showToast('success', t('MSG.advanceCreditedSuccess') || 'Advance Payment credited successfully')
         resetForm();
       } else {
-        showNotification('warning', response?.message || t('MSG.failedToCreditSalary') || 'Failed to credit salary');
+        // showNotification('warning', response?.message || t('MSG.failedToCreditSalary') || 'Failed to credit salary');
+         showToast('warning', response?.message || t('MSG.failedToCreditSalary') || 'Failed to credit salary');
       }
     } catch (err) {
       console.error('Error crediting salary:', err);
       if (err.message && err.message.includes('422')) {
-        showNotification('warning', t('MSG.invalidInputData') || 'Invalid input data');
+        // showNotification('warning', t('MSG.invalidInputData') || 'Invalid input data');
+         showToast('warning', t('MSG.invalidInputData') || 'Invalid input data');
       } else {
-        showNotification('warning', `${t('MSG.error') || 'Error'}: ${err.message}`);
+        // showNotification('warning', `${t('MSG.error') || 'Error'}: ${err.message}`);
+        showToast('warning', `${t('MSG.error') || 'Error'}: ${err.message}`);
       }
     } finally {
       setSubmitting(false);

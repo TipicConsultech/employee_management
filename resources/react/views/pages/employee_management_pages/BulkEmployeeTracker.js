@@ -10,6 +10,7 @@ import TrackerEditModal from "./TrackerEditModal";
 import GPSLocationModal from "./GPSLocationModal";
 import ImageViewModal from "./ImageViewModal";
 import { getAPICall, post } from "../../../util/api";
+import { useToast } from '../../common/toast/ToastContext';
 
 
 function BulkEmployeeCheckInOut() {
@@ -28,6 +29,9 @@ function BulkEmployeeCheckInOut() {
     const [mapVisible, setMapVisible] = useState(false);
     const [selectedGps,setSelectedGps]= useState(null);
   
+    
+    const { showToast } = useToast();
+
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]); // Current date in YYYY-MM-DD format
      const [isCurrentDate, setIsCurrentDate] = useState(true);
 
@@ -138,10 +142,12 @@ function BulkEmployeeCheckInOut() {
         } else {
             console.log('Invalid response format:', response);
             showNotification('warning', t('MSG.failedToFetchEmployees') || 'Failed to fetch employees');
+            showToast('warning', t('MSG.failedToFetchEmployees') || 'Failed to fetch employees');
         }
     } catch (error) {
         console.error('Error fetching employees:', error);
         showNotification('warning', `${t('MSG.errorConnectingToServer') || 'Error connecting to server'}: ${error.message}`);
+        showToast('warning', `${t('MSG.errorConnectingToServer') || 'Error connecting to server'}: ${error.message}`);
     } finally {
         setLoading(false);
     }
@@ -219,6 +225,7 @@ const handleTodayClick = useCallback(() => {
     const handleBulkCheckIn = useCallback(async () => {
     if (selectedEmployees.length === 0) {
         showNotification('warning', t('MSG.selectEmployeesFirst') || 'Please select employees first');
+        showToast('warning', t('MSG.selectEmployeesFirst') || 'Please select employees first');
         return;
     }
 
@@ -233,9 +240,11 @@ const handleTodayClick = useCallback(() => {
         const response = await post('/api/bulkCheckIn', payload);
 
         if (response && (response.message || response.rows_updated)) {
-            showNotification('success',
-                `${t('MSG.bulkCheckInSuccess') }`
-            );
+            // showNotification('success',
+            //     `${t('MSG.bulkCheckInSuccess') }`
+            // );
+
+            showToast('success',  `${t('MSG.bulkCheckInSuccess') }`);
             
             // -----> SCROLL TO TOP on success
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -252,10 +261,12 @@ const handleTodayClick = useCallback(() => {
             setSelectAll(false);
         } else {
             showNotification('warning', t('MSG.failedToProcessRequest') || 'Failed to process request');
+            showToast('warning', t('MSG.failedToProcessRequest') || 'Failed to process request');
         }
     } catch (error) {
         console.error('Error:', error);
         showNotification('warning', `${t('MSG.error') || 'Error'}: ${error.message}`);
+         showToast('warning', `${t('MSG.error') || 'Error'}: ${error.message}`);
     } finally {
         setSubmitting(false);
     }
@@ -264,6 +275,7 @@ const handleTodayClick = useCallback(() => {
 const handleBulkCheckOut = useCallback(async () => {
     if (selectedEmployees.length === 0) {
         showNotification('warning', t('MSG.selectEmployeesFirst') || 'Please select employees first');
+        showToast('warning', t('MSG.selectEmployeesFirst') || 'Please select employees first');
         return;
     }
 
@@ -275,6 +287,9 @@ const handleBulkCheckOut = useCallback(async () => {
         ).join(', ');
 
         showNotification('warning',
+            `${t('MSG.checkInRequiredForCheckOut') || 'Check-in required for check-out'}: ${employeeNames}`
+        );
+        showToast('warning',
             `${t('MSG.checkInRequiredForCheckOut') || 'Check-in required for check-out'}: ${employeeNames}`
         );
         return;
@@ -293,7 +308,10 @@ const handleBulkCheckOut = useCallback(async () => {
         const response = await post('/api/bulkCheckOut', payload);
 
         if (response && (response.message || response.rows_updated)) {
-            showNotification('success',
+            // showNotification('success',
+            //     `${t('MSG.bulkCheckOutSuccess') }`
+            // );
+             showToast('success',
                 `${t('MSG.bulkCheckOutSuccess') }`
             );
             
@@ -313,10 +331,12 @@ const handleBulkCheckOut = useCallback(async () => {
             setSelectAll(false);
         } else {
             showNotification('warning', t('MSG.failedToProcessRequest') || 'Failed to process request');
+            showToast('warning', t('MSG.failedToProcessRequest') || 'Failed to process request');
         }
     } catch (error) {
         console.error('Error:', error);
         showNotification('warning', `${t('MSG.error') || 'Error'}: ${error.message}`);
+        showToast('warning', `${t('MSG.error') || 'Error'}: ${error.message}`);
     } finally {
         setSubmitting(false);
     }

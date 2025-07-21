@@ -26,10 +26,12 @@ import { getAPICall, post } from '../../../util/api';
 import { useTranslation } from 'react-i18next';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { useToast } from '../../common/toast/ToastContext';
 
 const WeeklyPresentyPayroll = () => {
   // Add translation hook
   const { t } = useTranslation("global");
+    const { showToast } = useToast();
 
   const [selectedWeekDay, setSelectedWeekDay] = useState('');
   const [selectedWeek, setSelectedWeek] = useState('');
@@ -131,7 +133,8 @@ const WeeklyPresentyPayroll = () => {
     const selectedDate = e.target.value;
 
     if (!selectedWeekDay) {
-      showNotification('warning', t('MSG.pleaseSelectWeekdayFirst'));
+      // showNotification('warning', t('MSG.pleaseSelectWeekdayFirst'));
+       showToast('warning', t('MSG.pleaseSelectWeekdayFirst'));
       return;
     }
 
@@ -148,7 +151,8 @@ const WeeklyPresentyPayroll = () => {
 
   const handleGetEmployeeData = async () => {
     if (!startDate || !endDate || !selectedWeekDay) {
-      showNotification('warning', t('MSG.pleaseSelectWeekAndDate'));
+      // showNotification('warning', t('MSG.pleaseSelectWeekAndDate'));
+      showToast('warning', t('MSG.pleaseSelectWeekAndDate'));
       return;
     }
 
@@ -164,13 +168,16 @@ const WeeklyPresentyPayroll = () => {
 
       if (response.data) {
         setEmployeeData(response.data);
-        showNotification('success', t('MSG.employeeDataFetchedSuccess'));
+        // showNotification('success', t('MSG.employeeDataFetchedSuccess'));
+         showToast('success', t('MSG.employeeDataFetchedSuccess'));
       } else {
-        showNotification('warning', t('MSG.failedToFetchEmployeeData'));
+        // showNotification('warning', t('MSG.failedToFetchEmployeeData'));
+        showToast('warning', t('MSG.failedToFetchEmployeeData'));
       }
     } catch (err) {
       console.error('API Error:', err);
-      showNotification('warning', `${t('MSG.errorConnectingToServer')}: ${err.message}`);
+      // showNotification('warning', `${t('MSG.errorConnectingToServer')}: ${err.message}`);
+      showToast('warning', `${t('MSG.errorConnectingToServer')}: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -271,7 +278,8 @@ const WeeklyPresentyPayroll = () => {
     });
 
     doc.save(`weekly-presenty-${startDate}-to-${endDate}.pdf`);
-    showNotification('success', t('MSG.pdfExportedSuccess'));
+    // showNotification('success', t('MSG.pdfExportedSuccess'));
+        showToast('success', t('MSG.pdfExportedSuccess'));
   };
 
   // Loading state

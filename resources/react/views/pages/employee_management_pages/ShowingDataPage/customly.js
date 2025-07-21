@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { post, getAPICall } from '../../../../util/api';
 import WorkSummaryPayment from './WorkSummaryPayment ';
+import { useToast } from '../../../common/toast/ToastContext';
 
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
@@ -24,6 +25,7 @@ import './calendarStyles.css';
 function Customly() {
   const { t } = useTranslation('global');
   const { id } = useParams();
+  const { showToast } = useToast();
 
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -55,7 +57,8 @@ function Customly() {
         setEmployee(data);
       } catch (err) {
         console.error('Error loading employee:', err);
-        showNotification('warning', `${t('MSG.errorConnectingToServer')}: ${err.message}`);
+        // showNotification('warning', `${t('MSG.errorConnectingToServer')}: ${err.message}`);
+showToast('warning', `${t('MSG.errorConnectingToServer')}: ${err.message}`);
       } finally {
         setLoading(false);
       }
@@ -68,7 +71,8 @@ function Customly() {
   /* ──────────────────────────────────────────────────────────── */
   const handleCalculate = useCallback(async () => {
     if (!startDate || !endDate) {
-      showNotification('warning', t('MSG.pleaseSelectDates'));
+      // showNotification('warning', t('MSG.pleaseSelectDates'));
+      showToast('warning', t('MSG.pleaseSelectDates'));
       return;
     }
 
@@ -98,7 +102,8 @@ function Customly() {
       setShowCalendar(true);
     } catch (err) {
       console.error('Error fetching work summary:', err);
-      showNotification('warning', `${t('MSG.error')}: ${err.message}`);
+      // showNotification('warning', `${t('MSG.error')}: ${err.message}`);
+      showToast('warning', `${t('MSG.error')}: ${err.message}`);
     }
   }, [startDate, endDate, id, employee, showNotification, t]);
 
@@ -184,7 +189,8 @@ function Customly() {
   /* ──────────────────────────────────────────────────────────── */
   const handleSubmit = useCallback(async () => {
     if (!workSummary) {
-      showNotification('warning', t('MSG.noWorkSummary'));
+      // showNotification('warning', t('MSG.noWorkSummary'));
+      showToast('warning', t('MSG.noWorkSummary'));
       return;
     }
 
@@ -208,7 +214,8 @@ function Customly() {
 
     try {
       await post('/api/payment', payload);
-      showNotification('success', t('MSG.paymentSubmittedSuccess'));
+      // showNotification('success', t('MSG.paymentSubmittedSuccess'));
+      showToast('success', t('MSG.paymentSubmittedSuccess'));
 
       setWorkSummary((prev) => ({
         ...prev,
@@ -220,7 +227,8 @@ function Customly() {
       }));
     } catch (err) {
       console.error('Payment Error:', err);
-      showNotification('warning', `${t('MSG.error')}: ${err.message}`);
+      // showNotification('warning', `${t('MSG.error')}: ${err.message}`);
+      showToast('warning', `${t('MSG.error')}: ${err.message}`);
     }
   }, [workSummary, employee, startDate, endDate, id, showNotification, t]);
 

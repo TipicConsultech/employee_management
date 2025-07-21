@@ -14,10 +14,12 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { post, getAPICall } from '../../../../util/api';
+import { useToast } from '../../../common/toast/ToastContext';
 
 function Contract() {
   const { t } = useTranslation('global');
   const { id } = useParams();
+    const { showToast } = useToast();
 
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -58,7 +60,8 @@ function Contract() {
       }));
     } catch (error) {
       console.error('Error loading employee:', error);
-      showNotification('warning', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
+      // showNotification('warning', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
+      showToast('warning', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -93,7 +96,8 @@ function Contract() {
         })
         .catch((error) => {
           console.error('Error fetching contract summary:', error);
-          showNotification('warning', `${t('MSG.error')}: ${error.message}`);
+          // showNotification('warning', `${t('MSG.error')}: ${error.message}`);
+                    showToast('warning', `${t('MSG.error')}: ${error.message}`);
         });
     }
   }, [startDate, endDate, employee, id, workSummary.price, workSummary.quantity, showNotification, t]);
@@ -200,10 +204,12 @@ function Contract() {
 
     try {
       await post('/api/payment', payload);
-      showNotification('success', t('MSG.paymentSubmittedSuccess'));
+      // showNotification('success', t('MSG.paymentSubmittedSuccess'));
+      showToast('success', t('MSG.paymentSubmittedSuccess'));
     } catch (err) {
       console.error('Payment Error:', err);
-      showNotification('warning', t('MSG.paymentSubmissionError'));
+      // showNotification('warning', t('MSG.paymentSubmissionError'));
+       showToast('warning', t('MSG.paymentSubmissionError'));
     }
   };
 

@@ -27,10 +27,12 @@ import { getAPICall, postFormData } from '../../../util/api';
 import { useTranslation } from 'react-i18next';
 import CIcon from '@coreui/icons-react';
 import { cilZoom, cilCloudUpload, cilX } from '@coreui/icons';
+// import { cilZoom, cilCloudUpload, cilX } from '@coreui/icons';
+import { useToast } from '../../common/toast/ToastContext';
 
 function EmployeeDocumentUpload() {
     const { t } = useTranslation("global");
-
+const { showToast } = useToast();
     const [employees, setEmployees] = useState([]);
     const [documentTypes, setDocumentTypes] = useState([]);
     const [selectedEmployee, setSelectedEmployee] = useState('');
@@ -85,55 +87,65 @@ function EmployeeDocumentUpload() {
 
     const handleAPIResponse = (response, successMessage = t('MSG.operationSuccess')) => {
         if (!response) {
-            showNotification('danger', t('MSG.noResponse'));
+            // showNotification('danger', t('MSG.noResponse'));
+             showToast('danger', t('MSG.noResponse'));
             return false;
         }
 
         if (response.status !== undefined) {
             const statusCode = response.status;
             if (statusCode >= 200 && statusCode < 300) {
-                showNotification('success', successMessage);
+                // showNotification('success', successMessage);
+                 showToast('success', successMessage);
                 return true;
             } else {
                 const errorMessage = getStatusMessage(statusCode, response.data);
-                showNotification('danger', errorMessage);
+                // showNotification('danger', errorMessage);
+                showToast('danger', errorMessage);
                 return false;
             }
         }
 
         if (response.success !== undefined) {
             if (response.success === true) {
-                showNotification('success', response.message || successMessage);
+                // showNotification('success', response.message || successMessage);
+                showToast('success', response.message || successMessage);
                 return true;
             } else {
                 const errorMessage = response.message || response.error || t('MSG.operationFailed');
-                showNotification('danger', errorMessage);
+                // showNotification('danger', errorMessage);
+                 showToast('danger', errorMessage);
                 return false;
             }
         }
 
         if (response.error !== undefined) {
             if (!response.error) {
-                showNotification('success', response.message || successMessage);
+                // showNotification('success', response.message || successMessage);
+                 showToast('success', response.message || successMessage);
                 return true;
             } else {
                 const errorMessage = response.message || response.error || t('MSG.operationFailed');
-                showNotification('danger', errorMessage);
+                // showNotification('danger', errorMessage);
+                showToast('danger', errorMessage);
                 return false;
             }
         }
 
         if (response.data !== undefined) {
-            showNotification('success', successMessage);
+            // showNotification('success', successMessage);
+            showToast('success', successMessage);
             return true;
         }
 
         if (Array.isArray(response)) {
-            showNotification('success', successMessage);
+            // showNotification('success', successMessage);
+            showToast('success', successMessage);
             return true;
         }
 
-        showNotification('warning', t('MSG.responseUnclear'));
+        // showNotification('warning', t('MSG.responseUnclear'));
+         showToast('warning', t('MSG.responseUnclear'));
         return false;
     };
 
@@ -155,15 +167,22 @@ function EmployeeDocumentUpload() {
                 setEmployees(employeesData);
 
                 if (employeesData.length === 0) {
-                    showNotification('info', t('MSG.noEmployeesFound'));
+                    // showNotification('info', t('MSG.noEmployeesFound'));
+                    showToast('info', t('MSG.noEmployeesFound'));
                 } else {
                     handleAPIResponse(response, t('MSG.employeesLoaded', { count: employeesData.length }));
+                                     showToast(
+  response,
+  'success',
+  t('MSG.employeesLoaded', { count: employeesData.length })
+);
                 }
             } else {
                 handleAPIResponse(response, t('MSG.failedToFetchEmployees'));
             }
         } catch (error) {
-            showNotification('danger', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
+            // showNotification('danger', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
+            showToast('danger', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
         } finally {
             setEmployeesLoading(false);
         }
@@ -178,7 +197,8 @@ function EmployeeDocumentUpload() {
                 setDocumentTypes(documentTypesData);
 
                 if (documentTypesData.length === 0) {
-                    showNotification('info', t('MSG.noDocumentTypesFound'));
+                    // showNotification('info', t('MSG.noDocumentTypesFound'));
+                     showToast('info', t('MSG.noDocumentTypesFound'));
                     setDocumentUploads([]);
                 } else {
                     const documentRows = documentTypesData.map(type => ({
@@ -191,12 +211,19 @@ function EmployeeDocumentUpload() {
                     }));
                     setDocumentUploads(documentRows);
                    handleAPIResponse(response, t('MSG.documentTypesLoaded', { count: documentTypesData.length }));
+                   showToast(
+  response,
+  'success',
+  t('MSG.documentTypesLoaded', { count: documentTypesData.length })
+);
+
                 }
             } else {
                 handleAPIResponse(response, t('MSG.failedToFetchDocumentTypes'));
             }
         } catch (error) {
-            showNotification('danger', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
+            // showNotification('danger', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
+             showToast('danger', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
         } finally {
             setDocumentTypesLoading(false);
         }
@@ -212,11 +239,13 @@ function EmployeeDocumentUpload() {
         if (file) {
             const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
             if (!allowedTypes.includes(file.type)) {
-                showNotification('warning', t('MSG.invalidFileType'));
+                // showNotification('warning', t('MSG.invalidFileType'));
+                 showToast('warning', t('MSG.invalidFileType'));
                 return;
             }
             if (file.size > 10 * 1024 * 1024) {
-                showNotification('warning', t('MSG.fileTooLarge'));
+                // showNotification('warning', t('MSG.fileTooLarge'));
+                showToast('warning', t('MSG.fileTooLarge'));
                 return;
             }
             let previewUrl = null;
@@ -231,13 +260,15 @@ function EmployeeDocumentUpload() {
                     previewUrl: previewUrl
                 } : doc
             ));
-            showNotification('success', t('MSG.fileSelected', { fileName: file.name }));
+            // showNotification('success', t('MSG.fileSelected', { fileName: file.name }));
+             showToast('success', t('MSG.fileSelected', { fileName: file.name }));
         }
     };
 
     const previewDocument = (doc) => {
         if (!doc.file) {
-            showNotification('info', t('MSG.selectFileToPreview'));
+            // showNotification('info', t('MSG.selectFileToPreview'));
+            showToast('info', t('MSG.selectFileToPreview'));
             return;
         }
         let previewUrl = null;
@@ -257,7 +288,8 @@ function EmployeeDocumentUpload() {
                 fileType: fileType
             });
         } else {
-            showNotification('info', t('MSG.previewNotAvailable'));
+            // showNotification('info', t('MSG.previewNotAvailable'));
+             showToast('info', t('MSG.previewNotAvailable'));
         }
     };
 
@@ -276,7 +308,8 @@ function EmployeeDocumentUpload() {
 
     const uploadDocuments = async () => {
         if (!selectedEmployee) {
-            showNotification('warning', t('MSG.selectEmployee'));
+            // showNotification('warning', t('MSG.selectEmployee'));
+            showToast('warning', t('MSG.selectEmployee'));
             return;
         }
 
@@ -284,7 +317,8 @@ function EmployeeDocumentUpload() {
         const hasOtherDoc = otherDocument.file && otherDocument.name.trim();
 
         if (uploadedDocs.length === 0 && !hasOtherDoc) {
-            showNotification('warning', t('MSG.uploadAtLeastOneDocument'));
+            // showNotification('warning', t('MSG.uploadAtLeastOneDocument'));
+             showToast('warning', t('MSG.uploadAtLeastOneDocument'));
             return;
         }
 
@@ -329,7 +363,8 @@ function EmployeeDocumentUpload() {
                 : (error.request
                     ? t('MSG.networkError')
                     : t('MSG.errorUploadingDocuments', { error: error.message }));
-            showNotification('danger', msg);
+            // showNotification('danger', msg);
+            showToast('danger', msg);
         } finally {
             setUploading(false);
         }
@@ -346,7 +381,8 @@ function EmployeeDocumentUpload() {
         const fileInputs = document.querySelectorAll('input[type="file"]');
         fileInputs.forEach(input => input.value = '');
         setNotification({ show: false, type: '', message: '' });
-        showNotification('info', t('MSG.formResetSuccess'));
+        // showNotification('info', t('MSG.formResetSuccess'));
+        showToast('info', t('MSG.formResetSuccess'));
     };
 
     return (
@@ -515,11 +551,13 @@ function EmployeeDocumentUpload() {
                                                                 if (file) {
                                                                     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
                                                                     if (!allowedTypes.includes(file.type)) {
-                                                                        showNotification('warning', t('MSG.invalidFileType'));
+                                                                        // showNotification('warning', t('MSG.invalidFileType'));
+                                                                        showToast('warning', t('MSG.invalidFileType'));
                                                                         return;
                                                                     }
                                                                     if (file.size > 10 * 1024 * 1024) {
-                                                                        showNotification('warning', t('MSG.fileTooLarge'));
+                                                                        // showNotification('warning', t('MSG.fileTooLarge'));
+                                                                        showToast('warning', t('MSG.fileTooLarge'));
                                                                         return;
                                                                     }
 
@@ -534,7 +572,8 @@ function EmployeeDocumentUpload() {
                                                                         previewUrl: previewUrl
                                                                     }));
 
-                                                                    showNotification('success', t('MSG.fileSelected', { fileName: file.name }));
+                                                                    // showNotification('success', t('MSG.fileSelected', { fileName: file.name }));
+                                                                    showToast('success', t('MSG.fileSelected', { fileName: file.name }));
                                                                 }
                                                             }}
                                                         />
@@ -554,7 +593,8 @@ function EmployeeDocumentUpload() {
                                                             size="sm"
                                                             onClick={() => {
                                                                 if (!otherDocument.file) {
-                                                                    showNotification('warning', t('MSG.selectFileFirst'));
+                                                                    // showNotification('warning', t('MSG.selectFileFirst'));
+                                                                    showToast('warning', t('MSG.selectFileFirst'));
                                                                 } else {
                                                                     previewDocument({
                                                                         documentTypeName: otherDocument.name || t('LABELS.otherDocument'),

@@ -20,10 +20,11 @@ import CIcon from '@coreui/icons-react';
 import { cilClock, cilLocationPin, cilCheckCircle, cilXCircle } from '@coreui/icons';
 import { getAPICall, postFormData, put } from '../../../util/api';
 import { useTranslation } from 'react-i18next';
+import { useToast } from '../../common/toast/ToastContext';
 
 function CheckInWithSelfie() {
     const { t } = useTranslation("global");
-
+const { showToast } = useToast();
     // State management
     const [status, setStatus] = useState({ checkIn: false, checkOut: false });
     const [loading, setLoading] = useState(true);
@@ -66,7 +67,8 @@ function CheckInWithSelfie() {
             }
         } catch (error) {
             console.error('Error fetching employee status:', error);
-            showNotification('warning', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
+            // showNotification('warning', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
+            showToast('warning', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
         } finally {
             setLoading(false);
         }
@@ -147,7 +149,8 @@ function CheckInWithSelfie() {
             }
         } catch (error) {
             console.error('Error accessing camera:', error);
-            showNotification('danger', t('MSG.cameraAccessError') || 'Camera access is required. Please allow camera access to continue.');
+            showToast('danger', t('MSG.cameraAccessError') || 'Camera access is required. Please allow camera access to continue.');
+            // showNotification('danger', t('MSG.cameraAccessError') || 'Camera access is required. Please allow camera access to continue.');
         }
     }, [showNotification, t]);
 
@@ -174,7 +177,8 @@ function CheckInWithSelfie() {
                 setCapturedImage(URL.createObjectURL(blob));
                 const compressedFile = await compressImage(blob);
                 setCompressedImage(compressedFile);
-                showNotification('success', t('MSG.photoCapturepd') || 'Photo captured successfully');
+                // showNotification('success', t('MSG.photoCapturepd') || 'Photo captured successfully');
+                 showToast('success', t('MSG.photoCapturepd') || 'Photo captured successfully');
             }
         }, 'image/jpeg', 0.8);
     }, [compressImage, showNotification, t]);
@@ -182,7 +186,8 @@ function CheckInWithSelfie() {
     // Handle check-in/check-out submission
     const handleSubmit = useCallback(async () => {
         if (!compressedImage) {
-            showNotification('warning', t('MSG.pleaseUploadImage') || 'Please capture or upload an image');
+            // showNotification('warning', t('MSG.pleaseUploadImage') || 'Please capture or upload an image');
+            showToast('warning', t('MSG.pleaseUploadImage') || 'Please capture or upload an image');
             return;
         }
 
@@ -194,7 +199,8 @@ function CheckInWithSelfie() {
                     currentCoords = await getCurrentLocation();
                 } catch (gpsError) {
                     console.error('GPS Error:', gpsError);
-                    showNotification('warning', 'Could not get GPS coordinates. Using default location.');
+                    // showNotification('warning', 'Could not get GPS coordinates. Using default location.');
+                     showToast('warning', 'Could not get GPS coordinates. Using default location.');
                     currentCoords = { latitude: 18.5597952, longitude: 73.8033664 };
                 }
             }
@@ -217,7 +223,8 @@ function CheckInWithSelfie() {
                 const successMessage = response.message || 
                     (actionType === 'checkin' ? t('MSG.checkinSuccess') || 'Check-in successful' : t('MSG.checkoutSuccess') || 'Check-out successful');
 
-                showNotification('success', successMessage);
+                // showNotification('success', successMessage);
+                 showToast('success', successMessage);
                 
                 if (response.tracker && response.tracker.id) {
                     setTrackerId(response.tracker.id);
@@ -227,7 +234,8 @@ function CheckInWithSelfie() {
                 setTimeout(() => fetchEmployeeStatus(), 500);
             } else {
                 const errorMessage = response?.message || response?.error || t('MSG.operationFailed') || 'Operation failed';
-                showNotification('danger', errorMessage);
+                // showNotification('danger', errorMessage);
+                showToast('danger', errorMessage);
             }
         } catch (error) {
             console.error('Error submitting:', error);
@@ -237,7 +245,8 @@ function CheckInWithSelfie() {
             } else if (error.message) {
                 errorMessage = `${errorMessage}: ${error.message}`;
             }
-            showNotification('danger', errorMessage);
+            // showNotification('danger', errorMessage);
+            showToast('danger', errorMessage);
         } finally {
             setSubmitting(false);
         }
@@ -257,17 +266,20 @@ function CheckInWithSelfie() {
         const { checkIn, checkOut } = status;
         
         if (type === 'checkin' && checkIn) {
-            showNotification('warning', t('MSG.alreadyCheckedIn') || 'You have already checked in today');
+            // showNotification('warning', t('MSG.alreadyCheckedIn') || 'You have already checked in today');
+            showToast('warning', t('MSG.alreadyCheckedIn') || 'You have already checked in today');
             return;
         }
         
         if (type === 'checkout' && !checkIn) {
-            showNotification('warning', t('MSG.checkInFirst') || 'Please check in first before checking out');
+            // showNotification('warning', t('MSG.checkInFirst') || 'Please check in first before checking out');
+             showToast('warning', t('MSG.checkInFirst') || 'Please check in first before checking out');
             return;
         }
         
         if (type === 'checkout' && checkOut) {
-            showNotification('warning', t('MSG.alreadyCheckedOut') || 'You have already checked out today');
+            // showNotification('warning', t('MSG.alreadyCheckedOut') || 'You have already checked out today');
+            showToast('warning', t('MSG.alreadyCheckedOut') || 'You have already checked out today');
             return;
         }
 
@@ -279,7 +291,8 @@ function CheckInWithSelfie() {
         
         getCurrentLocation().catch(error => {
             console.error('Error getting GPS:', error);
-            showNotification('warning', 'Could not get GPS coordinates. Will use default location.');
+            // showNotification('warning', 'Could not get GPS coordinates. Will use default location.');
+             showToast('warning', 'Could not get GPS coordinates. Will use default location.');
         });
     }, [status, getCurrentLocation, showNotification, t]);
 
