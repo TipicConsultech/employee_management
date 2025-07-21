@@ -305,6 +305,7 @@ class EmployeeController extends Controller
     'refferal_number' => 'nullable|string|max:20',
     'user_id' => 'nullable|integer|exists:users,id',
     'working_hours' => 'nullable|numeric',
+    'tolerance'=>['nullable', 'string']
 ])->validate();
 
         // Step 4: Update employee table
@@ -384,7 +385,8 @@ class EmployeeController extends Controller
             'contract_type' => ['nullable', 'in:volume_based,fixed'],
             'attendance_type' => ['nullable', 'in:face_attendance,location,both'],
             'refferal_number' => ['nullable', 'string'],
-            'user_id' => ['nullable', 'string']
+            'user_id' => ['nullable', 'string'],
+            'tolerance'=>['nullable', 'string']
 
         ]);
     }

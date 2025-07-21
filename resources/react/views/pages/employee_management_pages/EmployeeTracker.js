@@ -193,6 +193,7 @@ function EmployeeCheckInOut() {
             setSubmitting(true);
             const gpsString = `${location.latitude},${location.longitude}`;
           const formData = new FormData();
+
           formData.append("check_in_gps",gpsString);
 
             const response = await postFormData('/api/employee-tracker', formData);

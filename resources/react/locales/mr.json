@@ -1274,7 +1274,8 @@
     "paymentCompleted": "पेमेंट यशस्वीरित्या पूर्ण केले",
     "partialPaymentSaved": "अर्धवट पेमेंट यशस्वीरित्या जतन केले",
     "pendingPaymentUpdated": "बाकी पेमेंट रक्कम अपडेट केली",
-    "toleranceRequired":"टोलरन्स निवडणे आवश्यक आहे."
+    "toleranceRequired":"टोलरन्स निवडणे आवश्यक आहे.",
+     "OutsideCompany":"तुम्ही कार्यालयापासून {{distance}} अंतरावर आहात."
 
     }
    }

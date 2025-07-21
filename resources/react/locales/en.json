@@ -1273,7 +1273,8 @@
     "dataValidationError": "Please check all required fields",
     "paymentCompleted": "Payment completed successfully",
     "partialPaymentSaved": "Partial payment saved successfully",
-    "pendingPaymentUpdated": "Pending payment amount updated"
+    "pendingPaymentUpdated": "Pending payment amount updated",
+    "OutsideCompany":"You are {{distance}} away from your office location"
 
 
     }
