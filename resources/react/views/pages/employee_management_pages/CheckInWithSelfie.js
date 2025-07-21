@@ -76,8 +76,8 @@ const toasterElement = (
             }
         } catch (error) {
             console.error('Error fetching employee status:', error);
-            // showNotification('warning', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
-            showToast('warning', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
+           showNotification('warning', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
+            // showToast('warning', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
         } finally {
             setLoading(false);
         }
@@ -188,8 +188,8 @@ const getCurrentLocationFresh = useCallback(() => {
                 setCapturedImage(URL.createObjectURL(blob));
                 const compressedFile = await compressImage(blob);
                 setCompressedImage(compressedFile);
-                // showNotification('success', t('MSG.photoCapturepd') || 'Photo captured successfully');
-                 showToast('success', t('MSG.photoCapturepd') || 'Photo captured successfully');
+                showNotification('success', t('MSG.photoCapturepd') || 'Photo captured successfully');
+                 //showToast('success', t('MSG.photoCapturepd') || 'Photo captured successfully');
             }
         }, 'image/jpeg', 0.8);
     }, [compressImage, showNotification, t]);
@@ -197,8 +197,8 @@ const getCurrentLocationFresh = useCallback(() => {
     // Handle check-in/check-out submission
     const handleSubmit = useCallback(async () => {
         if (!compressedImage) {
-            // showNotification('warning', t('MSG.pleaseUploadImage') || 'Please capture or upload an image');
-            showToast('warning', t('MSG.pleaseUploadImage') || 'Please capture or upload an image');
+             showNotification('warning', t('MSG.pleaseUploadImage') || 'Please capture or upload an image');
+            //showToast('warning', t('MSG.pleaseUploadImage') || 'Please capture or upload an image');
             return;
         }
 
@@ -210,8 +210,8 @@ const getCurrentLocationFresh = useCallback(() => {
                     currentCoords = await getCurrentLocation();
                 } catch (gpsError) {
                     console.error('GPS Error:', gpsError);
-                    // showNotification('warning', 'Could not get GPS coordinates. Using default location.');
-                     showToast('warning', 'Could not get GPS coordinates. Using default location.');
+                    showNotification('warning', 'Could not get GPS coordinates. Using default location.');
+                     //showToast('warning', 'Could not get GPS coordinates. Using default location.');
                     currentCoords = { latitude: 18.5597952, longitude: 73.8033664 };
                 }
             }
@@ -234,8 +234,8 @@ const getCurrentLocationFresh = useCallback(() => {
                 const successMessage = response.message || 
                     (actionType === 'checkin' ? t('MSG.checkinSuccess') || 'Check-in successful' : t('MSG.checkoutSuccess') || 'Check-out successful');
 
-                // showNotification('success', successMessage);
-                 showToast('success', successMessage);
+                showNotification('success', successMessage);
+                 //showToast('success', successMessage);
                 
                 if (response.tracker && response.tracker.id) {
                     setTrackerId(response.tracker.id);
@@ -245,8 +245,8 @@ const getCurrentLocationFresh = useCallback(() => {
                 setTimeout(() => fetchEmployeeStatus(), 500);
             } else {
                 const errorMessage = response?.message || response?.error || t('MSG.operationFailed') || 'Operation failed';
-                // showNotification('danger', errorMessage);
-                showToast('danger', errorMessage);
+                showNotification('danger', errorMessage);
+                //showToast('danger', errorMessage);
             }
         } catch (error) {
             console.error('Error submitting:', error);
@@ -256,8 +256,8 @@ const getCurrentLocationFresh = useCallback(() => {
             } else if (error.message) {
                 errorMessage = `${errorMessage}: ${error.message}`;
             }
-            // showNotification('danger', errorMessage);
-            showToast('danger', errorMessage);
+            showNotification('danger', errorMessage);
+            //showToast('danger', errorMessage);
         } finally {
             setSubmitting(false);
         }
@@ -296,19 +296,19 @@ const openCameraModal = useCallback(async (type) => {
     
     // Validate check-in/check-out conditions
     if (type === 'checkin' && checkIn) {
-        // showNotification('warning', t('MSG.alreadyCheckedIn') || 'Already checked in for today');
-            showToast('warning', t('MSG.alreadyCheckedIn') || 'You have already checked in today');
+        showNotification('warning', t('MSG.alreadyCheckedIn') || 'Already checked in for today');
+            // showToast('warning', t('MSG.alreadyCheckedIn') || 'You have already checked in today');
         return;
     }
     
     if (type === 'checkout' && !checkIn) {
-        // showNotification('warning', t('MSG.checkInFirst') || 'Please check in first');
-             showToast('warning', t('MSG.checkInFirst') || 'Please check in first before checking out');
+        showNotification('warning', t('MSG.checkInFirst') || 'Please check in first');
+            //showToast('warning', t('MSG.checkInFirst') || 'Please check in first before checking out');
         return;
     }
     
     if (type === 'checkout' && checkOut) {
-        // showNotification('warning', t('MSG.alreadyCheckedOut') || 'Already checked out for today');
+       showNotification('warning', t('MSG.alreadyCheckedOut') || 'Already checked out for today');
         return;
     }
 
@@ -385,7 +385,7 @@ const openCameraModal = useCallback(async (type) => {
             }
             
             setLocationLoading(false);
-            showToast('warning', t('MSG.alreadyCheckedOut') || 'You have already checked out today');
+            // showToast('warning', t('MSG.alreadyCheckedOut') || 'You have already checked out today');
             return;
         }
         
