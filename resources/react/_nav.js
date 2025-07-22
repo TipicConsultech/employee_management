@@ -106,12 +106,12 @@ export default function fetchNavItems(t1) {
               to: '/set_coordinates',
               icon: <CIcon icon={cilLocationPin} customClassName="nav-icon" />,
       },
-      {
-              component: CNavItem,
-              name: t("LABELS.bulk_employee_tracker"),
-              to: '/bulk_employee_tracker',
-              icon: <CIcon icon={cilAsteriskCircle} customClassName="nav-icon" />,
-      },
+      // {
+      //         component: CNavItem,
+      //         name: t("LABELS.bulk_employee_tracker"),
+      //         to: '/bulk_employee_tracker',
+      //         icon: <CIcon icon={cilAsteriskCircle} customClassName="nav-icon" />,
+      // },
       {
               component: CNavItem,
               name: t("LABELS.payrollAndAttendanceReport"),

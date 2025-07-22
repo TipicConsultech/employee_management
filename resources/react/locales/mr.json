@@ -419,7 +419,7 @@
   "fri": "शुक्र",
   "sat": "शनि",
   "dailyTallyReport": "दैनिक तपशील रिपोर्ट",
-  "selectDate": "तारीख निवडा",
+  "selectDate": "तारीख",
   "dataAvailable": "डेटा उपलब्ध",
   "selected": "निवडलेले",
   "refreshData": "डेटा रिफ्रेश करा",
@@ -728,7 +728,7 @@
     "noCheckInImageUploaded": "वापरकर्त्याने चेक-इनसाठी प्रतिमा अपलोड केली नाही किंवा सेल्फीसह चेक-आउट करण्याचा अधिकार नाही",
     "noCheckOutImageUploaded": "वापरकर्त्याने चेक-आउटसाठी प्रतिमा अपलोड केली नाही किंवा सेल्फीसह चेक-इन करण्याचा अधिकार नाही",
 
-    "faceAttendance": "चेहरा हजेरी",
+    "faceAttendance": "चेहरा आणि स्थान",
     "location": "स्थान",
     "both": "दोन्ही",
     "hourly": "तासाप्रमाणे",
@@ -871,7 +871,21 @@
     "basicInformation":"प्राथमिक माहिती",
     "additionalInfo":"अधिक माहिती",
     "employeeConfiguration":"कर्मचारी कॉन्फिगरेशन",
-    "wageConfiguration":"वेतन कॉन्फिगरेशन"
+    "wageConfiguration":"वेतन कॉन्फिगरेशन",
+
+    "selectReportParameters": "अहवाल पॅरामीटर्स निवडा",
+      "selectReportType": "अहवाल प्रकार निवडा",
+      "chooseReportType": "अहवाल प्रकार निवडा",
+      "weeklyReport": "साप्ताहिक अहवाल",
+      "monthlyReport": "मासिक अहवाल",
+      "selectMonth": "महिना निवडा",
+      "chooseMonth": "महिना निवडा",
+      
+      "selectYear": "वर्ष निवडा",
+
+      "monthDays": "महिन्याचे दिवस",
+  
+      "monthlyPresentyPayrollChart": "मासिक उपस्थिती आणि वेतन तक्ता"
   },
 
 
@@ -1140,8 +1154,7 @@
     "latitudeRequired": "अक्षांश आवश्यक आहे",
     "latitudeInvalidFormat": "अक्षांश वैध संख्या असावी",
     "latitudeInvalid": "अक्षांश -90 आणि 90 च्या दरम्यान असावा",
-    "toleranceRequired": "सहनशीलता निवड आवश्यक आहे",
-    "customToleranceRequired": "सानुकूल सहनशीलता मूल्य आवश्यक आहे",
+    "customToleranceRequired": "सानुकूल टोलरन्स मूल्य आवश्यक आहे",
     "customToleranceInvalidFormat": "सानुकूल सहनशीलता वैध संख्या असावी",
     "customTolerancePositive": "सानुकूल सहनशीलता 0 पेक्षा जास्त असावी",
     "customToleranceHigh": "सानुकूल सहनशीलता असामान्यपणे जास्त आहे. तुम्हाला खात्री आहे का?",
@@ -1227,7 +1240,7 @@
     "noDocumentTypesFound": "कोणतेही दस्तऐवज प्रकार सापडले नाहीत",
     "documentTypesLoaded": "{{count}} दस्तऐवज प्रकार यशस्वीपणे लोड झाले",
     "failedToFetchDocumentTypes": "दस्तऐवज प्रकार आणण्यात अयशस्वी",
-    "fileSelected": "फाइल \"{fileName}\" यशस्वीपणे निवडली गेली",
+    "fileSelected": "फाइल {{fileName}} यशस्वीपणे निवडली गेली",
     "selectFileToPreview": "कृपया पूर्वावलोकनासाठी फाइल निवडा",
     "previewNotAvailable": "या फाइल प्रकारासाठी पूर्वावलोकन उपलब्ध नाही",
     "selectEmployee": "कृपया एक कर्मचारी निवडा",
@@ -1276,8 +1289,14 @@
     "pendingPaymentUpdated": "बाकी पेमेंट रक्कम अपडेट केली",
     "toleranceRequired":"टोलरन्स निवडणे आवश्यक आहे.",
      "OutsideCompany":"तुम्ही कार्यालयापासून {{distance}} अंतरावर आहात.",
-
-    "selectedFile": "निवडलेली फाईल: {{fileName}}"
-
+    "selectedFile": "निवडलेली फाईल: {{fileName}}",
+      "pleaseSelectMonthAndYear": "कृपया महिना आणि वर्ष निवडा.",
+      "pleaseSelectReportType": "कृपया अहवाल प्रकार निवडा.",
+      "customToleranceInvalid": "सानुकूल सहनशीलता सकारात्मक संख्या असणे आवश्यक आहे.",
+      "employeeFetchFailed": "कर्मचारी डेटा प्राप्त करण्यात अयशस्वी.",
+      "employeeFetchError": "कर्मचारी डेटा प्राप्त करताना त्रुटी आली.",
+      "employeeUpdatedSuccess": "कर्मचारी तपशील यशस्वीरीत्या अद्यतनित झाले.",
+      "employeeUpdateFailed": "कर्मचारी तपशील अद्यतनित करण्यात अयशस्वी.",
+      "updateError": "अद्यतन दरम्यान त्रुटी आली."
     }
    }
