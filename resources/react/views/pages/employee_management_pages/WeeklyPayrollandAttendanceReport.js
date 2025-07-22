@@ -4,8 +4,8 @@ import {
   CRow,
   CCol,
   CCard,
-  CCardBody,
   CCardHeader,
+  CCardBody,
   CForm,
   CFormLabel,
   CFormSelect,
@@ -26,13 +26,11 @@ import { getAPICall, post } from '../../../util/api';
 import { useTranslation } from 'react-i18next';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useToast } from '../../common/toast/ToastContext';
 
 const WeeklyMonthlyPresentyPayroll = () => {
   const { t } = useTranslation("global");
-const { showToast } = useToast();
-
-  const [selectedWeekDay, setSelectedWeekDay] = useState('');
+  const [reportType, setReportType] = useState('');
+  const [selectedWeekDay, setSelectedWeekDay] = useState('monday');
   const [selectedWeek, setSelectedWeek] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -43,9 +41,8 @@ const { showToast } = useToast();
   const [notification, setNotification] = useState({ show: false, type: '', message: '' });
   const [weekDates, setWeekDates] = useState([]);
   const [monthlyWeeks, setMonthlyWeeks] = useState([]);
-  const [hasFetchedData, setHasFetchedData] = useState(false); // Track if data was fetched manually
+  const [hasFetchedData, setHasFetchedData] = useState(false);
   const tableRef = useRef(null);
-  const [reportType, setReportType] = useState('');
 
   const showNotification = useCallback((type, message) => {
     setNotification({ show: true, type, message });
@@ -93,6 +90,7 @@ const { showToast } = useToast();
   }
 
   const formatDate = (dateString) => {
+    if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-GB', {
       day: '2-digit',
@@ -102,19 +100,19 @@ const { showToast } = useToast();
   };
 
   const getWeekDates = (startDate, selectedWeekDay) => {
+    if (!startDate) return [];
     const dates = [];
     const start = new Date(startDate);
-
     for (let i = 0; i < 7; i++) {
       const date = new Date(start);
       date.setDate(start.getDate() + i);
       dates.push(date.toISOString().split('T')[0]);
     }
-
     return dates;
   };
 
   const getWeekFromDate = (dateString, weekStartDay) => {
+    if (!dateString || !weekStartDay) return { start: '', end: '' };
     const selectedDate = new Date(dateString);
     const dayOfWeek = selectedDate.getDay();
 
@@ -144,6 +142,7 @@ const { showToast } = useToast();
   };
 
   const getMonthDates = (monthStart, monthEnd) => {
+    if (!monthStart || !monthEnd) return [];
     const dates = [];
     const start = new Date(monthStart);
     const end = new Date(monthEnd);
@@ -151,11 +150,11 @@ const { showToast } = useToast();
     for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
       dates.push(date.toISOString().split('T')[0]);
     }
-
     return dates;
   };
 
   const getMonthlyWeeks = (monthStart, monthEnd, weekStartDay) => {
+    if (!monthStart || !monthEnd || !weekStartDay) return [];
     const weeks = [];
     const startDate = new Date(monthStart);
     const endDate = new Date(monthEnd);
@@ -201,7 +200,6 @@ const { showToast } = useToast();
 
       currentWeekStart.setDate(currentWeekStart.getDate() + 7);
     }
-
     return weeks;
   };
 
@@ -215,7 +213,7 @@ const { showToast } = useToast();
     setEmployeeData([]);
     setWeekDates([]);
     setMonthlyWeeks([]);
-    setHasFetchedData(false); // Reset fetch status on report type change
+    setHasFetchedData(false);
     setNotification({ show: false, type: '', message: '' });
   };
 
@@ -231,18 +229,13 @@ const { showToast } = useToast();
 
   const handleWeekChange = (e) => {
     const selectedDate = e.target.value;
-
     if (!selectedWeekDay) {
       showNotification('warning', t('MSG.pleaseSelectWeekdayFirst'));
-    //    showToast('warning', t('MSG.pleaseSelectWeekdayFirst'));
       return;
     }
-
     setNotification({ show: false, type: '', message: '' });
     setSelectedWeek(selectedDate);
-
     const weekRange = getWeekFromDate(selectedDate, selectedWeekDay);
-
     setStartDate(weekRange.start);
     setEndDate(weekRange.end);
     setWeekDates(getWeekDates(weekRange.start, selectedWeekDay));
@@ -260,7 +253,7 @@ const { showToast } = useToast();
 
   const handleGetEmployeeData = async () => {
     if (reportType === 'weekly') {
-      if (!startDate || !endDate || !selectedWeekDay) {
+      if (!selectedWeek || !selectedWeekDay) {
         showNotification('warning', t('MSG.pleaseSelectWeekAndDate'));
         return;
       }
@@ -270,8 +263,8 @@ const { showToast } = useToast();
         return;
       }
     } else {
-  showNotification('warning', t('MSG.pleaseSelectReportType'));
-  return;
+      showNotification('warning', t('MSG.pleaseSelectReportType'));
+      return;
     }
 
     setLoading(true);
@@ -279,56 +272,59 @@ const { showToast } = useToast();
 
     try {
       let response;
+      let weekStart, weekEnd;
 
       if (reportType === 'weekly') {
         response = await post('/api/weeklyPresenty', {
           date: selectedWeek,
           week_start_day: selectedWeekDay
         });
-        if (response.data.week_start) {
-          setWeekDates(getWeekDates(response.data.week_start, selectedWeekDay));
-          setStartDate(response.data.week_start);
-          setEndDate(response.data.week_end || getWeekFromDate(selectedWeek, selectedWeekDay).end);
+
+        if (response.data && response.data.week_start && response.data.week_end) {
+          weekStart = response.data.week_start;
+          weekEnd = response.data.week_end;
         } else {
-          throw new Error('No week_start in response');
+          // Fallback to calculated week range if API response lacks week_start or week_end
+          const weekRange = getWeekFromDate(selectedWeek, selectedWeekDay);
+          weekStart = weekRange.start;
+          weekEnd = weekRange.end;
         }
+
+        setWeekDates(getWeekDates(weekStart, selectedWeekDay));
+        setStartDate(weekStart);
+        setEndDate(weekEnd);
       } else {
         response = await post('/api/monthlyPresenty', {
           month: selectedMonth,
-          year: selectedYear,
+          year: selectedYear
         });
 
-        console.log('API Response:', response.data); // Debugging log
-
-        if (response.data.month_start && response.data.month_end) {
-          const monthDates = getMonthDates(response.data.month_start, response.data.month_end);
-          setWeekDates(monthDates);
-          setStartDate(response.data.month_start);
-          setEndDate(response.data.month_end);
-          const weeks = getMonthlyWeeks(response.data.month_start, response.data.month_end, selectedWeekDay);
-          setMonthlyWeeks(weeks);
+        let monthStart, monthEnd;
+        if (response.data && response.data.month_start && response.data.month_end) {
+          monthStart = response.data.month_start;
+          monthEnd = response.data.month_end;
         } else {
-          console.warn('No month_start or month_end in response, using fallback');
+          // Fallback to calculated month range
           const monthIndex = months.findIndex(m => m.value.toLowerCase() === selectedMonth.toLowerCase()) + 1;
-          const monthStart = `${selectedYear}-${monthIndex.toString().padStart(2, '0')}-01`;
+          monthStart = `${selectedYear}-${monthIndex.toString().padStart(2, '0')}-01`;
           const lastDay = new Date(selectedYear, monthIndex, 0);
-          const monthEnd = lastDay.toISOString().split('T')[0];
-          const monthDates = getMonthDates(monthStart, monthEnd);
-          setWeekDates(monthDates);
-          setStartDate(monthStart);
-          setEndDate(monthEnd);
-          const weeks = getMonthlyWeeks(monthStart, monthEnd, selectedWeekDay);
-          setMonthlyWeeks(weeks);
+          monthEnd = lastDay.toISOString().split('T')[0];
         }
+
+        const monthDates = getMonthDates(monthStart, monthEnd);
+        setWeekDates(monthDates);
+        setStartDate(monthStart);
+        setEndDate(monthEnd);
+        const weeks = getMonthlyWeeks(monthStart, monthEnd, selectedWeekDay);
+        setMonthlyWeeks(weeks);
       }
 
       const employees = response.data.employees || response.data;
       if (Array.isArray(employees) && employees.length > 0) {
         setEmployeeData(employees);
-        setHasFetchedData(true); // Mark that data has been fetched manually
+        setHasFetchedData(true);
         showNotification('success', t('MSG.employeeDataFetchedSuccess'));
       } else {
-        console.warn('No valid employee data in response:', employees);
         setEmployeeData([]);
         showNotification('warning', t('MSG.noEmployeeDataAvailable'));
       }
@@ -342,16 +338,15 @@ const { showToast } = useToast();
     }
   };
 
-  // Auto-fetch data when relevant state changes after initial manual fetch
   useEffect(() => {
     if (hasFetchedData) {
-      if (reportType === 'weekly' && selectedWeek && selectedWeekDay && startDate && endDate) {
+      if (reportType === 'weekly' && selectedWeek && selectedWeekDay) {
         handleGetEmployeeData();
       } else if (reportType === 'monthly' && selectedMonth && selectedYear) {
         handleGetEmployeeData();
       }
     }
-  }, [reportType, selectedWeek, selectedWeekDay, startDate, endDate, selectedMonth, selectedYear, hasFetchedData]);
+  }, [reportType, selectedWeek, selectedWeekDay, selectedMonth, selectedYear, hasFetchedData]);
 
   const calculateTotalDays = (attendance) => {
     if (!attendance) return 0;
@@ -371,20 +366,13 @@ const { showToast } = useToast();
       const dayOfWeek = new Date(date).getDay();
       return dayOfWeek === 0 && data?.status === 'P';
     });
-
-    if (sundayAttendance) {
-      return employee.wage_hour || 0;
-    }
-    return 0;
+    return sundayAttendance ? (employee.wage_hour || 0) : 0;
   };
 
   const calculateHalfDayRate = (employee) => {
     if (!employee?.attendance) return 0;
     const halfDayAttendance = Object.values(employee.attendance).find(day => day?.status === 'H');
-    if (halfDayAttendance) {
-      return employee.half_day_rate || (employee.wage_hour / 2) || 0;
-    }
-    return 0;
+    return halfDayAttendance ? (employee.half_day_rate || (employee.wage_hour / 2) || 0) : 0;
   };
 
   const calculateTotalAmount = (employee) => {
@@ -395,8 +383,8 @@ const { showToast } = useToast();
     const halfDayRate = calculateHalfDayRate(employee);
 
     return (
-      (totalDays * (employee.wage_hour || 0)) +
-      (overtimeHours * (employee.wage_overtime || 0)) +
+      (totalDays * employee.wage_hour || 0) +
+      (overtimeHours * employee.wage_overtime || 0) +
       holidayRate +
       halfDayRate
     );
@@ -480,6 +468,7 @@ const { showToast } = useToast();
       </div>
     );
   }
+
   return (
     <CContainer fluid>
       <CRow className="mb-4">
@@ -647,7 +636,7 @@ const { showToast } = useToast();
                           {t('LABELS.employeeName')}
                         </CTableHeaderCell>
                         <CTableHeaderCell colSpan={weekDates.length} className="text-center">
-                          {reportType === 'weekly' ? t('LABELS.weekDays') : t('LABELS.monthDays')}
+                          {(reportType === 'weekly' ? t('LABELS.weekDays') : t('LABELS.monthDays'))}
                         </CTableHeaderCell>
                         <CTableHeaderCell rowSpan="2" className="text-center align-middle">
                           {t('LABELS.totalDays')}
@@ -751,7 +740,7 @@ const { showToast } = useToast();
         </CRow>
       )}
     </CContainer>
-);
+  );
 };
 
 export default WeeklyMonthlyPresentyPayroll;

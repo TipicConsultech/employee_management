@@ -171,11 +171,7 @@ const { showToast } = useToast();
                     showToast('info', t('MSG.noEmployeesFound'));
                 } else {
                     handleAPIResponse(response, t('MSG.employeesLoaded', { count: employeesData.length }));
-                                     showToast(
-  response,
-  'success',
-  t('MSG.employeesLoaded', { count: employeesData.length })
-);
+                    showToast('success',t('MSG.employeesLoaded', { count: employeesData.length }));
                 }
             } else {
                 handleAPIResponse(response, t('MSG.failedToFetchEmployees'));
@@ -211,11 +207,7 @@ const { showToast } = useToast();
                     }));
                     setDocumentUploads(documentRows);
                    handleAPIResponse(response, t('MSG.documentTypesLoaded', { count: documentTypesData.length }));
-                   showToast(
-  response,
-  'success',
-  t('MSG.documentTypesLoaded', { count: documentTypesData.length })
-);
+                   showToast('success',t('MSG.documentTypesLoaded', { count: documentTypesData.length }));
 
                 }
             } else {

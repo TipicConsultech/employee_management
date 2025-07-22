@@ -921,7 +921,8 @@
       "employeeRegistrationFailed": "Failed to register employee.",
       "registrationError": "An error occurred during registration.",
       "confirmEmployeeCreationMessage": "Are you sure you want to create this employee?",
-      "confirmEmployeeUpdateMessage": "Are you sure you want to update this employee's details?"
+      "confirmEmployeeUpdateMessage": "Are you sure you want to update this employee's details?",
+      "paymentMethodRequired": "Payment method is required"
     },
 
 
@@ -1324,10 +1325,10 @@
     "OutsideCompany":"You are {{distance}} away from your office location",
 
     "selectedFile": "Selected file: {{fileName}}",
-  
+
       "pleaseSelectMonthAndYear": "Please select a month and year.",
       "pleaseSelectReportType": "Please select a report type."
-     
+
 
     }
    }
