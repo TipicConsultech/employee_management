@@ -98,7 +98,7 @@ function WeeklyView({ id, employee }) {
       end_date: endDate,
       employee_id: parseInt(id, 10),
       payed_amount: workSummary.payed_amount,
-      salary_amount,
+      salary_amount:workSummary.salary_amount,
       payment_type: workSummary.payment_type,
     };
 

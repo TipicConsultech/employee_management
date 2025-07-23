@@ -63,6 +63,7 @@ const WorkSummaryPayment = ({
         ...prev,
         payed_amount: positiveValue,
         pending_payment: pending >= 0 ? pending : 0,
+         salary_amount:totalCalculatedPayment
       }));
     } else {
       setWorkSummary((prev) => ({
@@ -88,6 +89,7 @@ const WorkSummaryPayment = ({
   // Handle submit with validation
   const handleSubmit = async () => {
     
+    console.log(workSummary);
     
     if (!workSummary.payment_type) {
       setPaymentTypeError(t('LABELS.paymentMethodRequired'));
