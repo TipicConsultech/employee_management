@@ -53,8 +53,8 @@ function StoreCoordinates() {
     const [formData, setFormData] = useState({
         longitude: '',
         latitude: '',
-        toleranceType: '',
-        toleranceValue: '',
+        toleranceType: 'NO_LIMIT',
+        toleranceValue: 999,
         customTolerance: ''
     });
     const [errors, setErrors] = useState({});
@@ -75,34 +75,6 @@ function StoreCoordinates() {
 
     // Enhanced tolerance options with meter-based options
     const toleranceOptions = useMemo(() => [
-        {
-            value: '',
-            label: t('LABELS.selectTolerance') || 'Select Tolerance',
-            type: null
-        },
-        {
-            value: 'preset_25',
-            label: '25 meters',
-            type: TOLERANCE_TYPES.METERS,
-            meters: 25
-        },
-        {
-            value: 'preset_50',
-            label: '50 meters',
-            type: TOLERANCE_TYPES.METERS,
-            meters: 50
-        },
-        {
-            value: 'preset_100',
-            label: '100 meters',
-            type: TOLERANCE_TYPES.METERS,
-            meters: 100
-        },
-        {
-            value: 'custom',
-            label: t('LABELS.customTolerance') || 'Custom Tolerance',
-            type: TOLERANCE_TYPES.CUSTOM_METERS
-        },
         {
             value: 'no_limit',
             label: t('LABELS.noLimit') || 'No Limit',
@@ -180,22 +152,22 @@ function StoreCoordinates() {
         }
 
         // Tolerance validation
-        if (!formData.toleranceType) {
-            newErrors.toleranceType = t('MSG.toleranceRequired') || 'Tolerance selection is required';
-        } else if (formData.toleranceType === 'custom') {
-            if (!formData.customTolerance.trim()) {
-                newErrors.customTolerance = t('MSG.customToleranceRequired') || 'Custom tolerance value is required';
-            } else {
-                const customTol = parseFloat(formData.customTolerance);
-                if (isNaN(customTol)) {
-                    newErrors.customTolerance = t('MSG.customToleranceInvalidFormat') || 'Custom tolerance must be a valid number';
-                } else if (customTol <= 0) {
-                    newErrors.customTolerance = t('MSG.customTolerancePositive') || 'Custom tolerance must be greater than 0';
-                } else if (customTol > 100000) {
-                    newErrors.customTolerance = t('MSG.customToleranceHigh') || 'Custom tolerance seems unusually high. Are you sure?';
-                }
-            }
-        }
+        // if (!formData.toleranceType) {
+        //     newErrors.toleranceType = t('MSG.toleranceRequired') || 'Tolerance selection is required';
+        // } else if (formData.toleranceType === 'custom') {
+        //     if (!formData.customTolerance.trim()) {
+        //         newErrors.customTolerance = t('MSG.customToleranceRequired') || 'Custom tolerance value is required';
+        //     } else {
+        //         const customTol = parseFloat(formData.customTolerance);
+        //         if (isNaN(customTol)) {
+        //             newErrors.customTolerance = t('MSG.customToleranceInvalidFormat') || 'Custom tolerance must be a valid number';
+        //         } else if (customTol <= 0) {
+        //             newErrors.customTolerance = t('MSG.customTolerancePositive') || 'Custom tolerance must be greater than 0';
+        //         } else if (customTol > 100000) {
+        //             newErrors.customTolerance = t('MSG.customToleranceHigh') || 'Custom tolerance seems unusually high. Are you sure?';
+        //         }
+        //     }
+        // }
 
         return newErrors;
     }, [formData, t]);
@@ -243,11 +215,11 @@ function StoreCoordinates() {
             return;
         }
 
-        const finalToleranceValue = getFinalToleranceValue();
-        if (finalToleranceValue === null) {
-            showToast('danger', t('MSG.invalidTolerance') || 'Invalid tolerance configuration', false);
-            return;
-        }
+        // const finalToleranceValue = getFinalToleranceValue();
+        // if (finalToleranceValue === null) {
+        //     showToast('danger', t('MSG.invalidTolerance') || 'Invalid tolerance configuration', false);
+        //     return;
+        // }
 
         try {
             setLoading(true);
@@ -255,7 +227,7 @@ function StoreCoordinates() {
             const payload = {
                 longitude: parseFloat(formData.longitude),
                 latitude: parseFloat(formData.latitude),
-                tolerance: finalToleranceValue
+                tolerance: 999
             };
 
             const response = await post('/api/storeCordinates', payload);
@@ -452,7 +424,7 @@ function StoreCoordinates() {
                                 </CCol>
                             </CRow>
 
-                            <CRow className="mb-3">
+                            {/* <CRow className="mb-3">
                                 <CCol md={selectedToleranceOption?.type === TOLERANCE_TYPES.CUSTOM_METERS ? 6 : 12}>
                                     <CFormLabel htmlFor="toleranceType">
                                         {t('LABELS.tolerance') || 'Tolerance'} <span className="text-danger">*</span>
@@ -503,10 +475,10 @@ function StoreCoordinates() {
                                         </small>
                                     </CCol>
                                 )}
-                            </CRow>
+                            </CRow> */}
 
                             {/* Tolerance Preview */}
-                            {selectedToleranceOption && getFinalToleranceValue() !== null && (
+                            {/* {selectedToleranceOption && getFinalToleranceValue() !== null && (
                                 <CRow className="mb-3">
                                     <CCol>
                                         <div className="p-3 bg-light rounded">
@@ -526,7 +498,7 @@ function StoreCoordinates() {
                                         </div>
                                     </CCol>
                                 </CRow>
-                            )}
+                            )} */}
 
                             <CRow>
                                 <CCol className="d-flex gap-2">

@@ -13,7 +13,7 @@ import { useToast } from '../../common/toast/ToastContext';
 const NOTIFICATION_TIMEOUT = 3000;
 const INITIAL_FORM_DATA = {
   name: '', gender: '', payment_type: '', contract_type: '', work_type: '', overtime_type: '',
-  wage_hour: '', wage_overtime: '', credit: '0', debit: '0', half_day_payment: '', holiday_payment: '',
+  wage_hour: '', wage_overtime: '', credit: '', debit: '', half_day_payment: '', holiday_payment: '',
   adhaar_number: '', mobile: '', refferal_by: '', referral_by_number: '', is_login: false,
   password: '', re_enter_password: '', email: '', attendance_type: '', tolerance: ''
 };
@@ -69,7 +69,7 @@ const EmployeeRegistrationForm = () => {
     { value: '50', label: '50 meters' },
     { value: '100', label: '100 meters' },
     { value: 'custom', label: t('LABELS.customTolerance') || 'Custom Tolerance' },
-    { value: 'no_limit', label: t('LABELS.noLimit') || 'No Limit' }
+    { value: '111208680', label: t('LABELS.noLimit') || 'No Limit' }
   ];
 
   const convertedDegree = () => {
@@ -155,7 +155,7 @@ const EmployeeRegistrationForm = () => {
       ...prev, work_type: value, payment_type: value === 'fulltime' ? prev.payment_type : '',
       contract_type: value === 'contract' ? prev.contract_type : '', overtime_type: value === 'fulltime' ? prev.overtime_type : '',
       wage_hour: value === 'contract' ? '' : prev.wage_hour, wage_overtime: value === 'contract' ? '' : prev.wage_overtime,
-      credit: value === 'contract' ? '0' : prev.credit, debit: value === 'contract' ? '0' : prev.debit
+      credit: value === 'contract' ? '' : prev.credit, debit: value === 'contract' ? '' : prev.debit
     }));
     setTouched(prev => ({ ...prev, work_type: true }));
   }, []);
@@ -175,9 +175,11 @@ const EmployeeRegistrationForm = () => {
     if (type === 'custom') {
       const meters = parseFloat(customValue);
       toleranceValue = isNaN(meters) || meters <= 0 ? '' : metersToDecimalDegrees(meters);
-    } else if (type === 'no_limit') {
-      toleranceValue = 'no_limit';
-    } else if (type) {
+    }
+    //  else if (type === 'no_limit') {
+    //   toleranceValue = '999'; 
+    // } 
+    else{
       const meters = parseFloat(type);
       toleranceValue = isNaN(meters) ? '' : metersToDecimalDegrees(meters);
     }
@@ -234,6 +236,8 @@ const EmployeeRegistrationForm = () => {
       if (isFullTimeWork) {
         payload.wage_hour = payload.wage_hour || '0';
         payload.wage_overtime = payload.wage_overtime || '0';
+        payload.credit = payload.credit || '0';
+        payload.debit = payload.debit || '0';
       }
       payload.half_day_payment = payload.half_day_payment || '0';
       payload.holiday_payment = payload.holiday_payment || '0';
@@ -242,14 +246,6 @@ const EmployeeRegistrationForm = () => {
       }
 
       const response = await post('/api/employees', payload);
-      // showNotification(
-      //   response.message === "Email already taken" || response.message === "Mobile number already taken" || response.message === "Aadhaar number already taken" 
-      //     ? 'danger' 
-      //     : response && response.employee?.id 
-      //       ? 'success' 
-      //       : 'danger',
-      //   response.message || (response && response.employee?.id ? t('MSG.employeeRegisteredSuccess') : t('MSG.employeeRegistrationFailed'))
-      // );
       showToast(
         response.message === "Email already taken" || response.message === "Mobile number already taken" || response.message === "Aadhaar number already taken" 
           ? 'danger' 
@@ -264,12 +260,11 @@ const EmployeeRegistrationForm = () => {
       }
     } catch (error) {
       console.error('Error registering employee:', error);
-      // showNotification('danger', error.message || t('MSG.registrationError'));
       showToast('danger', error.message || t('MSG.registrationError'));
     } finally {
       setSubmitting(false);
     }
-  }, [formData, validateForm, showNotification, showToast, resetForm, t, isFullTimeWork, scrollToTop]);
+  }, [formData, validateForm, showToast, resetForm, t, isFullTimeWork, scrollToTop]);
 
   const isFormValid = useMemo(() => {
     const base = formData.name.trim() && formData.gender && formData.work_type && formData.adhaar_number && formData.mobile;
@@ -598,7 +593,7 @@ const EmployeeRegistrationForm = () => {
                         <CFormLabel className="fw-semibold small">{t('LABELS.credit')}</CFormLabel>
                         <CFormInput
                           type="text"
-                          placeholder="0"
+                          placeholder={t('LABELS.priceZero')}
                           value={formData.credit}
                           name="credit"
                           onChange={e => handleNumberInput('credit', e.target.value)}
@@ -613,7 +608,7 @@ const EmployeeRegistrationForm = () => {
                         <CFormLabel className="fw-semibold small">{t('LABELS.debit')}</CFormLabel>
                         <CFormInput
                           type="text"
-                          placeholder="0"
+                          placeholder={t('LABELS.priceZero')}
                           value={formData.debit}
                           name="debit"
                           onChange={e => handleNumberInput('debit', e.target.value)}

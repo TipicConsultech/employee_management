@@ -55,7 +55,7 @@ Route::middleware('auth:sanctum')->post('/employeeCredit', [CommonController::cl
 Route::middleware('auth:sanctum')->get('/isface-attendance', [CompanyInfoController::class, 'isFaceAttendance']);
 Route::middleware('auth:sanctum')->post('/contractSummary', [EmployeeTrackerController::class, 'contractSummary']);
 Route::middleware('auth:sanctum')->post('/weeklyPresenty', [EmployeeTrackerController::class, 'weeklyPresenty']);
-Route::post('/monthlyPresenty', [EmployeeTrackerController::class, 'monthlyPresenty']);
+Route::middleware('auth:sanctum')->post('/monthlyPresenty', [EmployeeTrackerController::class, 'monthlyPresenty']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
     /* ---------- EmployeeController APIs---------- */

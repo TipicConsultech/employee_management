@@ -35,7 +35,7 @@ import { useToast } from '../../common/toast/ToastContext';
 
 const CreditSalaryScreen = () => {
   const { t } = useTranslation("global");
-const { showToast } = useToast();
+  const { showToast } = useToast();
   // State management
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -62,62 +62,64 @@ const { showToast } = useToast();
   const validateForm = useCallback(() => {
     const errors = {};
     let isValid = true;
+    let errorMessage = '';
 
+    // Step 1: Validate selectedEmployee
     if (!formData.selectedEmployee) {
       errors.selectedEmployee = true;
       isValid = false;
+      errorMessage = t('MSG.pleaseSelectEmployee') || 'Please select an employee';
     }
 
-    if (!formData.creditAmount) {
+    // Step 2: Validate creditAmount only if selectedEmployee is valid
+    if (isValid && !formData.creditAmount) {
       errors.creditAmount = true;
       isValid = false;
-    } else {
+      errorMessage = t('MSG.pleaseEnterCreditAmount') || 'Please enter credit amount';
+    } else if (isValid) {
       const amount = parseFloat(formData.creditAmount);
-      if (isNaN(amount) || amount <= 0) {
+      if (isNaN(amount)) {
         errors.creditAmount = true;
         isValid = false;
+        errorMessage = t('MSG.pleaseEnterValidNumber') || 'Please enter a valid number';
+      } else if (amount <= 0) {
+        errors.creditAmount = true;
+        isValid = false;
+        errorMessage = t('MSG.amountMustBeGreaterThanZero') || 'Amount must be greater than zero';
       }
     }
 
     setValidationErrors(errors);
 
     if (!isValid) {
-      if (!formData.selectedEmployee) {
-        // showNotification('warning', t('MSG.pleaseSelectEmployee') || 'Please select an employee');
-         showToast('warning', t('MSG.pleaseSelectEmployee') || 'Please select an employee');
-      } else if (!formData.creditAmount) {
-        // showNotification('warning', t('MSG.pleaseEnterCreditAmount') || 'Please enter credit amount');
-        showToast('warning', t('MSG.pleaseEnterCreditAmount') || 'Please enter credit amount');
-      } else {
-        const amount = parseFloat(formData.creditAmount);
-        if (isNaN(amount)) {
-          // showNotification('warning', t('MSG.pleaseEnterValidNumber') || 'Please enter a valid number');
-          showToast('warning', t('MSG.pleaseEnterValidNumber') || 'Please enter a valid number');
-        } else if (amount <= 0) {
-          // showNotification('warning', t('MSG.amountMustBeGreaterThanZero') || 'Amount must be greater than zero');
-           showToast('warning', t('MSG.amountMustBeGreaterThanZero') || 'Amount must be greater than zero');
-        }
-      }
+      showToast('warning', errorMessage);
     }
 
     return isValid;
-  }, [formData, showNotification, t]);
+  }, [formData, showToast, t]);
 
   const fetchEmployees = useCallback(async () => {
     try {
       console.log('Fetching employees...');
-      const response = await getAPICall('/api/employees');
+      // Add timeout to API call (10 seconds)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      const response = await getAPICall('/api/employees', { signal: controller.signal });
+      clearTimeout(timeoutId);
+
       console.log('API Response:', response);
 
       let employeeData = [];
-      if (response && response.success && response.data) {
-        employeeData = Array.isArray(response.data) ? response.data : [];
-      } else if (response && Array.isArray(response)) {
+      // Simplified response parsing
+      if (response && Array.isArray(response)) {
         employeeData = response;
-      } else if (response && response.employees) {
-        employeeData = Array.isArray(response.employees) ? response.employees : [];
-      } else if (response && response.data && Array.isArray(response.data)) {
+      } else if (response && response.success && Array.isArray(response.data)) {
         employeeData = response.data;
+      } else if (response && Array.isArray(response.employees)) {
+        employeeData = response.employees;
+      } else {
+        throw new Error('Unexpected API response format');
       }
 
       console.log('Processed employee data:', employeeData);
@@ -134,36 +136,36 @@ const { showToast } = useToast();
       } else {
         setEmployees([]);
         if (employeeData.length === 0) {
-          // showNotification('info', t('MSG.noEmployeesFound') || 'No employees found');
-           showToast('info', t('MSG.noEmployeesFound') || 'No employees found');
+          showToast('info', t('MSG.noEmployeesFound') || 'No employees found');
         } else {
-          // showNotification('info', t('MSG.noActiveEmployeesFound') || 'No active employees found');
           showToast('info', t('MSG.noActiveEmployeesFound') || 'No active employees found');
         }
       }
     } catch (err) {
       console.error('Error fetching employees:', err);
       setEmployees([]);
-      setError(err.message);
-      // showNotification('danger', `${t('MSG.errorConnectingToServer') || 'Error connecting to server'}: ${err.message}`);
-      showToast('danger', `${t('MSG.errorConnectingToServer') || 'Error connecting to server'}: ${err.message}`);
+      setError(err.message || 'Failed to fetch employees');
+      if (err.name === 'AbortError') {
+        showToast('danger', t('MSG.requestTimedOut') || 'Request timed out');
+      } else {
+        showToast('danger', `${t('MSG.errorConnectingToServer') || 'Error connecting to server'}: ${err.message}`);
+      }
     }
-  }, [showNotification, t]);
+  }, [showToast, t]);
 
   const fetchInitialData = useCallback(async () => {
     try {
-      setLoading(true);
+      // setLoading(true);
       setError(null);
       await fetchEmployees();
     } catch (err) {
       console.error('Error during initialization:', err);
-      setError(err.message);
-      // showNotification('danger', `${t('MSG.errorInitializingData') || 'Error initializing data'}: ${err.message}`);
+      setError(err.message || 'Initialization failed');
       showToast('danger', `${t('MSG.errorInitializingData') || 'Error initializing data'}: ${err.message}`);
     } finally {
       setLoading(false);
     }
-  }, [fetchEmployees, showNotification, t]);
+  }, [fetchEmployees, showToast, t]);
 
   // Fetch data on component mount
   useEffect(() => {
@@ -175,9 +177,12 @@ const { showToast } = useToast();
       ...prev,
       [field]: value
     }));
-    // Trigger validation on input change
-    validateForm();
-  }, [validateForm]);
+    // Clear validation errors for the changed field
+    setValidationErrors(prev => ({
+      ...prev,
+      [field]: false
+    }));
+  }, []);
 
   const resetForm = useCallback(() => {
     setFormData({
@@ -197,7 +202,6 @@ const { showToast } = useToast();
       const selectedEmployee = employees.find(emp => emp.id.toString() === formData.selectedEmployee);
 
       if (!selectedEmployee) {
-        // showNotification('warning', t('MSG.selectedEmployeeNotFound') || 'Selected employee not found');
         showToast('warning', t('MSG.selectedEmployeeNotFound') || 'Selected employee not found');
         return;
       }
@@ -210,29 +214,32 @@ const { showToast } = useToast();
 
       console.log('Submitting credit salary data:', data);
 
-      const response = await post('/api/employeeCredit', data);
+      // Add timeout to POST request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      const response = await post('/api/employeeCredit', data, { signal: controller.signal });
+      clearTimeout(timeoutId);
 
       if (response && response.id) {
-        // showNotification('success', t('MSG.advanceCreditedSuccess') || 'Advance Payment credited successfully');
-         showToast('success', t('MSG.advanceCreditedSuccess') || 'Advance Payment credited successfully')
+        showToast('success', t('MSG.advanceCreditedSuccess') || 'Advance Payment credited successfully');
         resetForm();
       } else {
-        // showNotification('warning', response?.message || t('MSG.failedToCreditSalary') || 'Failed to credit salary');
-         showToast('warning', response?.message || t('MSG.failedToCreditSalary') || 'Failed to credit salary');
+        showToast('warning', response?.message || t('MSG.failedToCreditSalary') || 'Failed to credit salary');
       }
     } catch (err) {
       console.error('Error crediting salary:', err);
-      if (err.message && err.message.includes('422')) {
-        // showNotification('warning', t('MSG.invalidInputData') || 'Invalid input data');
-         showToast('warning', t('MSG.invalidInputData') || 'Invalid input data');
+      if (err.name === 'AbortError') {
+        showToast('warning', t('MSG.requestTimedOut') || 'Request timed out');
+      } else if (err.message && err.message.includes('422')) {
+        showToast('warning', t('MSG.invalidInputData') || 'Invalid input data');
       } else {
-        // showNotification('warning', `${t('MSG.error') || 'Error'}: ${err.message}`);
         showToast('warning', `${t('MSG.error') || 'Error'}: ${err.message}`);
       }
     } finally {
       setSubmitting(false);
     }
-  }, [formData, employees, validateForm, showNotification, resetForm, t]);
+  }, [formData, employees, validateForm, showToast, resetForm, t]);
 
   // Loading state
   if (loading) {
@@ -241,6 +248,10 @@ const { showToast } = useToast();
         <div className="text-center">
           <CSpinner color="primary" className="mb-3" />
           <p className="text-muted">{t('LABELS.loadingEmployees') || 'Loading employees...'}</p>
+          <CButton color="primary" variant="outline" onClick={fetchInitialData} className="mt-3">
+            <CIcon icon={cilReload} className="me-2" />
+            {t('LABELS.retry') || 'Retry'}
+          </CButton>
         </div>
       </CContainer>
     );

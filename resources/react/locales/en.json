@@ -382,6 +382,7 @@
   "searchSelectProduct": "Search or select product",
   "enterQuantity": "Enter Quantity",
   "error": "Error",
+   "noPaymentData":"No Payment Data",
   "createdQuantity": "Newly Created Quantity",
   "previousQuantity": "Previous Quantity",
   "updatedQuantity": "Updated Total Quantity",
@@ -740,6 +741,9 @@
     "both": "Both",
     "hourly": "Hourly",
     "fixed": "Fixed",
+    "paymentMethodRequired":"Payment Method Required",
+    "companyLocationNotConfigured ":"Company Location Not Configured",
+
 
     "volumeBasedContract": "Volume Based Contract",
     "fixedContract": "Fixed Contract",

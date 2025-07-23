@@ -14,7 +14,7 @@ import { put, getAPICall } from '../../../util/api';
 const NOTIFICATION_TIMEOUT = 3000;
 const INITIAL_FORM_DATA = {
   name: '', gender: '', payment_type: '', contract_type: '', work_type: '', overtime_type: '',
-  wage_hour: '', wage_overtime: '', credit: '0', debit: '0', half_day_payment: '',
+  wage_hour: '', wage_overtime: '', credit: '', debit: '', half_day_payment: '',
   holiday_payment: '', adhaar_number: '', mobile: '', referral_by: '', referral_by_number: '',
   is_login: false, email: '', attendance_type: '', tolerance: ''
 };
@@ -50,7 +50,7 @@ const EmployeeEditForm = () => {
     { value: '50', label: '50 meters' },
     { value: '100', label: '100 meters' },
     { value: 'custom', label: t('LABELS.customTolerance') || 'Custom Tolerance' },
-    { value: 'no_limit', label: t('LABELS.noLimit') || 'No Limit' }
+    { value: '111208680', label: t('LABELS.noLimit') || 'No Limit' }
   ];
 
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
@@ -166,7 +166,7 @@ const EmployeeEditForm = () => {
       ...prev, work_type: value, payment_type: value === 'fulltime' ? prev.payment_type : '',
       contract_type: value === 'contract' ? prev.contract_type : '', overtime_type: value === 'fulltime' ? prev.overtime_type : '',
       wage_hour: value === 'contract' ? '' : prev.wage_hour, wage_overtime: value === 'contract' ? '' : prev.wage_overtime,
-      credit: value === 'contract' ? '0' : prev.credit, debit: value === 'contract' ? '0' : prev.debit,
+      credit: value === 'contract' ? '' : prev.credit, debit: value === 'contract' ? '' : prev.debit,
       half_day_payment: value === 'contract' ? '' : prev.half_day_payment, holiday_payment: value === 'contract' ? '' : prev.holiday_payment
     }));
     setTouched(prev => ({ ...prev, work_type: true }));
@@ -189,9 +189,11 @@ const EmployeeEditForm = () => {
     if (type === 'custom') {
       const meters = parseFloat(customValue);
       toleranceValue = isNaN(meters) || meters <= 0 ? '' : metersToDecimalDegrees(meters);
-    } else if (type === 'no_limit') {
-      toleranceValue = 'no_limit';
-    } else if (type) {
+    } 
+    // else if (type === 'no_limit') {
+    //   toleranceValue = '999';
+    // }
+     else{
       const meters = parseFloat(type);
       toleranceValue = isNaN(meters) ? '' : metersToDecimalDegrees(meters);
     }
@@ -222,7 +224,7 @@ const EmployeeEditForm = () => {
             toleranceType = 'no_limit';
           } else if (tolerance) {
             const meters = (parseFloat(tolerance) * 111320).toFixed(0);
-            if (['25', '50', '100'].includes(meters)) {
+            if (['25', '50', '100','111208680'].includes(meters)) {
               toleranceType = meters;
             } else {
               toleranceType = 'custom';
@@ -239,8 +241,8 @@ const EmployeeEditForm = () => {
             overtime_type: response.overtime_type || '',
             wage_hour: response.wage_hour ? String(response.wage_hour) : '',
             wage_overtime: response.wage_overtime ? String(response.wage_overtime) : '',
-            credit: response.credit ? String(response.credit) : '0',
-            debit: response.debit ? String(response.debit) : '0',
+            credit: response.credit ? String(response.credit) : '',
+            debit: response.debit ? String(response.debit) : '',
             half_day_payment: response.half_day_rate ? String(response.half_day_rate) : '',
             holiday_payment: response.holiday_rate ? String(response.holiday_rate) : '',
             adhaar_number: response.adhaar_number || '',
@@ -316,6 +318,8 @@ const EmployeeEditForm = () => {
         half_day_rate: formData.half_day_payment || '0',
         holiday_rate: formData.holiday_payment || '0',
         wage_overtime: formData.wage_overtime || '0',
+        credit: formData.credit || '0',
+        debit: formData.debit || '0',
         refferal_by: formData.referral_by,
         refferal_number: formData.referral_by_number,
         isActive: formData.is_login,
@@ -664,7 +668,7 @@ const EmployeeEditForm = () => {
                         <CFormLabel className="fw-semibold small">{t('LABELS.credit')}</CFormLabel>
                         <CFormInput
                           type="text"
-                          placeholder="0"
+                          placeholder={t('LABELS.priceZero')}
                           value={formData.credit}
                           name="credit"
                           onChange={e => handleNumberInput('credit', e.target.value)}
@@ -679,7 +683,7 @@ const EmployeeEditForm = () => {
                         <CFormLabel className="fw-semibold small">{t('LABELS.debit')}</CFormLabel>
                         <CFormInput
                           type="text"
-                          placeholder="0"
+                          placeholder={t('LABELS.priceZero')}
                           value={formData.debit}
                           name="debit"
                           onChange={e => handleNumberInput('debit', e.target.value)}
@@ -716,6 +720,33 @@ const EmployeeEditForm = () => {
                     </CCardHeader>
                     <CCardBody>
                       <CRow className="g-2">
+
+                           <CCol xs={12} md={4}>
+                          {faceAttendanceEnabled && !loadingFaceAttendance && (
+                            <>
+                              <CFormLabel className="fw-semibold small">{t('LABELS.attendanceType')}<span className="text-danger">*</span></CFormLabel>
+                              <CFormSelect
+                                value={formData.attendance_type}
+                                name="attendance_type"
+                                onChange={e => handleInputChange('attendance_type', e.target.value)}
+                                onBlur={() => setTouched(prev => ({ ...prev, attendance_type: true }))}
+                                disabled={submitting}
+                              >
+                                <option value="">{t('LABELS.selectAttendanceType')}</option>
+                                {ATTENDANCE_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                              </CFormSelect>
+                              {(touched.attendance_type || formSubmitted) && errors.attendance_type && (
+                                <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.attendance_type}</div>
+                              )}
+                            </>
+                          )}
+                          {loadingFaceAttendance && (
+                            <div className="d-flex align-items-center">
+                              <CSpinner size="sm" className="me-2" />
+                              <span className="text-muted small">Loading...</span>
+                            </div>
+                          )}
+                        </CCol>
                     
                         <CCol xs={12} md={4}>
                           <CFormLabel htmlFor="toleranceType" className="fw-semibold small">
@@ -770,39 +801,14 @@ const EmployeeEditForm = () => {
                             </>
                           )}
                         </CCol>
-                        <CCol xs={12} md={4}>
+                     
+                      </CRow>
+                       <CRow className="g-2">
+                              <CCol xs={12} md={4}>
                           {(convertedDegree()&& toleranceType === 'custom' )&& (
                             <div className="mt-2 p-2 bg-light rounded">
                               <strong>{t('LABELS.tolerancePreview') || 'Tolerance Preview'}:</strong>{' '}
                               ≈ {customTolerance} meters ≈ <code>{convertedDegree()}°</code> latitude degrees
-                            </div>
-                          )}
-                        </CCol>
-                      </CRow>
-                       <CRow className="g-2">
-                        <CCol xs={12} md={4}>
-                          {faceAttendanceEnabled && !loadingFaceAttendance && (
-                            <>
-                              <CFormLabel className="fw-semibold small">{t('LABELS.attendanceType')}<span className="text-danger">*</span></CFormLabel>
-                              <CFormSelect
-                                value={formData.attendance_type}
-                                name="attendance_type"
-                                onChange={e => handleInputChange('attendance_type', e.target.value)}
-                                onBlur={() => setTouched(prev => ({ ...prev, attendance_type: true }))}
-                                disabled={submitting}
-                              >
-                                <option value="">{t('LABELS.selectAttendanceType')}</option>
-                                {ATTENDANCE_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                              </CFormSelect>
-                              {(touched.attendance_type || formSubmitted) && errors.attendance_type && (
-                                <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.attendance_type}</div>
-                              )}
-                            </>
-                          )}
-                          {loadingFaceAttendance && (
-                            <div className="d-flex align-items-center">
-                              <CSpinner size="sm" className="me-2" />
-                              <span className="text-muted small">Loading...</span>
                             </div>
                           )}
                         </CCol>

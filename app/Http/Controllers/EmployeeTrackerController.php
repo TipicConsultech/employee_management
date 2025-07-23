@@ -723,7 +723,9 @@ class EmployeeTrackerController extends Controller
         $endOfWeek = $startOfWeek->copy()->addDays(6)->endOfDay();
         $holidayWeekdayName = strtolower($startOfWeek->copy()->subDay()->format('l'));
 
-        $employees = Employee::with([
+        $employees = Employee::where('company_id',auth()->user()->company_id)
+        ->where('product_id',auth()->user()->product_id)
+        ->with([
             'trackers' => function ($query) use ($startOfWeek, $endOfWeek) {
                 $query->whereBetween('created_at', [$startOfWeek, $endOfWeek]);
             }
@@ -900,7 +902,9 @@ class EmployeeTrackerController extends Controller
         $startOfMonth = Carbon::createFromDate($year, $monthIndex, 1)->startOfDay();
         $endOfMonth = Carbon::createFromDate($year, $monthIndex, 1)->endOfMonth()->endOfDay();
 
-        $employees = Employee::with([
+        $employees = Employee::where('company_id',auth()->user()->company_id)
+        ->where('product_id',auth()->user()->product_id)
+        ->with([
             'trackers' => function ($query) use ($startOfMonth, $endOfMonth) {
                 $query->whereBetween('created_at', [$startOfMonth, $endOfMonth]);
             }

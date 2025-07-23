@@ -733,6 +733,10 @@
     "both": "दोन्ही",
     "hourly": "तासाप्रमाणे",
     "fixed": "निश्चित",
+    "noPaymentData":"पेमेंट डेटा उपलब्ध नाही",
+    "paymentMethodRequired":"paymentMethodRequired",
+    "companyLocationNotConfigured ":"कंपनीचे स्थान कॉन्फिगर केलेले नाही",
+
 
     "volumeBasedContract": "आकारमान आधारित कंत्राट",
     "fixedContract": "निश्चित कंत्राट",

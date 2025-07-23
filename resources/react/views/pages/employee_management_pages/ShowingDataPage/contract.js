@@ -1,108 +1,95 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  CRow,
-  CCol,
-  CFormInput,
-  CButton,
-  CFormSelect,
-  CCard,
-  CCardHeader,
-  CCardBody,
-  CAlert,
-  CSpinner
-} from '@coreui/react';
-import { useTranslation } from 'react-i18next';
-import { useParams } from 'react-router-dom';
-import { post, getAPICall } from '../../../../util/api';
-import { useToast } from '../../../common/toast/ToastContext';
+import React, { useState, useCallback, useEffect } from 'react';
+import { post } from '../../../../util/api';
 
-function Contract() {
-  const { t } = useTranslation('global');
-  const { id } = useParams();
-    const { showToast } = useToast();
+function Contract({employee}) {
+  // Mock translation function with your LABELS and MSG structure
+  const t = (key) => {
+    const translations = {
+      'LABELS.paymentInfo': 'Payment Information',
+      'LABELS.startDate': 'Start Date',
+      'LABELS.endDate': 'End Date',
+      'LABELS.description': 'Work Description',
+      'LABELS.enterWorkingType': 'Enter work description',
+      'LABELS.quantity': 'Quantity',
+      'LABELS.enterQuantity': 'Enter quantity',
+      'LABELS.pricePerItem': 'Price per Item',
+      'LABELS.enterPrice': 'Enter price',
+      'LABELS.totalAmount': 'Total Amount',
+      'LABELS.paidAmount': 'Paid Amount',
+      'LABELS.enterActualPayment': 'Enter paid amount',
+      'LABELS.pendingAmount': 'Pending Amount',
+      'LABELS.paymentMethod': 'Payment Method',
+      'LABELS.selectPaymentMethod': 'Select payment method',
+      'LABELS.cash': 'Cash',
+      'LABELS.upi': 'UPI',
+      'LABELS.bankTransfer': 'Bank Transfer',
+      'LABELS.submitAndSave': 'Submit Payment',
+      'LABELS.workPeriod': 'Work Period',
+      'LABELS.workDetails': 'Work Details',
+      'LABELS.paymentDetails': 'Payment Details',
+      'MSG.workingTypeRequired': 'Work description is required',
+      'MSG.priceMustBePositive': 'Price must be greater than 0',
+      'MSG.quantityMustBePositive': 'Quantity must be greater than 0',
+      'MSG.payedAmountCannotBeNegative': 'Paid amount cannot be negative',
+      'MSG.payedAmountExceedsTotal': 'Paid amount cannot exceed total amount',
+      'MSG.payedAmountRequired': 'Paid amount is required',
+      'MSG.paymentMethodRequired': 'Payment method is required',
+      'MSG.startDateRequired': 'Start date is required',
+      'MSG.endDateRequired': 'End date is required',
+      'MSG.endDateAfterStartDate': 'End date must be after start date',
+      'MSG.fixErrors': 'Please fix the following errors before submitting:',
+      'MSG.paymentSubmittedSuccess': 'Payment submitted successfully!',
+      'MSG.paymentSubmissionError': 'Error submitting payment. Please try again.',
+      'MSG.processing': 'Processing...'
+    };
+    return translations[key] || key;
+  };
 
-  const [employee, setEmployee] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Mock useParams and useToast hooks
+ 
+  const showToast = useCallback((type, message) => {
+    console.log(`Toast: ${type} - ${message}`);
+  }, []);
+
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [errors, setErrors] = useState({});
   const [notification, setNotification] = useState({ show: false, type: '', message: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [workSummary, setWorkSummary] = useState({
     working_type: '',
     price: '',
     quantity: '',
-    days_worked: 0,
     total_salary: 0,
     payed_amount: '',
     pending_payment: 0,
     payment_type: '',
   });
 
-  // Memoized helper function for showing notifications
+  // Show notification
   const showNotification = useCallback((type, message) => {
     setNotification({ show: true, type, message });
-    if (type === 'success') {
-      setTimeout(() => {
-        setNotification({ show: false, type: '', message: '' });
-      }, 3000);
-    }
+    setTimeout(() => {
+      setNotification({ show: false, type: '', message: '' });
+    }, 4000);
   }, []);
 
-  // Fetch employee data
-  const fetchEmployee = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await getAPICall(`/api/employee/${id}`);
-      setEmployee(data);
-      setWorkSummary(prev => ({
-        ...prev,
-        price: data?.price > 0 ? data.price : ''
-      }));
-    } catch (error) {
-      console.error('Error loading employee:', error);
-      // showNotification('warning', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
-      showToast('warning', `${t('MSG.errorConnectingToServer')}: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
-  }, [id, showNotification, t]);
-
+  // Calculate totals whenever price, quantity, or paid amount changes
   useEffect(() => {
-    fetchEmployee();
-  }, [fetchEmployee]);
+    const price = parseFloat(workSummary.price) || 0;
+    const quantity = parseFloat(workSummary.quantity) || 0;
+    const total_salary = price * quantity;
+    const payed_amount = parseFloat(workSummary.payed_amount) || 0;
+    const pending_payment = Math.max(0, total_salary - payed_amount);
 
-  // Auto-fetch contract summary when both dates are selected
-  useEffect(() => {
-    if (startDate && endDate && employee) {
-      const requestData = {
-        employee_id: parseInt(id),
-        start_date: startDate,
-        end_date: endDate,
-      };
+    setWorkSummary(prev => ({
+      ...prev,
+      total_salary,
+      pending_payment,
+    }));
+  }, [workSummary.price, workSummary.quantity, workSummary.payed_amount]);
 
-      post('/api/contractSummary', requestData)
-        .then((response) => {
-          const daysWorked = response?.days_worked || 0;
-          const price = parseFloat(workSummary.price) || 0;
-          const quantity = parseFloat(workSummary.quantity) || 1;
-          const total_salary = daysWorked * price * quantity;
-
-          setWorkSummary(prev => ({
-            ...prev,
-            days_worked: daysWorked,
-            total_salary: total_salary,
-            pending_payment: total_salary - (parseFloat(prev.payed_amount) || 0),
-          }));
-        })
-        .catch((error) => {
-          console.error('Error fetching contract summary:', error);
-          // showNotification('warning', `${t('MSG.error')}: ${error.message}`);
-                    showToast('warning', `${t('MSG.error')}: ${error.message}`);
-        });
-    }
-  }, [startDate, endDate, employee, id, workSummary.price, workSummary.quantity, showNotification, t]);
-
-  // Validation functions
+  // Enhanced validation functions
   const validateField = (name, value) => {
     let error = '';
 
@@ -117,7 +104,15 @@ function Contract() {
         if (!value || parseFloat(value) <= 0) error = t('MSG.quantityMustBePositive');
         break;
       case 'payed_amount':
-        if (value && parseFloat(value) < 0) error = t('MSG.payedAmountCannotBeNegative');
+        const paidAmount = parseFloat(value);
+        const totalAmount = workSummary.total_salary;
+        if (!value) {
+          error = t('MSG.payedAmountRequired');
+        } else if (paidAmount < 0) {
+          error = t('MSG.payedAmountCannotBeNegative');
+        } else if (paidAmount > totalAmount && totalAmount > 0) {
+          error = t('MSG.payedAmountExceedsTotal');
+        }
         break;
       case 'payment_type':
         if (!value) error = t('MSG.paymentMethodRequired');
@@ -157,30 +152,22 @@ function Contract() {
       if (value !== '') {
         validateField(fieldName, value);
       }
-
-      if (fieldName === 'price' || fieldName === 'quantity' || fieldName === 'payed_amount') {
-        calculateTotals(fieldName, value);
-      }
     }
   };
 
-  const calculateTotals = (changedField, changedValue) => {
-    const price = changedField === 'price' ? parseFloat(changedValue) || 0 : parseFloat(workSummary.price) || 0;
-    const quantity = changedField === 'quantity' ? parseFloat(changedValue) || 1 : parseFloat(workSummary.quantity) || 1;
-    const daysWorked = workSummary.days_worked || 0;
-    const payedAmount = changedField === 'payed_amount' ? parseFloat(changedValue) || 0 : parseFloat(workSummary.payed_amount) || 0;
-
-    const total_salary = daysWorked * price * quantity;
-    const pending_payment = Math.max(0, total_salary - payedAmount);
-
-    setWorkSummary(prev => ({
-      ...prev,
-      total_salary: total_salary,
-      pending_payment: pending_payment,
-    }));
+  // Check if form is valid
+  const isFormValid = () => {
+    const hasNoErrors = Object.keys(errors).every(key => !errors[key]);
+    const hasRequiredFields = startDate && endDate && workSummary.working_type && 
+      workSummary.price && workSummary.quantity && workSummary.payed_amount && 
+      workSummary.payment_type;
+    return hasNoErrors && hasRequiredFields;
   };
 
   const handleSubmit = async () => {
+    setIsSubmitting(true);
+    
+    // Validate all fields
     const isDateValid = validateDates();
     const isWorkingTypeValid = validateField('working_type', workSummary.working_type);
     const isPriceValid = validateField('price', workSummary.price);
@@ -189,223 +176,374 @@ function Contract() {
     const isPayedAmountValid = validateField('payed_amount', workSummary.payed_amount);
 
     if (!isDateValid || !isWorkingTypeValid || !isPriceValid || !isQuantityValid || !isPaymentTypeValid || !isPayedAmountValid) {
+      setIsSubmitting(false);
       return;
     }
 
     const payload = {
       start_date: startDate,
       end_date: endDate,
-      employee_id: parseInt(id),
+      employee_id: employee.id,
       payed_amount: parseFloat(workSummary.payed_amount) || 0,
       salary_amount: workSummary.total_salary,
       payment_type: workSummary.payment_type,
-      working_type: workSummary.working_type,
+      // working_type: workSummary.working_type,
     };
 
     try {
-      await post('/api/payment', payload);
-      // showNotification('success', t('MSG.paymentSubmittedSuccess'));
+      // Simulate API call
+      await post('/api/payment',payload);
+      showNotification('success', t('MSG.paymentSubmittedSuccess'));
       showToast('success', t('MSG.paymentSubmittedSuccess'));
+      
+      // Reset form after successful submission
+      setStartDate('');
+      setEndDate('');
+      setWorkSummary({
+        working_type: '',
+        price: '',
+        quantity: '',
+        total_salary: 0,
+        payed_amount: '',
+        pending_payment: 0,
+        payment_type: '',
+      });
+      setErrors({});
     } catch (err) {
       console.error('Payment Error:', err);
-      // showNotification('warning', t('MSG.paymentSubmissionError'));
-       showToast('warning', t('MSG.paymentSubmissionError'));
+      showNotification('danger', t('MSG.paymentSubmissionError'));
+      showToast('warning', t('MSG.paymentSubmissionError'));
     }
+    
+    setIsSubmitting(false);
   };
 
-  if (loading) {
-    return (
-      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
-        <CSpinner color="primary" />
-      </div>
-    );
-  }
-
   return (
-    <CRow>
-      <CCol xs={12}>
-        <CCard className="mb-4 shadow-sm">
-          <CCardHeader style={{ backgroundColor: "#E6E6FA" }}>
-            <div className="d-flex justify-content-between align-items-center flex-wrap">
-              <strong>{t('LABELS.paymentInfo')}</strong>
-            </div>
-          </CCardHeader>
+    <>
+      {/* Bootstrap CSS */}
+      {/* <link 
+        href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" 
+        rel="stylesheet" 
+      /> */}
+      {/* CoreUI Icons */}
+      {/* <link 
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" 
+        rel="stylesheet" 
+      /> */}
+      
+      <div className="bg-light min-vh-100 py-2">
+        <div className="container">
+          <div className="row justify-content-center">
+            <div className="col-12">
+              <div className="card shadow-lg border-0">
+                {/* Card Header */}
+                {/* <div className="card-header bg-primary text-white border-0 py-2">
+                  <div className="d-flex align-items-center">
+                  
+                    <h5 className="mb-0 fw-semibold">
+                      {t('LABELS.paymentInfo')}
+                    </h5>
+                  </div>
+                </div> */}
 
-          <CCardBody className="p-3 p-md-4">
-            {/* Notifications */}
-            {notification.show && (
-              <CAlert color={notification.type} dismissible onClose={() => setNotification({ show: false, type: '', message: '' })}>
-                {notification.message}
-              </CAlert>
-            )}
-
-            {/* Date Filter */}
-            <CRow className="align-items-end mt-4 g-3">
-              <CCol xs={12} md={6}>
-                <label className="form-label fw-semibold">{t('LABELS.startDate')}</label>
-                <input
-                  type="date"
-                  className={`form-control ${errors.startDate ? 'is-invalid' : ''}`}
-                  value={startDate}
-                  onChange={(e) => {
-                    setStartDate(e.target.value);
-                    if (errors.startDate) validateDates();
-                  }}
-                />
-                {errors.startDate && <div className="invalid-feedback">{errors.startDate}</div>}
-              </CCol>
-              <CCol xs={12} md={6}>
-                <label className="form-label fw-semibold">{t('LABELS.endDate')}</label>
-                <input
-                  type="date"
-                  className={`form-control ${errors.endDate ? 'is-invalid' : ''}`}
-                  value={endDate}
-                  onChange={(e) => {
-                    setEndDate(e.target.value);
-                    if (errors.endDate) validateDates();
-                  }}
-                />
-                {errors.endDate && <div className="invalid-feedback">{errors.endDate}</div>}
-              </CCol>
-            </CRow>
-
-            {/* Working Type, Quantity & Price */}
-            <CRow className="mb-4 g-3">
-              <CCol xs={12} md={4}>
-                <label className="form-label fw-semibold">{t('LABELS.description')} <span className="text-danger">*</span></label>
-                <CFormInput
-                  type="text"
-                  placeholder={t('LABELS.enterWorkingType')}
-                  value={workSummary.working_type}
-                  className={errors.working_type ? 'is-invalid' : ''}
-                  onChange={(e) => {
-                    setWorkSummary(prev => ({
-                      ...prev,
-                      working_type: e.target.value,
-                    }));
-                    validateField('working_type', e.target.value);
-                  }}
-                />
-                {errors.working_type && <div className="invalid-feedback">{errors.working_type}</div>}
-              </CCol>
-
-              <CCol xs={12} md={4}>
-                <label className="form-label fw-semibold">{t('LABELS.quantity')} <span className="text-danger">*</span></label>
-                <CFormInput
-                  type="text"
-                  placeholder={t('LABELS.enterQuantity')}
-                  value={workSummary.quantity}
-                  className={errors.quantity ? 'is-invalid' : ''}
-                  onChange={(e) => handleNumberInput('quantity', e.target.value)}
-                  onBlur={() => validateField('quantity', workSummary.quantity)}
-                />
-                {errors.quantity && <div className="invalid-feedback">{errors.quantity}</div>}
-              </CCol>
-
-              <CCol xs={12} md={4}>
-                <label className="form-label fw-semibold">{t('LABELS.pricePerItem')} <span className="text-danger">*</span></label>
-                <CFormInput
-                  type="text"
-                  placeholder={t('LABELS.enterPrice')}
-                  value={workSummary.price}
-                  className={errors.price ? 'is-invalid' : ''}
-                  onChange={(e) => handleNumberInput('price', e.target.value)}
-                  onBlur={() => validateField('price', workSummary.price)}
-                />
-                {errors.price && <div className="invalid-feedback">{errors.price}</div>}
-              </CCol>
-            </CRow>
-
-            {/* Payment Status */}
-            <h6 className="fw-semibold text-primary mb-3">{t('LABELS.paymentStatus')}</h6>
-            <CRow className="bg-info-subtle p-3 rounded mb-4 g-3">
-              <CCol xs={12} md={4}>
-                <label className="form-label fw-semibold">{t('LABELS.calculatedAmount')}</label>
-                <CFormInput
-                  type="number"
-                  value={workSummary.total_salary.toFixed(2)}
-                  disabled
-                  className="bg-light"
-                />
-              </CCol>
-              <CCol xs={12} md={4}>
-                <label className="form-label fw-semibold">{t('LABELS.actualPayment')}</label>
-                <CFormInput
-                  type="text"
-                  placeholder={t('LABELS.enterActualPayment')}
-                  value={workSummary.payed_amount}
-                  className={errors.payed_amount ? 'is-invalid' : ''}
-                  onChange={(e) => handleNumberInput('payed_amount', e.target.value)}
-                  onBlur={() => validateField('payed_amount', workSummary.payed_amount)}
-                />
-                {errors.payed_amount && <div className="invalid-feedback">{errors.payed_amount}</div>}
-              </CCol>
-              <CCol xs={12} md={4}>
-                <label className="form-label fw-semibold">{t('LABELS.pendingAmount')}</label>
-                <CFormInput
-                  type="number"
-                  readOnly
-                  className="bg-danger-subtle"
-                  value={workSummary.pending_payment.toFixed(2)}
-                />
-              </CCol>
-            </CRow>
-
-            {/* Payment Method */}
-            <h6 className="fw-semibold text-warning mb-3">{t('LABELS.paymentMethod')}</h6>
-            <CRow className="bg-warning-subtle p-3 rounded mb-4 g-3">
-              <CCol xs={12} md={6}>
-                <label className="form-label fw-semibold">{t('LABELS.paymentMethod')} <span className="text-danger">*</span></label>
-                <CFormSelect
-                  value={workSummary.payment_type}
-                  className={errors.payment_type ? 'is-invalid' : ''}
-                  onChange={(e) => {
-                    setWorkSummary(prev => ({
-                      ...prev,
-                      payment_type: e.target.value,
-                    }));
-                    validateField('payment_type', e.target.value);
-                  }}
-                >
-                  <option value="">{t('LABELS.selectPaymentMethod')}</option>
-                  <option value="cash">{t('LABELS.cash')}</option>
-                  <option value="upi">{t('LABELS.upi')}</option>
-                  <option value="bank_transfer">{t('LABELS.bankTransfer')}</option>
-                </CFormSelect>
-                {errors.payment_type && <div className="invalid-feedback">{errors.payment_type}</div>}
-              </CCol>
-            </CRow>
-
-            {/* Error Summary */}
-            {Object.keys(errors).some(key => errors[key]) && (
-              <CAlert color="danger" className="mb-4">
-                <strong>{t('MSG.fixErrors')}</strong>
-                <ul className="mb-0 mt-2">
-                  {Object.entries(errors).map(([field, error]) =>
-                    error && <li key={field}>{error}</li>
+                <div className="card-body p-3">
+                  {/* Notifications */}
+                  {notification.show && (
+                    <div className="mb-4">
+                      <div className={`alert alert-${notification.type === 'success' ? 'success' : notification.type === 'danger' ? 'danger' : 'warning'} alert-dismissible fade show`} role="alert">
+                        {notification.message}
+                        <button 
+                          type="button" 
+                          className="btn-close" 
+                          onClick={() => setNotification({ show: false, type: '', message: '' })}
+                        ></button>
+                      </div>
+                    </div>
                   )}
-                </ul>
-              </CAlert>
-            )}
 
-            {/* Submit Button */}
-            <div className="d-flex justify-content-center">
-              <CButton
-                color="success"
-                size="lg"
-                onClick={handleSubmit}
-                className="px-4 py-2"
-              >
-                {t('LABELS.submitAndSave')}
-              </CButton>
+                  {/* Work Period Section */}
+                  <div className="mb-2">
+                    <div className="border-start border-primary border-4 bg-light p-3 mb-4 rounded-end">
+                      <h5 className="text-primary mb-0 d-flex align-items-center">
+                        <span className="badge bg-primary me-2">1</span>
+                        {t('LABELS.workPeriod')}
+                      </h5>
+                    </div>
+
+                    <div className="row">
+                      <div className="col-md-6 mb-3">
+                        <label className="form-label fw-medium">
+                          {t('LABELS.startDate')} <span className="text-danger">*</span>
+                        </label>
+                        <input
+                          type="date"
+                          className={`form-control ${errors.startDate ? 'is-invalid' : ''}`}
+                          value={startDate}
+                          onChange={(e) => {
+                            setStartDate(e.target.value);
+                            if (errors.startDate) validateDates();
+                          }}
+                        />
+                        {errors.startDate && (
+                          <div className="invalid-feedback">{errors.startDate}</div>
+                        )}
+                      </div>
+
+                      <div className="col-md-6 mb-3">
+                        <label className="form-label fw-medium">
+                          {t('LABELS.endDate')} <span className="text-danger">*</span>
+                        </label>
+                        <input
+                          type="date"
+                          className={`form-control ${errors.endDate ? 'is-invalid' : ''}`}
+                          value={endDate}
+                          onChange={(e) => {
+                            setEndDate(e.target.value);
+                            if (errors.endDate) validateDates();
+                          }}
+                        />
+                        {errors.endDate && (
+                          <div className="invalid-feedback">{errors.endDate}</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Work Details Section */}
+                  <div className="mb-3">
+                    <div className="border-start border-success border-4 bg-light p-3 mb-2 rounded-end">
+                      <h5 className="text-success mb-0 d-flex align-items-center">
+                        <span className="badge bg-success me-2">2</span>
+                        {t('LABELS.workDetails')}
+                      </h5>
+                    </div>
+
+                    <div className="row">
+                      <div className="col-md-6 mb-3">
+                        <label className="form-label fw-medium">
+                          {t('LABELS.description')} <span className="text-danger">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          className={`form-control ${errors.working_type ? 'is-invalid' : ''}`}
+                          placeholder={t('LABELS.enterWorkingType')}
+                          value={workSummary.working_type}
+                          onChange={(e) => {
+                            setWorkSummary(prev => ({
+                              ...prev,
+                              working_type: e.target.value,
+                            }));
+                            validateField('working_type', e.target.value);
+                          }}
+                        />
+                        {errors.working_type && (
+                          <div className="invalid-feedback">{errors.working_type}</div>
+                        )}
+                      </div>
+
+                      <div className="col-md-3 mb-3">
+                        <label className="form-label fw-medium">
+                          {t('LABELS.quantity')} <span className="text-danger">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          className={`form-control ${errors.quantity ? 'is-invalid' : ''}`}
+                          placeholder={t('LABELS.enterQuantity')}
+                          value={workSummary.quantity}
+                          onChange={(e) => handleNumberInput('quantity', e.target.value)}
+                          onBlur={() => validateField('quantity', workSummary.quantity)}
+                        />
+                        {errors.quantity && (
+                          <div className="invalid-feedback">{errors.quantity}</div>
+                        )}
+                      </div>
+
+                      <div className="col-md-3 mb-3">
+                        <label className="form-label fw-medium">
+                          {t('LABELS.pricePerItem')} <span className="text-danger">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          className={`form-control ${errors.price ? 'is-invalid' : ''}`}
+                          placeholder={t('LABELS.enterPrice')}
+                          value={workSummary.price}
+                          onChange={(e) => handleNumberInput('price', e.target.value)}
+                          onBlur={() => validateField('price', workSummary.price)}
+                        />
+                        {errors.price && (
+                          <div className="invalid-feedback">{errors.price}</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Payment Details Section */}
+                  <div className="mb-5">
+                    <div className="border-start border-warning border-4 bg-light p-3 mb-4 rounded-end">
+                      <h5 className="text-warning mb-0 d-flex align-items-center">
+                        <span className="badge bg-warning text-dark me-2">3</span>
+                        {t('LABELS.paymentDetails')}
+                      </h5>
+                    </div>
+
+                    <div className="bg-primary bg-opacity-10 border border-primary border-opacity-25 rounded p-4 mb-4">
+                      <div className="row">
+                        <div className="col-md-4 mb-3">
+                          <label className="form-label fw-medium">
+                            {t('LABELS.totalAmount')}
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control bg-white fw-bold text-success"
+                            value={`₹${workSummary.total_salary.toFixed(2)}`}
+                            disabled
+                          />
+                        </div>
+
+                        <div className="col-md-4 mb-3">
+                          <label className="form-label fw-medium">
+                            {t('LABELS.paidAmount')} <span className="text-danger">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            className={`form-control ${errors.payed_amount ? 'is-invalid' : ''}`}
+                            placeholder={t('LABELS.enterActualPayment')}
+                            value={workSummary.payed_amount}
+                            onChange={(e) => handleNumberInput('payed_amount', e.target.value)}
+                            onBlur={() => validateField('payed_amount', workSummary.payed_amount)}
+                          />
+                          {errors.payed_amount && (
+                            <div className="invalid-feedback">{errors.payed_amount}</div>
+                          )}
+                        </div>
+
+                        <div className="col-md-4 mb-3">
+                          <label className="form-label fw-medium">
+                            {t('LABELS.pendingAmount')}
+                          </label>
+                          <input
+                            type="text"
+                            className={`form-control fw-bold ${
+                              workSummary.pending_payment > 0 
+                                ? 'bg-danger bg-opacity-10 text-danger' 
+                                : 'bg-success bg-opacity-10 text-success'
+                            }`}
+                            value={`₹${workSummary.pending_payment.toFixed(2)}`}
+                            disabled
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Payment Method */}
+                    <div className="row">
+                      <div className="col-md-6 mb-3">
+                        <label className="form-label fw-medium">
+                          {t('LABELS.paymentMethod')} <span className="text-danger">*</span>
+                        </label>
+                        <select
+                          className={`form-select ${errors.payment_type ? 'is-invalid' : ''}`}
+                          value={workSummary.payment_type}
+                          onChange={(e) => {
+                            setWorkSummary(prev => ({
+                              ...prev,
+                              payment_type: e.target.value,
+                            }));
+                            validateField('payment_type', e.target.value);
+                          }}
+                        >
+                          <option value="">{t('LABELS.selectPaymentMethod')}</option>
+                          <option value="cash">{t('LABELS.cash')}</option>
+                          <option value="upi">{t('LABELS.upi')}</option>
+                          <option value="bank_transfer">{t('LABELS.bankTransfer')}</option>
+                        </select>
+                        {errors.payment_type && (
+                          <div className="invalid-feedback">{errors.payment_type}</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Error Summary */}
+                  {Object.keys(errors).some(key => errors[key]) && (
+                    <div className="mb-4">
+                      <div className="alert alert-danger">
+                        <strong className="fw-semibold">{t('MSG.fixErrors')}</strong>
+                        <ul className="mb-0 mt-2">
+                          {Object.entries(errors).map(([field, error]) =>
+                            error && <li key={field}>{error}</li>
+                          )}
+                        </ul>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Form Progress */}
+                  <div className="mb-4">
+                    <div className="d-flex justify-content-between mb-2">
+                      <span className="fw-medium text-muted">Form Completion</span>
+                      <span className="text-muted">
+                        {Math.round((
+                          (startDate ? 1 : 0) +
+                          (endDate ? 1 : 0) +
+                          (workSummary.working_type ? 1 : 0) +
+                          (workSummary.price ? 1 : 0) +
+                          (workSummary.quantity ? 1 : 0) +
+                          (workSummary.payed_amount ? 1 : 0) +
+                          (workSummary.payment_type ? 1 : 0)
+                        ) / 7 * 100)}%
+                      </span>
+                    </div>
+                    <div className="progress" style={{height: '8px'}}>
+                      <div 
+                        className="progress-bar bg-primary transition-all"
+                        role="progressbar"
+                        style={{
+                          width: `${Math.round((
+                            (startDate ? 1 : 0) +
+                            (endDate ? 1 : 0) +
+                            (workSummary.working_type ? 1 : 0) +
+                            (workSummary.price ? 1 : 0) +
+                            (workSummary.quantity ? 1 : 0) +
+                            (workSummary.payed_amount ? 1 : 0) +
+                            (workSummary.payment_type ? 1 : 0)
+                          ) / 7 * 100)}%`
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="text-center pt-3 border-top">
+                    <button
+                      type="button"
+                      className={`btn btn-lg px-5 ${!isFormValid() || isSubmitting ? 'btn-secondary' : 'btn-primary'}`}
+                      onClick={handleSubmit}
+                      disabled={!isFormValid() || isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <div className="spinner-border spinner-border-sm me-2" role="status">
+                            <span className="visually-hidden">Loading...</span>
+                          </div>
+                          {t('MSG.processing')}
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-paper-plane me-2"></i>
+                          {t('LABELS.submitAndSave')}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-          </CCardBody>
-        </CCard>
-      </CCol>
-    </CRow>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
 export default Contract;
-
-

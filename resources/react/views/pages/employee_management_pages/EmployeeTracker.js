@@ -189,7 +189,7 @@ function EmployeeCheckInOut() {
 
         try {
             setLocationLoading(true);
-            showToast('info', t('MSG.gettingLocation') || 'Getting your current location...');
+            // showToast('info', t('MSG.gettingLocation') || 'Getting your current location...');
 
             // Get fresh location
             const coords = await getCurrentLocationFresh();
