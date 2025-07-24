@@ -28,7 +28,7 @@ const GPSLocationModal = ({
   onClose, 
   gpsCoordinates, 
   attendanceType,
-  isNoLimit 
+  employeeId 
 }) => {
   const [mapType, setMapType] = useState('satellite');
   const [zoom, setZoom] = useState(15);
@@ -37,8 +37,10 @@ const GPSLocationModal = ({
   const [companyLocation, setCompanyLocation] = useState(null);
   const [isWithinPremises, setIsWithinPremises] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [employeeData,setEmployeeData]=useState(null);
 
-
+console.log("You are in primises",isWithinPremises);
+ 
   // Parse GPS coordinates when props change
   useEffect(() => {
     if (gpsCoordinates && isOpen) {
@@ -51,7 +53,17 @@ const GPSLocationModal = ({
       }, 500);
         
     }
-  }, [gpsCoordinates, isOpen,attendanceType]);
+
+    if(employeeId){
+      
+      EmployeeData()
+    }
+  }, [gpsCoordinates, isOpen,attendanceType,employeeId]);
+
+  async function EmployeeData(){
+       const responce= await getAPICall(`/api/tolaranceLimit/${employeeId}`);
+       setEmployeeData(responce);
+      }
 
   // Fetch company location
   useEffect(() => {
@@ -70,19 +82,28 @@ const GPSLocationModal = ({
   }
 
   // Check if user is within company premises
-  useEffect(() => {
-    if (coordinates && companyLocation) {
-      const isWithin = checkLocationProximity(
-        coordinates,
-        {
-          lat: parseFloat(companyLocation.required_lat),
-          lng: parseFloat(companyLocation.required_lng)
-        },
-        parseFloat(companyLocation.location_tolerance)
-      );
-      setIsWithinPremises(isWithin);
+// Check if user is within company premises
+useEffect(() => {
+  if (coordinates && companyLocation) {
+    const isWithin = checkLocationProximity(
+      coordinates,
+      {
+        lat: parseFloat(companyLocation.required_lat),
+        lng: parseFloat(companyLocation.required_lng)
+      },
+      parseFloat(companyLocation.location_tolerance)
+    );
+
+    if (employeeData) {
+      if (employeeData?.no_limit === true) {
+        setIsWithinPremises(true);
+      } else {
+        setIsWithinPremises(isWithin);
+      }
     }
-  }, [coordinates, companyLocation]);
+  }
+}, [coordinates, companyLocation, employeeData?.no_limit]);
+
 
   const parseGPSCoordinates = (gpsString) => {
     if (!gpsString) return null;
@@ -108,6 +129,8 @@ const GPSLocationModal = ({
     const distance = R * c;
 
     return distance <= tolerance;
+
+
   };
 
   const getMapUrl = () => {
@@ -133,7 +156,7 @@ const GPSLocationModal = ({
   };
 
   const getAttendanceTypeInfo = () => {
-    if (attendanceType === 'check_in') {
+    if (attendanceType === 0) {
       return {
         label: 'Check-in',
         icon: cilAccountLogout,
