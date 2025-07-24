@@ -499,9 +499,6 @@ class EmployeeTrackerController extends Controller
     }
 
 
-
-
-
 public function checkTodayStatus(Request $request): JsonResponse
 {
     // Step 1: Get employee ID from logged-in user’s mobile

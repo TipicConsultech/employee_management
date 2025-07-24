@@ -643,8 +643,8 @@
 
 "totalEmployees": "एकूण कर्मचारी",
       "presentToday": "उपस्थित",
-      "totalCredit": "एकूण जमा",
-      "totalDebit": "एकूण खर्च",
+      "totalCredit": "आगाऊ पगार",
+      "totalDebit": "थकित पेमेंट",
       "employeeAttendance": "कर्मचारी उपस्थिती आणि तपशील",
       "employees": "कर्मचारी",
       "checkIn": "चेक इन",
@@ -889,10 +889,11 @@
 
       "monthDays": "महिन्याचे दिवस",
       "monthlyPresentyPayrollChart": "मासिक उपस्थिती आणि वेतन तक्ता",
-      
+
       "paymentMethodRequired":"पेमेंट पद्धत आवश्यक आहे",
       "workHours":"कामाचे तास",
-      "notAvailable":"उपलब्ध नाही"
+      "notAvailable":"उपलब्ध नाही",
+      "confirmCheckout":"चेकआउट निश्चित करा"
 
   },
 
@@ -1306,6 +1307,8 @@
       "employeeUpdatedSuccess": "कर्मचारी तपशील यशस्वीरीत्या अद्यतनित झाले.",
       "employeeUpdateFailed": "कर्मचारी तपशील अद्यतनित करण्यात अयशस्वी.",
       "updateError": "अद्यतन दरम्यान त्रुटी आली.",
-      "workHoursRequired":"कामाचे तास आवश्यक आहेत"
+      "workHoursRequired":"कामाचे तास आवश्यक आहेत",
+      "under30MinWarning":"आपण ३० मिनिटांच्या आतच चेक-आउट केले आहे. धोरणानुसार हे अनुपस्थित म्हणून गणले जाईल.",
+      "locationVerified":"स्थानाची खात्री झाली आहे"
     }
    }

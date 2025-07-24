@@ -38,8 +38,6 @@ const presentEmployees = employees.filter(e =>
 ).length;
 
 
-
-  
   return (
     <>
       <CContainer fluid className="px-2 px-md-4">
