@@ -38,6 +38,12 @@ export default function fetchNavItems(t1) {
   /* ─────────── SUPER‑ADMIN ─────────── */
   if (user === 0) {
     _nav = [
+        {
+        component: CNavItem,
+        name: t('LABELS.TipicDashboard'),
+        to: '/tipicDashboard',
+        icon: <CIcon icon={cibPostgresql} customClassName="nav-icon" />,
+      },
       {
         component: CNavGroup,
         name: t('LABELS.company'),
@@ -55,12 +61,27 @@ export default function fetchNavItems(t1) {
         icon: <CIcon icon={cibPostgresql} customClassName="nav-icon" />,
       },
       {
+        component: CNavItem,
+        name: t('LABELS.onboarding-partner-configure'),
+        to: '/onboarding-partner-configure',
+        icon: <CIcon icon={cibPostgresql} customClassName="nav-icon" />,
+      },
+      {
         component: CNavGroup,
         name: t('LABELS.user_management'),
         icon: <CIcon icon={cilGroup} customClassName="nav-icon" />,
         items: [
           { component: CNavItem, name: t('LABELS.all_Users'),   to: 'usermanagement/all-users' },
           { component: CNavItem, name: t('LABELS.create_user'), to: 'usermanagement/create-user' },
+        ],
+      },
+      {
+        component: CNavGroup,
+        name: t('LABELS.Onboarding_Partners'),
+        icon: <CIcon icon={cilGroup} customClassName="nav-icon" />,
+        items: [
+          { component: CNavItem, name: t('LABELS.New_Partners'),   to: '/OnboardingNewPartnere' },
+          { component: CNavItem, name: t('LABELS.All_Partners'), to: '/OnboardingAllPartnere' },
         ],
       },
     ]
@@ -160,4 +181,3 @@ export default function fetchNavItems(t1) {
 
   return _nav
 }
-  

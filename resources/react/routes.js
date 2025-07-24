@@ -22,6 +22,11 @@ const AllCompanies    = React.lazy(() => import('./views/pages/company/AllCompan
 const EditCompany     = React.lazy(() => import('./views/pages/company/EditCompany'))
 const CompanyReceipts = React.lazy(() => import('./views/pages/company/CompanyReceipt'))
 
+const TipicDashboard  = React.lazy(()=>import('./views/pages/company/TipicDashboard'))
+const onboardingPartnerConfigure  = React.lazy(()=>import('./views/pages/company/OnboardingTypesConfigure'))
+const OnboardingNewPartner  = React.lazy(()=>import('./views/pages/company/registerPartner'))
+const OnboardingAllPartner  = React.lazy(()=>import('./views/pages/company/AllPartners'))
+
 /* ───── products ───── */
 const NewProduct      = React.lazy(() => import('./views/pages/products/NewProduct'))
 const AllProducts     = React.lazy(() => import('./views/pages/products/AllProducts'))
@@ -118,6 +123,10 @@ export default function fetchRoutes () {
 
       { path: 'plans',                      name: 'Plans',                      element: Plans },
       { path: '/company/companyReceipt',    name: 'Company Receipt',            element: CompanyReceipts },
+      { path: '/tipicDashboard',            name: 'Tipic Dashboard',              element: TipicDashboard },
+      { path: '/onboarding-partner-configure',            name: 'onboarding Partner Configure',              element: onboardingPartnerConfigure },
+      { path: '/OnboardingNewPartnere',            name: 'Onboarding New Partner',              element: OnboardingNewPartner },
+      { path: '/OnboardingAllPartnere',            name: 'Onboarding All Partner',              element: OnboardingAllPartner },
     ]
   }
 
