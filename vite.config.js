@@ -149,8 +149,8 @@ export default defineConfig(({ mode }) => {
         },
         // Manifest settings - these will appear in the generated manifest.webmanifest
         manifest: {
-          name: "MilkFactory",
-          short_name: "MilkFactory",
+          name: "EmpPulse",
+          short_name: "EmpPulse",
           description: "An app to manage Milk Factory.",
           theme_color: "#171717",
           background_color: "#e8ebf2",

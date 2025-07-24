@@ -4,7 +4,6 @@ import {
   CButton,
   CCard,
   CCardBody,
-  CCardGroup,
   CCol,
   CContainer,
   CForm,
@@ -15,26 +14,29 @@ import {
   CButtonGroup,
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
-import { cilArrowThickFromTop, cilLockLocked, cilUser, cilPhone } from '@coreui/icons';
+import { cilArrowThickFromTop, cilLockLocked, cilUser, cilPhone, cilShieldAlt } from '@coreui/icons';
 import { login, post } from '../../../util/api';
 import { isLogIn, storeUserData } from '../../../util/session';
 
 import logo from './../../../assets/brand/ems_new_image.png';
-import image from './../../../assets/images/ems_background.png';
 import { useToast } from '../../common/toast/ToastContext';
 
 const Login = () => {
   const [validated, setValidated] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showInstall, setShowInstall] = useState(false);
-  const [loginType, setLoginType] = useState('Employee'); // Default to Employee
+  const [loginType, setLoginType] = useState('Employee');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const userNameRef = useRef();
   const userPwdRef = useRef();
   const { showToast } = useToast();
 
   useEffect(() => {
+    // Simulate app loading
+    setTimeout(() => setIsLoading(false), 1500);
+
     if (isLogIn()) {
       navigate('/');
       return;
@@ -64,51 +66,41 @@ const Login = () => {
     }
   };
 
-const getEmployeePath = (type) => {
-  switch (type) {
-    case 'face_attendance':
-       case 'both':
-      return '/checkInWithSelfie';
-
-
-    case 'location':
-      return '/employee_tracker';
-
-    default:
-      return '/employee_tracker'; // fallback if type is unknown or undefined
-  }
-};
-
-  const getRedirectPathByUserType = (userType,type=null) => {
-    switch (userType) {
-      case 0:
-        return '/company/new';
-      case 1:
-         return '/dashboard';
-      case 10:
-        return  type ? getEmployeePath(type) : '/employee_tracker';
+  const getEmployeePath = (type) => {
+    switch (type) {
+      case 'face_attendance':
+      case 'both':
+        return '/checkInWithSelfie';
+      case 'location':
+        return '/employee_tracker';
       default:
         return '/employee_tracker';
     }
   };
 
-  // Mobile number validation function
-  const validateMobileNumber = (mobile) => {
-    // Remove all non-numeric characters
-    const cleaned = mobile.replace(/\D/g, '');
+  const getRedirectPathByUserType = (userType, type = null) => {
+    switch (userType) {
+      case 0:
+        return '/company/new';
+      case 1:
+        return '/dashboard';
+      case 10:
+        return type ? getEmployeePath(type) : '/employee_tracker';
+      default:
+        return '/employee_tracker';
+    }
+  };
 
-    // Check if it's a valid mobile number (10 digits, starting with 6, 7, 8, or 9)
+  const validateMobileNumber = (mobile) => {
+    const cleaned = mobile.replace(/\D/g, '');
     const mobileRegex = /^[6-9]\d{9}$/;
     return mobileRegex.test(cleaned);
   };
 
-  // Handle numeric input only for mobile number
   const handleMobileInputChange = (e) => {
     const value = e.target.value;
-    // Only allow numeric characters
     const numericValue = value.replace(/[^0-9]/g, '');
 
-    // Limit to 10 digits
     if (numericValue.length <= 10) {
       e.target.value = numericValue;
     } else {
@@ -116,24 +108,19 @@ const getEmployeePath = (type) => {
     }
   };
 
-  // Prevent non-numeric key presses for mobile input
   const handleMobileKeyPress = (e) => {
-    // Allow: backspace, delete, tab, escape, enter
     if ([8, 9, 27, 13, 46].indexOf(e.keyCode) !== -1 ||
-        // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
         (e.keyCode === 65 && e.ctrlKey === true) ||
         (e.keyCode === 67 && e.ctrlKey === true) ||
         (e.keyCode === 86 && e.ctrlKey === true) ||
         (e.keyCode === 88 && e.ctrlKey === true)) {
       return;
     }
-    // Ensure that it is a number and stop the keypress
     if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
       e.preventDefault();
     }
   };
 
-  // Handle paste event for mobile input
   const handleMobilePaste = (e) => {
     e.preventDefault();
     const paste = (e.clipboardData || window.clipboardData).getData('text');
@@ -147,18 +134,12 @@ const getEmployeePath = (type) => {
   };
 
   const handleLogin = async (event) => {
-    // Always prevent default form submission
     event.preventDefault();
     event.stopPropagation();
 
-    // Prevent double submission
-    if (isSubmitting) {
-      return;
-    }
+    if (isSubmitting) return;
 
     const form = event.currentTarget;
-
-    // Check form validity
     if (form.checkValidity() !== true) {
       setValidated(true);
       return;
@@ -170,7 +151,6 @@ const getEmployeePath = (type) => {
     const credential = userNameRef.current?.value?.trim();
     const password = userPwdRef.current?.value?.trim();
 
-    // Additional validation
     if (!credential || !password) {
       const errorMessage = loginType === 'Employee'
         ? 'Please provide valid phone number and password'
@@ -180,7 +160,6 @@ const getEmployeePath = (type) => {
       return;
     }
 
-    // Mobile number validation for Employee login
     if (loginType === 'Employee' && !validateMobileNumber(credential)) {
       showToast('danger', 'Please provide a valid 10-digit mobile number');
       setIsSubmitting(false);
@@ -188,7 +167,6 @@ const getEmployeePath = (type) => {
     }
 
     try {
-      // Prepare login data based on login type
       const loginData = loginType === 'Employee'
         ? { mobile: credential, password }
         : { email: credential, password };
@@ -198,11 +176,8 @@ const getEmployeePath = (type) => {
       if (loginType === "Employee") {
         try {
           resp = await post('/api/mobileLogin', loginData);
-          console.log(resp);
-
         } catch (employeeError) {
           console.error('Employee login error:', employeeError);
-          // Handle employee login specific errors
           const errorMessage = 'Please provide valid phone number and password';
           showToast('danger', errorMessage);
           setIsSubmitting(false);
@@ -213,7 +188,6 @@ const getEmployeePath = (type) => {
           resp = await login(loginData);
         } catch (managerError) {
           console.error('Manager login error:', managerError);
-          // Handle manager login specific errors
           const errorMessage = 'Please provide valid email and password';
           showToast('danger', errorMessage);
           setIsSubmitting(false);
@@ -221,7 +195,6 @@ const getEmployeePath = (type) => {
         }
       }
 
-      // Check if response exists and process it
       if (!resp) {
         const errorMessage = loginType === 'Employee'
           ? 'Please provide valid phone number and password'
@@ -231,22 +204,19 @@ const getEmployeePath = (type) => {
         return;
       }
 
-      // Check if user is blocked
       if (resp.blocked) {
         showToast('danger', resp.message || 'Account is blocked');
         setIsSubmitting(false);
         return;
       }
 
-      // Check if login was successful
       if (resp.user) {
         storeUserData(resp);
-        const redirectPath = getRedirectPathByUserType(resp.user.type,resp?.user?.attendance_type);
+        const redirectPath = getRedirectPathByUserType(resp.user.type, resp?.user?.attendance_type);
         navigate(redirectPath);
         return;
       }
 
-      // If we reach here, login failed
       const errorMessage = loginType === 'Employee'
         ? 'Please provide valid phone number and password'
         : 'Please provide valid email and password';
@@ -264,13 +234,12 @@ const getEmployeePath = (type) => {
   };
 
   const handleLoginTypeChange = (type) => {
-    if (isSubmitting) return; // Prevent change during submission
+    if (isSubmitting) return;
 
     setLoginType(type);
     setValidated(false);
-    setIsSubmitting(false); // Reset submitting state
+    setIsSubmitting(false);
 
-    // Clear form when switching login types
     if (userNameRef.current) {
       userNameRef.current.value = '';
     }
@@ -285,7 +254,6 @@ const getEmployeePath = (type) => {
     setShowPassword(prev => !prev);
   };
 
-  // Handle Enter key press to prevent form submission issues
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !isSubmitting) {
       e.preventDefault();
@@ -293,47 +261,181 @@ const getEmployeePath = (type) => {
     }
   };
 
-  // Handle form submission more explicitly
   const handleFormSubmit = (e) => {
     e.preventDefault();
     e.stopPropagation();
     handleLogin(e);
   };
 
-  return (
-    <div
-      className="min-vh-100 d-flex flex-row align-items-center"
-      style={{
-        backgroundImage: `url(${image})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        backgroundColor: '#f8f9fa', // Fallback color
-      }}
-    >
-      {/* Optional overlay for better readability */}
-      <div
-        className="position-absolute w-100 h-100"
-        style={{
-          background: 'rgba(0, 0, 0, 0.3)', // Semi-transparent overlay
-          zIndex: 1,
-        }}
-      ></div>
+  // Loading Screen
+  if (isLoading) {
+    return (
+      <div className="position-fixed w-100 h-100 d-flex align-items-center justify-content-center"
+           style={{
+             background: 'linear-gradient(135deg, #1e3a5f 0%, #2c5aa0 50%, #0ea5e9 100%)',
+             zIndex: 9999
+           }}>
+        <div className="text-center">
+          <div className="mb-4">
+            <div style={{
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
+              background: 'rgba(255, 255, 255, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto',
+              animation: 'pulse 2s infinite'
+            }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                background: 'linear-gradient(45deg, #0ea5e9, #22d3ee)',
+                animation: 'spin 1s linear infinite'
+              }}></div>
+            </div>
+          </div>
+          <h4 className="text-white mb-2">EmpPulse</h4>
+          <p className="text-white-50">Employee Management System</p>
+          <style jsx>{`
+            @keyframes pulse {
+              0%, 100% { transform: scale(1); opacity: 1; }
+              50% { transform: scale(1.1); opacity: 0.8; }
+            }
+            @keyframes spin {
+              from { transform: rotate(0deg); }
+              to { transform: rotate(360deg); }
+            }
+          `}</style>
+        </div>
+      </div>
+    );
+  }
 
-      <CContainer style={{ position: 'relative', zIndex: 2 }}>
-        <CRow className="justify-content-center">
-          <CCol md={6}>
-            <CCardGroup>
-              <CCard
-                className="p-4"
-                style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.95)', // Semi-transparent white
-                  backdropFilter: 'blur(10px)', // Glass effect
-                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                }}
-              >
-                <CCardBody>
+  return (
+    <div className="min-vh-100 position-relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="position-absolute w-100 h-100" style={{
+        background: 'linear-gradient(135deg, #1e3a5f 0%, #2c5aa0 25%, #0ea5e9 50%, #22d3ee 75%, #0891b2 100%)',
+        backgroundSize: '400% 400%',
+        animation: 'gradientShift 15s ease infinite'
+      }}>
+        {/* Floating Elements */}
+        <div className="position-absolute" style={{
+          top: '10%',
+          left: '10%',
+          width: '150px',
+          height: '150px',
+          borderRadius: '50%',
+          background: 'rgba(255, 255, 255, 0.1)',
+          animation: 'float 6s ease-in-out infinite'
+        }}></div>
+        <div className="position-absolute" style={{
+          top: '60%',
+          right: '15%',
+          width: '100px',
+          height: '100px',
+          borderRadius: '50%',
+          background: 'rgba(255, 255, 255, 0.08)',
+          animation: 'float 8s ease-in-out infinite reverse'
+        }}></div>
+        <div className="position-absolute" style={{
+          bottom: '20%',
+          left: '20%',
+          width: '80px',
+          height: '80px',
+          borderRadius: '50%',
+          background: 'rgba(34, 211, 238, 0.2)',
+          animation: 'float 7s ease-in-out infinite'
+        }}></div>
+      </div>
+
+      <style jsx>{`
+        @keyframes gradientShift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-20px) rotate(180deg); }
+        }
+        @keyframes slideInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes fadeInScale {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        .animate-slide-up {
+          animation: slideInUp 0.6s ease-out;
+        }
+        .animate-fade-scale {
+          animation: fadeInScale 0.8s ease-out;
+        }
+      `}</style>
+
+      <CContainer className="position-relative h-100" style={{ zIndex: 2 }}>
+        <CRow className="min-vh-100 align-items-center justify-content-center py-3">
+          <CCol xs={12} sm={10} md={8} lg={6} xl={5}>
+            {/* Main Login Card */}
+            <CCard className="border-0 shadow-lg animate-fade-scale" style={{
+              background: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(20px)',
+              borderRadius: '20px',
+              overflow: 'hidden'
+            }}>
+              <CCardBody className="p-0">
+                {/* Header Section */}
+                <div className="text-center py-3 px-3" style={{
+                  background: 'linear-gradient(135deg, rgba(30, 58, 95, 0.95) 0%, rgba(14, 165, 233, 0.9) 100%)',
+                  position: 'relative'
+                }}>
+                  {/* Logo */}
+                  <div className="mb-3">
+                    <img
+                      src={logo}
+                      style={{
+                        width: '120px',
+                        height: 'auto',
+                        maxHeight: '120px',
+                        filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))'
+                      }}
+                      className="object-fit-contain animate-slide-up"
+                      alt="EmpPulse Logo"
+                    />
+                  </div>
+
+                  {/* Welcome Text */}
+                  <h2 className="text-white mb-1 fw-bold">Welcome Back</h2>
+                  <h3 className="text-white-75 mb-2 small">Sign in to continue to EmpPulse</h3>
+
+                  {/* Decorative Line */}
+                  <div className="mx-auto" style={{
+                    width: '150px',
+                    height: '2px',
+                    background: 'linear-gradient(90deg, #22d3ee, #0ea5e9)',
+                    borderRadius: '2px'
+                  }}></div>
+                </div>
+
+                {/* Form Section */}
+                <div className="p-3">
                   <CForm
                     noValidate
                     validated={validated}
@@ -341,57 +443,66 @@ const getEmployeePath = (type) => {
                     autoComplete="off"
                     onKeyDown={handleKeyDown}
                   >
-                    {/* Logo Section */}
-                    <div className="text-center mb-4">
-                      <img
-                        src={logo}
-                        style={{ width: '100%', height: 'auto', maxHeight: '150px' }}
-                        className="object-fit-contain mb-3"
-                        alt="Logo"
-                      />
-                      <h4 className="text-body-emphasis mb-2">Welcome Back</h4>
-                      <p className="text-body-secondary mb-0">Please sign in to continue</p>
-                    </div>
-
-                    {/* Login Type Toggle Buttons */}
-                    <div className="mb-4">
-                      <CButtonGroup
-                        role="group"
-                        aria-label="Login type selection"
-                        className="w-100"
-                      >
+                    {/* Login Type Toggle */}
+                    <div className="mb-3">
+                      <CButtonGroup role="group" className="w-100 shadow-sm" style={{ borderRadius: '10px', overflow: 'hidden' }}>
                         <CButton
-                          color={loginType === 'Employee' ? 'primary' : 'outline-primary'}
+                          color={loginType === 'Employee' ? 'primary' : 'light'}
                           onClick={() => handleLoginTypeChange('Employee')}
-                          className="flex-grow-1"
+                          className={`flex-grow-1 py-2 border-0 fw-semibold ${loginType === 'Employee' ? 'text-white' : 'text-muted'}`}
                           type="button"
+                          style={{
+                            background: loginType === 'Employee'
+                              ? 'linear-gradient(135deg, #1e3a5f, #0ea5e9)'
+                              : 'rgba(248, 249, 250, 0.8)',
+                            transition: 'all 0.3s ease'
+                          }}
                         >
-                          👤 Employee
+                          <CIcon icon={cilUser} className="me-2" />
+                          Employee
                         </CButton>
                         <CButton
-                          color={loginType === 'Manager' ? 'warning' : 'outline-warning'}
+                          color={loginType === 'Manager' ? 'warning' : 'light'}
                           onClick={() => handleLoginTypeChange('Manager')}
-                          className="flex-grow-1"
+                          className={`flex-grow-1 py-2 border-0 fw-semibold ${loginType === 'Manager' ? 'text-white' : 'text-muted'}`}
                           type="button"
+                          style={{
+                            background: loginType === 'Manager'
+                              ? 'linear-gradient(135deg, #f59e0b, #d97706)'
+                              : 'rgba(248, 249, 250, 0.8)',
+                            transition: 'all 0.3s ease'
+                          }}
                         >
-                          🏢 Manager
+                          <CIcon icon={cilShieldAlt} className="me-2" />
+                          Manager
                         </CButton>
                       </CButtonGroup>
                     </div>
 
-                    {/* Access Type Info */}
-                    <div className="text-center mb-4">
-                      <div className="d-flex align-items-center justify-content-center mb-2">
+                    {/* Access Info */}
+                    <div className="text-center mb-3 p-2" style={{
+                      background: loginType === 'Employee'
+                        ? 'linear-gradient(135deg, rgba(14, 165, 233, 0.1), rgba(34, 211, 238, 0.1))'
+                        : 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.1))',
+                      borderRadius: '10px',
+                      border: `1px solid ${loginType === 'Employee' ? 'rgba(14, 165, 233, 0.2)' : 'rgba(245, 158, 11, 0.2)'}`
+                    }}>
+                      <div className="d-flex align-items-center justify-content-center mb-1">
                         <CIcon
                           icon={loginType === 'Employee' ? cilPhone : cilUser}
                           className="me-2"
-                          style={{ color: loginType === 'Employee' ? '#0d6efd' : '#fd7e14' }}
+                          style={{
+                            color: loginType === 'Employee' ? '#0ea5e9' : '#f59e0b',
+                            fontSize: '16px'
+                          }}
                         />
-                        <span className="text-body-secondary">
-                          {loginType === 'Employee' ? 'Employee Portal Access' : 'Manager Portal Access'}
+                        <span className="fw-semibold small" style={{
+                          color: loginType === 'Employee' ? '#1e3a5f' : '#92400e'
+                        }}>
+                          {loginType === 'Employee' ? 'Employee Portal' : 'Manager Portal'}
                         </span>
                       </div>
-                      <small className="text-body-secondary">
+                      <small className="text-muted" style={{ fontSize: '12px' }}>
                         {loginType === 'Employee'
                           ? 'Access your work schedule and tasks'
                           : 'Manage your team and operations'
@@ -400,101 +511,155 @@ const getEmployeePath = (type) => {
                     </div>
 
                     {/* Username/Phone Input */}
-                    <CInputGroup className="mb-3">
-                      <CInputGroupText>
-                        <CIcon icon={loginType === 'Employee' ? cilPhone : cilUser} />
-                      </CInputGroupText>
-                      <CFormInput
-                        ref={userNameRef}
-                        id="username"
-                        name="username"
-                        placeholder={loginType === 'Employee' ? 'Enter your phone number' : 'Enter your email'}
-                        autoComplete="off"
-                        feedbackInvalid={`Please provide ${loginType === 'Employee' ? 'valid 10-digit mobile number' : 'email'}.`}
-                        required
-                        type={loginType === 'Employee' ? 'tel' : 'email'}
-                        disabled={isSubmitting}
-                        pattern={loginType === 'Employee' ? '[6-9][0-9]{9}' : undefined}
-                        title={loginType === 'Employee' ? 'Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9' : undefined}
-                        maxLength={loginType === 'Employee' ? '10' : undefined}
-                        minLength={loginType === 'Employee' ? '10' : undefined}
-                        inputMode={loginType === 'Employee' ? 'numeric' : 'email'}
-                        onInput={loginType === 'Employee' ? handleMobileInputChange : undefined}
-                        onKeyDown={loginType === 'Employee' ? handleMobileKeyPress : undefined}
-                        onPaste={loginType === 'Employee' ? handleMobilePaste : undefined}
-                      />
-                    </CInputGroup>
+                    <div className="mb-3">
+                      <CInputGroup className="shadow-sm" style={{ borderRadius: '10px', overflow: 'hidden' }}>
+                        <CInputGroupText className="border-0" style={{
+                          background: 'linear-gradient(135deg, #f8fafc, #e2e8f0)',
+                          color: '#64748b'
+                        }}>
+                          <CIcon icon={loginType === 'Employee' ? cilPhone : cilUser} />
+                        </CInputGroupText>
+                        <CFormInput
+                          ref={userNameRef}
+                          id="username"
+                          name="username"
+                          placeholder={loginType === 'Employee' ? 'Enter your phone number' : 'Enter your email'}
+                          autoComplete="off"
+                          feedbackInvalid={`Please provide ${loginType === 'Employee' ? 'valid 10-digit mobile number' : 'email'}.`}
+                          required
+                          type={loginType === 'Employee' ? 'tel' : 'email'}
+                          disabled={isSubmitting}
+                          pattern={loginType === 'Employee' ? '[6-9][0-9]{9}' : undefined}
+                          title={loginType === 'Employee' ? 'Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9' : undefined}
+                          maxLength={loginType === 'Employee' ? '10' : undefined}
+                          minLength={loginType === 'Employee' ? '10' : undefined}
+                          inputMode={loginType === 'Employee' ? 'numeric' : 'email'}
+                          onInput={loginType === 'Employee' ? handleMobileInputChange : undefined}
+                          onKeyDown={loginType === 'Employee' ? handleMobileKeyPress : undefined}
+                          onPaste={loginType === 'Employee' ? handleMobilePaste : undefined}
+                          className="border-0 py-2"
+                          style={{
+                            background: 'rgba(248, 250, 252, 0.5)',
+                            fontSize: '15px'
+                          }}
+                        />
+                      </CInputGroup>
+                    </div>
 
                     {/* Password Input */}
-                    <CInputGroup className="mb-4 position-relative">
-                      <CInputGroupText>
-                        <CIcon icon={cilLockLocked} />
-                      </CInputGroupText>
-                      <CFormInput
-                        ref={userPwdRef}
-                        id="password"
-                        name="password"
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="Enter your password"
-                        autoComplete="off"
-                        feedbackInvalid="Please provide password."
-                        required
-                        style={{ paddingRight: '4.5rem' }} //eye
-                        disabled={isSubmitting}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleShowPasswordToggle}
+                    <div className="mb-3">
+                      <CInputGroup className="shadow-sm position-relative" style={{ borderRadius: '10px', overflow: 'hidden' }}>
+                        <CInputGroupText className="border-0" style={{
+                          background: 'linear-gradient(135deg, #f8fafc, #e2e8f0)',
+                          color: '#64748b'
+                        }}>
+                          <CIcon icon={cilLockLocked} />
+                        </CInputGroupText>
+                        <CFormInput
+                          ref={userPwdRef}
+                          id="password"
+                          name="password"
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Enter your password"
+                          autoComplete="off"
+                          feedbackInvalid="Please provide password."
+                          required
+                          disabled={isSubmitting}
+                          className="border-0 py-2"
+                          style={{
+                            background: 'rgba(248, 250, 252, 0.5)',
+                            paddingRight: '3.5rem',
+                            fontSize: '15px'
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleShowPasswordToggle}
+                          disabled={isSubmitting}
+                          className="position-absolute border-0 bg-transparent"
+                          style={{
+                            top: '50%',
+                            right: '12px',
+                            transform: 'translateY(-50%)',
+                            cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                            zIndex: 10,
+                            opacity: isSubmitting ? 0.6 : 0.7,
+                            fontSize: '16px',
+                            transition: 'opacity 0.2s ease'
+                          }}
+                        >
+                          {showPassword ? '🔒' : '👁️'}
+                        </button>
+                      </CInputGroup>
+                    </div>
+
+                    {/* Login Button */}
+                    <div className="mb-3">
+                      <CButton
+                        type="submit"
+                        className="w-100 py-2 border-0 fw-semibold shadow-sm"
                         disabled={isSubmitting}
                         style={{
-                          position: 'absolute',
-                          top: '50%',
-                          right: '20px',  //gave some padding to eye
-                          transform: 'translateY(-50%)',
-                          background: 'none',
-                          border: 'none',
-                          cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                          zIndex: 10,
-                          opacity: isSubmitting ? 0.6 : 1,
-                          fontSize: '16px',
+                          background: loginType === 'Employee'
+                            ? 'linear-gradient(135deg, #1e3a5f, #0ea5e9)'
+                            : 'linear-gradient(135deg, #f59e0b, #d97706)',
+                          borderRadius: '10px',
+                          fontSize: '15px',
+                          transition: 'all 0.3s ease',
+                          transform: isSubmitting ? 'scale(0.98)' : 'scale(1)'
                         }}
                       >
-                        {showPassword ? '🔒' : '👁️'}
-                      </button>
-                    </CInputGroup>
+                        {isSubmitting ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-2" role="status" />
+                            Signing In...
+                          </>
+                        ) : (
+                          <>
+                            <CIcon icon={cilShieldAlt} className="me-2" />
+                            Sign In
+                          </>
+                        )}
+                      </CButton>
+                    </div>
 
-                    {/* Login Button and Forgot Password */}
-                    <CRow className="justify-content-center">
-                      <CCol xs={12} className="text-center mb-2">
-                        <CButton
-                          color={loginType === 'Employee' ? 'primary' : 'warning'}
-                          type="submit"
-                          className="px-4"
-                          disabled={isSubmitting}
-                        >
-                          {isSubmitting ? '🔄 Logging in...' : '🔐 Login'}
-                        </CButton>
-                      </CCol>
-                      <CCol xs={12} className="text-center">
-                        <CButton
-                          color="link"
-                          className="px-0"
-                          onClick={() => navigate('/sendEmailForResetLink')}
-                          type="button"
-                          disabled={isSubmitting}
-                        >
-                          🔑 Forgot Password?
-                        </CButton>
-                      </CCol>
-                    </CRow>
+                    {/* Forgot Password */}
+                    {loginType != 'Employee' && (<div className="text-center">
+                      <CButton
+                        color="link"
+                        className="text-decoration-none fw-semibold p-1"
+                        onClick={() => navigate('/sendEmailForResetLink')}
+                        type="button"
+                        disabled={isSubmitting}
+                        style={{
+                          color: loginType === 'Employee' ? '#0ea5e9' : '#f59e0b',
+                          transition: 'color 0.2s ease',
+                          fontSize: '14px'
+                        }}
+                      >
+                        🔑 Forgot Password?
+                      </CButton>
+                    </div>)}
                   </CForm>
-                </CCardBody>
-              </CCard>
-            </CCardGroup>
+                </div>
+
+                {/* Footer */}
+                <div className="text-center py-2 px-3" style={{
+                  background: 'rgba(248, 250, 252, 0.5)',
+                  borderTop: '1px solid rgba(226, 232, 240, 0.5)'
+                }}>
+                  <small className="text-muted" style={{ fontSize: '12px' }}>
+                    Powered by <span className="fw-semibold" style={{ color: '#0ea5e9' }}>EmpPulse</span> -
+                    Employee Management System
+                  </small>
+                </div>
+              </CCardBody>
+            </CCard>
           </CCol>
         </CRow>
       </CContainer>
 
+      {/* Simple PWA Install Button (from code 2) */}
       {showInstall && (
         <CButton
           onClick={onInstall}
