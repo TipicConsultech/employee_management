@@ -20,12 +20,20 @@ import {
   CSpinner,
   CAlert
 } from '@coreui/react';
-import { cilCloudDownload, cilCalendar } from '@coreui/icons';
+import { cilCloudDownload, cilCalendar, cilSpreadsheet } from '@coreui/icons';
 import CIcon from '@coreui/icons-react';
 import { getAPICall, post } from '../../../util/api';
 import { useTranslation } from 'react-i18next';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+
+const styles = `
+  .serial-no-column {
+    width: 50px !important;
+    max-width: 50px !important;
+    min-width: 50px !important;
+  }
+`;
 
 const WeeklyMonthlyPresentyPayroll = () => {
   const { t } = useTranslation("global");
@@ -34,7 +42,12 @@ const WeeklyMonthlyPresentyPayroll = () => {
   const [selectedWeek, setSelectedWeek] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+  const currentDate = new Date();
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                     'July', 'August', 'September', 'October', 'November', 'December'];
+  return monthNames[currentDate.getMonth()];
+});
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [employeeData, setEmployeeData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -204,18 +217,29 @@ const WeeklyMonthlyPresentyPayroll = () => {
   };
 
   const handleReportTypeChange = (e) => {
-    const type = e.target.value;
-    setReportType(type);
-    setSelectedWeek('');
-    setStartDate('');
-    setEndDate('');
+  const type = e.target.value;
+  setReportType(type);
+  setSelectedWeek('');
+  setStartDate('');
+  setEndDate('');
+
+  // Only reset month if switching away from monthly, otherwise keep current month
+  if (type !== 'monthly') {
     setSelectedMonth('');
-    setEmployeeData([]);
-    setWeekDates([]);
-    setMonthlyWeeks([]);
-    setHasFetchedData(false);
-    setNotification({ show: false, type: '', message: '' });
-  };
+  } else if (!selectedMonth) {
+    // Set current month if monthly is selected and no month is set
+    const currentDate = new Date();
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+    setSelectedMonth(monthNames[currentDate.getMonth()]);
+  }
+
+  setEmployeeData([]);
+  setWeekDates([]);
+  setMonthlyWeeks([]);
+  setHasFetchedData(false);
+  setNotification({ show: false, type: '', message: '' });
+};
 
   const handleWeekDayChange = (e) => {
     const weekDay = e.target.value;
@@ -452,6 +476,127 @@ const WeeklyMonthlyPresentyPayroll = () => {
     showNotification('success', t('MSG.pdfExportedSuccess'));
   };
 
+  // REPLACE THE EXISTING exportToCSV function with this updated version:
+
+const exportToCSV = () => {
+  // Create CSV headers matching the table structure
+  const headers = [
+    t('LABELS.serialNo'),
+    t('LABELS.employeeName'),
+    // Add date headers
+    ...weekDates.map(date => new Date(date).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit'
+    })),
+    t('LABELS.totalDays'),
+    t('LABELS.overtimeHours'),
+    t('LABELS.dayRate'),
+    t('LABELS.holidayRate'),
+    t('LABELS.halfDayRate'),
+    t('LABELS.totalAmount'),
+    t('LABELS.paidAmount')
+  ];
+
+  // Create CSV data rows
+  const csvData = [];
+
+  // Add title row
+  const title = reportType === 'weekly'
+    ? t('LABELS.weeklyPresentyPayrollChart')
+    : t('LABELS.monthlyPresentyPayrollChart');
+  csvData.push([title]);
+
+  // Add date range row
+  const dateRange = reportType === 'weekly'
+    ? `${t('LABELS.week')}: ${formatDate(startDate)} ${t('LABELS.to')} ${formatDate(endDate)}`
+    : `${t('LABELS.month')}: ${selectedMonth} ${selectedYear}`;
+  csvData.push([dateRange]);
+
+  // Add empty row for spacing
+  csvData.push([]);
+
+  // Add headers
+  csvData.push(headers);
+
+  // Add employee data rows
+  employeeData.forEach((employee, index) => {
+    // Main employee row with attendance status
+    const mainRow = [
+      index + 1, // Serial number
+      employee.employee_name || 'Unknown',
+      // Attendance status for each date
+      ...weekDates.map(date => {
+        const attendance = employee.attendance && employee.attendance[date];
+        return attendance?.status || '-';
+      }),
+      calculateTotalDays(employee.attendance),
+      calculateOvertimeHours(employee.attendance),
+      employee.wage_hour || 0, // Clean numeric value
+      calculateHolidayRate(employee), // Clean numeric value
+      calculateHalfDayRate(employee), // Clean numeric value
+      calculateTotalAmount(employee), // Clean numeric value
+      calculateTotalAmount(employee) // Clean numeric value
+    ];
+    csvData.push(mainRow);
+
+    // Overtime hours row (matching the frontend structure)
+    const overtimeRow = [
+      '', // Empty serial number
+      t('LABELS.overTime'), // Overtime label
+      // Overtime hours for each date
+      ...weekDates.map(date => {
+        const attendance = employee.attendance && employee.attendance[date];
+        const overtimeHours = attendance?.overtime_hours || 0;
+        return overtimeHours > 0 ? overtimeHours : 0; // Clean numeric value
+      }),
+      '', '', '', '', '', '', '' // Empty cells for summary columns
+    ];
+    csvData.push(overtimeRow);
+  });
+
+  // Convert to CSV string with proper escaping
+  const csvString = csvData.map(row =>
+    row.map(cell => {
+      // Convert to string and handle special characters
+      let cellString = String(cell);
+
+      // If cell contains comma, newline, or quotes, wrap in quotes
+      if (cellString.includes(',') || cellString.includes('\n') || cellString.includes('"')) {
+        cellString = `"${cellString.replace(/"/g, '""')}"`;
+      }
+
+      return cellString;
+    }).join(',')
+  ).join('\r\n'); // Use \r\n for better Excel compatibility
+
+  // Create and download the CSV file with proper BOM for Excel
+  const BOM = '\uFEFF'; // Byte Order Mark for proper UTF-8 encoding in Excel
+  const blob = new Blob([BOM + csvString], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+
+  if (link.download !== undefined) {
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+
+    // Generate filename
+    const fileName = reportType === 'weekly'
+      ? `weekly-presenty-${startDate}-to-${endDate}.csv`
+      : `monthly-presenty-${selectedMonth}-${selectedYear}.csv`;
+
+    link.setAttribute('download', fileName);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Clean up
+    URL.revokeObjectURL(url);
+  }
+
+  showNotification('success', t('MSG.csvExportedSuccess'));
+};
+
+
   const getDateRangeDisplay = () => {
     if (reportType === 'weekly' && startDate && endDate) {
       return `${formatDate(startDate)} ${t('LABELS.to')} ${formatDate(endDate)}`;
@@ -471,12 +616,14 @@ const WeeklyMonthlyPresentyPayroll = () => {
 
   return (
     <CContainer fluid>
-      <CRow className="mb-4">
+    <style>{styles}</style>
+    <CRow className="mb-2">  {/* Changed from mb-4 to mb-2 */}
         <CCol>
-          <CCard className="mb-4 shadow-sm">
-            <CCardHeader style={{ backgroundColor: "#E6E6FA" }}>
-              <strong>{t('LABELS.selectReportParameters')}</strong>
-            </CCardHeader>
+        <CCard className="mb-2 shadow-sm">  {/* Changed from mb-4 to mb-2 */}
+        <CCardHeader style={{ backgroundColor: "#E6E6FA" }}>
+            <strong>{t('LABELS.selectReportParameters')}</strong>
+        </CCardHeader>
+
 
             {notification.show && (
               <CAlert
@@ -595,14 +742,26 @@ const WeeklyMonthlyPresentyPayroll = () => {
                     </CButton>
 
                     {employeeData.length > 0 && (
-                      <CButton
-                        color="success"
-                        onClick={exportToPDF}
-                        disabled={loading}
-                      >
-                        <CIcon icon={cilCloudDownload} className="me-2" />
-                        {t('LABELS.exportToPDF')}
-                      </CButton>
+                      <>
+                        <CButton
+                          color="success"
+                          onClick={exportToPDF}
+                          disabled={loading}
+                          className="me-2"
+                        >
+                          <CIcon icon={cilCloudDownload} className="me-2" />
+                          {t('LABELS.exportToPDF')}
+                        </CButton>
+
+                        <CButton
+                          color="info"
+                          onClick={exportToCSV}
+                          disabled={loading}
+                        >
+                          <CIcon icon={cilSpreadsheet} className="me-2" />
+                          {t('LABELS.exportToCSV')}
+                        </CButton>
+                      </>
                     )}
                   </CCol>
                 </CRow>
@@ -613,11 +772,11 @@ const WeeklyMonthlyPresentyPayroll = () => {
       </CRow>
 
       {employeeData.length > 0 && weekDates.length > 0 && (
-        <CRow>
-          <CCol>
-            <CCard className="mb-4 shadow-sm">
-              <CCardHeader style={{ backgroundColor: "#E6E6FA" }} className="d-flex justify-content-between align-items-center flex-wrap">
-                <strong>{t('LABELS.employeeAttendancePayrollReport')}</strong>
+      <CRow>  {/* No margin class needed here */}
+        <CCol>
+          <CCard className="shadow-sm">  {/* Removed mb-4 completely */}
+            <CCardHeader style={{ backgroundColor: "#E6E6FA" }} className="d-flex justify-content-between align-items-center flex-wrap">
+              <strong>{t('LABELS.employeeAttendancePayrollReport')}</strong>
                 <small className="text-muted">
                   {reportType === 'weekly' && `${t('LABELS.week')}: `}
                   {reportType === 'monthly' && `${t('LABELS.month')}: `}
@@ -629,7 +788,7 @@ const WeeklyMonthlyPresentyPayroll = () => {
                   <CTable striped bordered hover>
                     <CTableHead color="dark">
                       <CTableRow>
-                        <CTableHeaderCell rowSpan="2" className="text-center align-middle">
+                        <CTableHeaderCell rowSpan="2" className="text-center align-middle serial-no-column">
                           {t('LABELS.serialNo')}
                         </CTableHeaderCell>
                         <CTableHeaderCell rowSpan="2" className="text-center align-middle">
@@ -665,7 +824,7 @@ const WeeklyMonthlyPresentyPayroll = () => {
                           <CTableHeaderCell key={index} className="text-center">
                             {new Date(date).toLocaleDateString('en-GB', {
                               day: '2-digit',
-                              month: '2-digit'
+                            //   month: '2-digit'
                             })}
                           </CTableHeaderCell>
                         ))}
@@ -675,7 +834,7 @@ const WeeklyMonthlyPresentyPayroll = () => {
                       {employeeData.map((employee, index) => (
                         <React.Fragment key={employee.employee_id || index}>
                           <CTableRow>
-                            <CTableDataCell className="text-center" rowSpan="2">{index + 1}</CTableDataCell>
+                            <CTableDataCell className="text-center" rowSpan="2" style={{width: '50px', maxWidth: '50px', minWidth: '50px'}}>{index + 1}</CTableDataCell>
                             <CTableDataCell>
                               <div>{employee.employee_name || 'Unknown'}</div>
                             </CTableDataCell>
