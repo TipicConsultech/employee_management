@@ -198,7 +198,7 @@ const MobileEmployeeRow = ({ handleEditClick, handleMapClick, employee, empId, e
                                                     cursor: employee.trackers?.[0]?.check_in_gps ? 'pointer' : 'not-allowed'
                                                 }}
                                                 disabled={!employee.trackers?.[0]?.check_in_gps}
-                                                onClick={() => handleMapClick(employee.trackers?.[0]?.check_in_gps, 'check-in')}
+                                                onClick={() => handleMapClick(employee.trackers?.[0]?.check_in_gps, 'check-in',employee.trackers?.[0]?.employee_id)}
                                             >
                                                 <CIcon icon={cilLocationPin} size="sm" />
                                             </CButton>
@@ -283,7 +283,7 @@ const MobileEmployeeRow = ({ handleEditClick, handleMapClick, employee, empId, e
                                                     cursor: employee.trackers?.[0]?.check_out_gps ? 'pointer' : 'not-allowed'
                                                 }}
                                                 disabled={!employee.trackers?.[0]?.check_out_gps}
-                                                onClick={() => handleMapClick(employee.trackers?.[0]?.check_out_gps, 'check-out')}
+                                                onClick={() => handleMapClick(employee.trackers?.[0]?.check_out_gps, 'check-out',employee.trackers?.[0]?.employee_id)}
                                             >
                                                 <CIcon icon={cilLocationPin} size="sm" />
                                             </CButton>

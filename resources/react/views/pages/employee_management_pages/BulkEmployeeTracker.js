@@ -13,6 +13,7 @@ import { getAPICall, post } from "../../../util/api";
 import { useToast } from '../../common/toast/ToastContext';
 
 
+
 function BulkEmployeeCheckInOut() {
     const { t } = useTranslation("global");
     const navigate = useNavigate();
@@ -28,6 +29,10 @@ function BulkEmployeeCheckInOut() {
     const [selectedTrackerId, setSelectedTrackerId] = useState(null);
     const [mapVisible, setMapVisible] = useState(false);
     const [selectedGps,setSelectedGps]= useState(null);
+    const [employeeId, setEmployeeId] = useState(null);
+    const [attendanceType, setAttendanceType] = useState(0);
+
+
   
     
     const { showToast } = useToast();
@@ -39,19 +44,26 @@ function BulkEmployeeCheckInOut() {
         setSelectedTrackerId(trackerId);
         setModalVisible(true);
     };
-      let attendanceType=null;
+
+   
     const handleDeleteClick = (empId) => {
         // Implement delete logic here
         console.log(`Delete employee with ID: ${empId}`);
         // Add API call or state update to remove employee
     };
 
-    const handleMapClick = (gpsCoordinates, type) => {
+
+    
+    
+
+    const handleMapClick = (gpsCoordinates,type,empId) => {
         setSelectedGps(gpsCoordinates);
-         attendanceType=type;
-        setMapVisible(true);
-      
-        
+        if(type==="check-out"){
+             setAttendanceType(1);
+        }
+         setEmployeeId(empId);
+        setMapVisible(true);  
+
     };
 
 
@@ -871,7 +883,7 @@ const handleBulkCheckOut = useCallback(async () => {
                                                                                 color: employee.trackers?.[0]?.check_in_gps ? '' : '#6c757d'
                                                                             }}
                                                                             disabled={!employee.trackers?.[0]?.check_in_gps}
-                                                                            onClick={() => handleMapClick(employee.trackers?.[0]?.check_in_gps,'check-in')}
+                                                                            onClick={() => handleMapClick(employee.trackers?.[0]?.check_in_gps,'check-in',employee.trackers?.[0]?.employee_id)}
                                                                         >
                                                                             <CIcon icon={cilLocationPin} size="sm" />
                                                                         </CButton>
@@ -948,7 +960,7 @@ const handleBulkCheckOut = useCallback(async () => {
                                                                                 color: employee.trackers?.[0]?.check_out_gps ? '' : '#6c757d'
                                                                             }}
                                                                             disabled={!employee.trackers?.[0]?.check_out_gps}
-                                                                            onClick={() => handleMapClick(employee.trackers?.[0]?.check_out_gps, 'check-out')}
+                                                                            onClick={() => handleMapClick(employee.trackers?.[0]?.check_out_gps, 'check-out',employee.trackers?.[0]?.employee_id)}
                                                                         >
                                                                             <CIcon icon={cilLocationPin} size="sm" />
                                                                         </CButton>
@@ -1041,6 +1053,7 @@ const handleBulkCheckOut = useCallback(async () => {
                 onClose={() => setMapVisible(false)}
                 gpsCoordinates={selectedGps}
                 attendanceType={attendanceType}
+                employeeId={employeeId}
             />
         </div>
         </>
