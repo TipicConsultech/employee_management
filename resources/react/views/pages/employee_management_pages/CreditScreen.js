@@ -46,7 +46,8 @@ const CreditSalaryScreen = () => {
   const [formData, setFormData] = useState({
     selectedEmployee: '',
     creditAmount: '',
-    paymentType: 'cash'
+    paymentType: 'cash',
+    transactionId: ''
   });
 
   // Memoized helper functions to prevent recreating on every render
@@ -87,6 +88,13 @@ const CreditSalaryScreen = () => {
         isValid = false;
         errorMessage = t('MSG.amountMustBeGreaterThanZero') || 'Amount must be greater than zero';
       }
+    }
+
+    // Step 3: Validate transactionId for UPI or Bank Transfer
+    if (isValid && ['upi', 'bank_transfer'].includes(formData.paymentType) && !formData.transactionId.trim()) {
+      errors.transactionId = true;
+      isValid = false;
+      errorMessage = t('MSG.pleaseEnterTransactionId') || 'Please enter transaction ID';
     }
 
     setValidationErrors(errors);
@@ -155,7 +163,6 @@ const CreditSalaryScreen = () => {
 
   const fetchInitialData = useCallback(async () => {
     try {
-      // setLoading(true);
       setError(null);
       await fetchEmployees();
     } catch (err) {
@@ -188,7 +195,8 @@ const CreditSalaryScreen = () => {
     setFormData({
       selectedEmployee: '',
       creditAmount: '',
-      paymentType: 'cash'
+      paymentType: 'cash',
+      transactionId: ''
     });
     setValidationErrors({});
   }, []);
@@ -211,6 +219,11 @@ const CreditSalaryScreen = () => {
         payment_type: formData.paymentType,
         payed_amount: parseFloat(formData.creditAmount)
       };
+
+      // Add transaction_id only for UPI or Bank Transfer
+      if (['upi', 'bank_transfer'].includes(formData.paymentType)) {
+        data.transaction_id = formData.transactionId.trim();
+      }
 
       console.log('Submitting credit salary data:', data);
 
@@ -438,10 +451,37 @@ const CreditSalaryScreen = () => {
                   )}
                 </CCol>
 
-                {/* Empty column for spacing */}
-                <CCol md={6} className="mb-4">
-                  {/* This column can be used for additional fields in the future */}
-                </CCol>
+                {/* Transaction ID (Conditional) */}
+                {['upi', 'bank_transfer'].includes(formData.paymentType) && (
+                  <CCol md={6} className="mb-4">
+                    <CFormLabel className="fw-semibold text-dark mb-2">
+                      {t('LABELS.transactionId') || 'Transaction ID'}
+                      <span className="text-danger ms-1">*</span>
+                    </CFormLabel>
+                    <CFormInput
+                      type="text"
+                      placeholder={t('LABELS.enterTransactionId') || 'Enter Transaction ID'}
+                      value={formData.transactionId}
+                      onChange={(e) => handleFormChange('transactionId', e.target.value)}
+                      disabled={submitting}
+                      invalid={!!validationErrors.transactionId}
+                      className={`form-control ${validationErrors.transactionId ? 'border-danger' : ''}`}
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: '14px',
+                        borderRadius: '4px',
+                        backgroundColor: '#ffffff',
+                        border: validationErrors.transactionId ? '2px solid #dc3545' : '1px solid #d1d5db',
+                        boxShadow: 'none'
+                      }}
+                    />
+                    {validationErrors.transactionId && (
+                      <small className="text-danger d-flex align-items-center mt-2">
+                        {t('MSG.pleaseEnterTransactionId') || 'Please enter transaction ID'}
+                      </small>
+                    )}
+                  </CCol>
+                )}
               </CRow>
 
               {/* No employees state */}
@@ -479,7 +519,7 @@ const CreditSalaryScreen = () => {
                 </CButton>
                 <CButton
                   color="primary"
-                  disabled={submitting || employees.length === 0 || validationErrors.selectedEmployee || validationErrors.creditAmount}
+                  disabled={submitting || employees.length === 0 || validationErrors.selectedEmployee || validationErrors.creditAmount || validationErrors.transactionId}
                   onClick={handleSubmitCreditSalary}
                   className="px-4 py-2"
                   style={{

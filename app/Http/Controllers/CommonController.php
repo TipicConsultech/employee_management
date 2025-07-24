@@ -19,6 +19,7 @@ class CommonController extends Controller
             'employee_id'       => ['required', 'exists:employee,id'],
             'payment_type'      => ['required', 'in:cash,upi,bank_transfer'],
             'payed_amount'      => ['required', 'numeric', 'min:1'],
+             'transaction_id'=> ['nullable', 'string']
         ]);
 
        

@@ -893,7 +893,11 @@
       "paymentMethodRequired":"पेमेंट पद्धत आवश्यक आहे",
       "workHours":"कामाचे तास",
       "notAvailable":"उपलब्ध नाही",
-      "confirmCheckout":"चेकआउट निश्चित करा"
+      "confirmCheckout":"चेकआउट निश्चित करा",
+      "workPeriod": "कामकाज कालावधी",
+  "workDetails": "कामाचे तपशील",
+  "transactionId": "व्यवहार आयडी",
+  "enterTransactionId": "व्यवहार आयडी प्रविष्ट करा"
 
   },
 

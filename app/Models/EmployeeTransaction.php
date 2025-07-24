@@ -20,6 +20,7 @@ class EmployeeTransaction extends Model
         'payment_type',
         'salary_amount',
         'payed_amount',
+        'transaction_id'
     ];
 
     protected $casts = [

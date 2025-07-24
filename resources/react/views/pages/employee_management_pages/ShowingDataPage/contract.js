@@ -1,52 +1,12 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { post } from '../../../../util/api';
+import { useTranslation } from 'react-i18next';
 
 function Contract({employee}) {
   // Mock translation function with your LABELS and MSG structure
-  const t = (key) => {
-    const translations = {
-      'LABELS.paymentInfo': 'Payment Information',
-      'LABELS.startDate': 'Start Date',
-      'LABELS.endDate': 'End Date',
-      'LABELS.description': 'Work Description',
-      'LABELS.enterWorkingType': 'Enter work description',
-      'LABELS.quantity': 'Quantity',
-      'LABELS.enterQuantity': 'Enter quantity',
-      'LABELS.pricePerItem': 'Price per Item',
-      'LABELS.enterPrice': 'Enter price',
-      'LABELS.totalAmount': 'Total Amount',
-      'LABELS.paidAmount': 'Paid Amount',
-      'LABELS.enterActualPayment': 'Enter paid amount',
-      'LABELS.pendingAmount': 'Pending Amount',
-      'LABELS.paymentMethod': 'Payment Method',
-      'LABELS.selectPaymentMethod': 'Select payment method',
-      'LABELS.cash': 'Cash',
-      'LABELS.upi': 'UPI',
-      'LABELS.bankTransfer': 'Bank Transfer',
-      'LABELS.submitAndSave': 'Submit Payment',
-      'LABELS.workPeriod': 'Work Period',
-      'LABELS.workDetails': 'Work Details',
-      'LABELS.paymentDetails': 'Payment Details',
-      'MSG.workingTypeRequired': 'Work description is required',
-      'MSG.priceMustBePositive': 'Price must be greater than 0',
-      'MSG.quantityMustBePositive': 'Quantity must be greater than 0',
-      'MSG.payedAmountCannotBeNegative': 'Paid amount cannot be negative',
-      'MSG.payedAmountExceedsTotal': 'Paid amount cannot exceed total amount',
-      'MSG.payedAmountRequired': 'Paid amount is required',
-      'MSG.paymentMethodRequired': 'Payment method is required',
-      'MSG.startDateRequired': 'Start date is required',
-      'MSG.endDateRequired': 'End date is required',
-      'MSG.endDateAfterStartDate': 'End date must be after start date',
-      'MSG.fixErrors': 'Please fix the following errors before submitting:',
-      'MSG.paymentSubmittedSuccess': 'Payment submitted successfully!',
-      'MSG.paymentSubmissionError': 'Error submitting payment. Please try again.',
-      'MSG.processing': 'Processing...'
-    };
-    return translations[key] || key;
-  };
-
-  // Mock useParams and useToast hooks
  
+ const { t } = useTranslation('global');
+  // Mock useToast hook
   const showToast = useCallback((type, message) => {
     console.log(`Toast: ${type} - ${message}`);
   }, []);
@@ -64,7 +24,10 @@ function Contract({employee}) {
     payed_amount: '',
     pending_payment: 0,
     payment_type: '',
+    transactionId: ''
   });
+
+
 
   // Show notification
   const showNotification = useCallback((type, message) => {
@@ -117,6 +80,7 @@ function Contract({employee}) {
       case 'payment_type':
         if (!value) error = t('MSG.paymentMethodRequired');
         break;
+     
       default:
         break;
     }
@@ -159,8 +123,8 @@ function Contract({employee}) {
   const isFormValid = () => {
     const hasNoErrors = Object.keys(errors).every(key => !errors[key]);
     const hasRequiredFields = startDate && endDate && workSummary.working_type && 
-      workSummary.price && workSummary.quantity && workSummary.payed_amount && 
-      workSummary.payment_type;
+      workSummary.price && workSummary.quantity && workSummary.payed_amount 
+    
     return hasNoErrors && hasRequiredFields;
   };
 
@@ -174,8 +138,10 @@ function Contract({employee}) {
     const isQuantityValid = validateField('quantity', workSummary.quantity);
     const isPaymentTypeValid = validateField('payment_type', workSummary.payment_type);
     const isPayedAmountValid = validateField('payed_amount', workSummary.payed_amount);
+    const isTransactionIdValid = validateField('transactionId', workSummary.transactionId);
 
-    if (!isDateValid || !isWorkingTypeValid || !isPriceValid || !isQuantityValid || !isPaymentTypeValid || !isPayedAmountValid) {
+    if (!isDateValid || !isWorkingTypeValid || !isPriceValid || !isQuantityValid || 
+        !isPaymentTypeValid || !isPayedAmountValid || !isTransactionIdValid) {
       setIsSubmitting(false);
       return;
     }
@@ -190,9 +156,14 @@ function Contract({employee}) {
       // working_type: workSummary.working_type,
     };
 
+    // Add transaction_id only for UPI or Bank Transfer
+    if (['upi', 'bank_transfer'].includes(workSummary.payment_type) && payload.transaction_id !="") {
+      payload.transaction_id = workSummary.transactionId.trim();
+    }
+
     try {
       // Simulate API call
-      await post('/api/payment',payload);
+      await post('/api/payment', payload);
       showNotification('success', t('MSG.paymentSubmittedSuccess'));
       showToast('success', t('MSG.paymentSubmittedSuccess'));
       
@@ -207,6 +178,7 @@ function Contract({employee}) {
         payed_amount: '',
         pending_payment: 0,
         payment_type: '',
+        transactionId: ''
       });
       setErrors({});
     } catch (err) {
@@ -220,32 +192,11 @@ function Contract({employee}) {
 
   return (
     <>
-      {/* Bootstrap CSS */}
-      {/* <link 
-        href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" 
-        rel="stylesheet" 
-      /> */}
-      {/* CoreUI Icons */}
-      {/* <link 
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" 
-        rel="stylesheet" 
-      /> */}
-      
       <div className="bg-light min-vh-100 py-2">
         <div className="container">
           <div className="row justify-content-center">
             <div className="col-12">
               <div className="card shadow-lg border-0">
-                {/* Card Header */}
-                {/* <div className="card-header bg-primary text-white border-0 py-2">
-                  <div className="d-flex align-items-center">
-                  
-                    <h5 className="mb-0 fw-semibold">
-                      {t('LABELS.paymentInfo')}
-                    </h5>
-                  </div>
-                </div> */}
-
                 <div className="card-body p-3">
                   {/* Notifications */}
                   {notification.show && (
@@ -435,7 +386,7 @@ function Contract({employee}) {
                       </div>
                     </div>
 
-                    {/* Payment Method */}
+                    {/* Payment Method and Transaction ID */}
                     <div className="row">
                       <div className="col-md-6 mb-3">
                         <label className="form-label fw-medium">
@@ -461,6 +412,31 @@ function Contract({employee}) {
                           <div className="invalid-feedback">{errors.payment_type}</div>
                         )}
                       </div>
+
+                      {['upi', 'bank_transfer'].includes(workSummary.payment_type) && (
+                        <div className="col-md-6 mb-3">
+                          <label className="form-label fw-medium">
+                            {t('LABELS.transactionId')} <span className="text-danger">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            className={`form-control ${errors.transactionId ? 'is-invalid' : ''}`}
+                            placeholder={t('LABELS.enterTransactionId')}
+                            value={workSummary.transactionId}
+                            onChange={(e) => {
+                              setWorkSummary(prev => ({
+                                ...prev,
+                                transactionId: e.target.value,
+                              }));
+                              validateField('transactionId', e.target.value);
+                            }}
+                            onBlur={() => validateField('transactionId', workSummary.transactionId)}
+                          />
+                          {errors.transactionId && (
+                            <div className="invalid-feedback">{errors.transactionId}</div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -490,7 +466,7 @@ function Contract({employee}) {
                           (workSummary.price ? 1 : 0) +
                           (workSummary.quantity ? 1 : 0) +
                           (workSummary.payed_amount ? 1 : 0) +
-                          (workSummary.payment_type ? 1 : 0)
+                          (workSummary.payment_type ? 1 : 0)    
                         ) / 7 * 100)}%
                       </span>
                     </div>
@@ -506,7 +482,7 @@ function Contract({employee}) {
                             (workSummary.price ? 1 : 0) +
                             (workSummary.quantity ? 1 : 0) +
                             (workSummary.payed_amount ? 1 : 0) +
-                            (workSummary.payment_type ? 1 : 0)
+                            (workSummary.payment_type ? 1 : 0)    
                           ) / 7 * 100)}%`
                         }}
                       ></div>
