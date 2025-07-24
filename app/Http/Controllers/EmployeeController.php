@@ -225,6 +225,24 @@ class EmployeeController extends Controller
         return response()->json($response);
     }
 
+    public function checkTolerance($id)
+{
+    $employee = Employee::find($id);
+
+    if (!$employee) {
+        return response()->json([
+            'message' => 'Employee not found',
+            'no_limit' => false
+        ], 404);
+    }
+
+    $hasNoLimit = $employee->tolerance >= 999.0;
+
+    return response()->json([
+        'no_limit' => $hasNoLimit
+    ]);
+}
+
 
 
 
