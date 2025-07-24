@@ -929,7 +929,12 @@
       "paymentMethodRequired": "Payment method is required",
       "workHours":"Working Hours",
       "notAvailable":"Not Available",
-      "confirmCheckout":"Confirm Check-Out"
+      "confirmCheckout":"Confirm Check-Out",
+      "workPeriod":"Work Period",
+      "workDetails":"Work Details",
+      "transactionId":"Transaction Id",
+      "enterTransactionId":"Enter Transaction Id"
+
     },
 
 

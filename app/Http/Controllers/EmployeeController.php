@@ -245,7 +245,6 @@ class EmployeeController extends Controller
 
 
 
-
     /* PUT / PATCH /api/employees/{employee} */
     // public function update(Request $request, Employee $employee): JsonResponse
     // {

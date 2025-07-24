@@ -29,6 +29,7 @@ class EmployeeTransactionController extends Controller
         'payed_amount' => ['required','numeric'],
         'salary_amount'=> ['required', 'numeric'],
         'payment_type' => ['required', 'in:cash,upi,bank_transfer'],
+        'transaction_id'=> ['nullable', 'string']
     ]);
 
     if ($validated['payed_amount'] > $validated['salary_amount']) {
