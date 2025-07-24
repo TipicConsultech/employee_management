@@ -933,7 +933,11 @@
       "workPeriod":"Work Period",
       "workDetails":"Work Details",
       "transactionId":"Transaction Id",
-      "enterTransactionId":"Enter Transaction Id"
+      "enterTransactionId":"Enter Transaction Id",
+      "overtimeHours": "O.T Hours",
+      "serialNo": "No.",
+      "exportToCSV": "Export to CSV"
+
 
     },
 
@@ -1342,7 +1346,8 @@
       "pleaseSelectReportType": "Please select a report type.",
       "workHoursRequired":"Working hours are required",
       "under30MinWarning":"You have checked out within 30 minutes. As per policy, this will be treated as an absence.",
-      "locationVerified":"Your Location is Veriferd"
+      "locationVerified":"Your Location is Veriferd",
+      "csvExportedSuccess": "CSV exported successfully"
 
 
 

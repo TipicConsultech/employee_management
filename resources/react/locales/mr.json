@@ -897,7 +897,8 @@
       "workPeriod": "कामकाज कालावधी",
   "workDetails": "कामाचे तपशील",
   "transactionId": "व्यवहार आयडी",
-  "enterTransactionId": "व्यवहार आयडी प्रविष्ट करा"
+  "enterTransactionId": "व्यवहार आयडी प्रविष्ट करा",
+  "exportToCSV": "CSV डाउनलोड करा"
 
   },
 
@@ -1313,6 +1314,7 @@
       "updateError": "अद्यतन दरम्यान त्रुटी आली.",
       "workHoursRequired":"कामाचे तास आवश्यक आहेत",
       "under30MinWarning":"आपण ३० मिनिटांच्या आतच चेक-आउट केले आहे. धोरणानुसार हे अनुपस्थित म्हणून गणले जाईल.",
-      "locationVerified":"स्थानाची खात्री झाली आहे"
+      "locationVerified":"स्थानाची खात्री झाली आहे",
+      "csvExportedSuccess": "CSV डाउनलोड झाले"
     }
    }
