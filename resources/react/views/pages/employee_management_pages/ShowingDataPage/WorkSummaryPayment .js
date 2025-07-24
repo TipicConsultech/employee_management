@@ -63,7 +63,7 @@ const WorkSummaryPayment = ({
         ...prev,
         payed_amount: positiveValue,
         pending_payment: pending >= 0 ? pending : 0,
-         salary_amount:totalCalculatedPayment
+        salary_amount: totalCalculatedPayment
       }));
     } else {
       setWorkSummary((prev) => ({
@@ -86,11 +86,18 @@ const WorkSummaryPayment = ({
     }
   };
 
+  // Handle transaction ID change
+  const handleTransactionIdChange = (value) => {
+    setWorkSummary((prev) => ({
+      ...prev,
+      transaction_id: value || null,
+    }));
+  };
+
   // Handle submit with validation
   const handleSubmit = async () => {
-    
     console.log(workSummary);
-    
+
     if (!workSummary.payment_type) {
       setPaymentTypeError(t('LABELS.paymentMethodRequired'));
       return;
@@ -307,9 +314,9 @@ const WorkSummaryPayment = ({
           gap: 12px;
         }
 
-        .form-grid-three {
+        .form-grid-two {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
+          grid-template-columns: repeat(2, 1fr);
           gap: 12px;
         }
 
@@ -364,7 +371,7 @@ const WorkSummaryPayment = ({
 
         .submit-section {
           text-align: center;
-          margin-top: 16px;
+          margin-top: 06px;
         }
 
         .submit-btn {
@@ -471,7 +478,7 @@ const WorkSummaryPayment = ({
             font-size: 0.65rem;
           }
 
-          .form-grid-three {
+          .form-grid-two {
             grid-template-columns: 1fr;
             gap: 10px;
           }
@@ -574,7 +581,7 @@ const WorkSummaryPayment = ({
                 <>
                   {/* Work Hours Overview with Wage Configuration */}
                   <div className="hours-overview">
-                    {(workSummary?.regular_day || 0) > 0 &&(workSummary.regular_hours!=0) && (
+                    {(workSummary?.regular_day || 0) > 0 && (workSummary.regular_hours != 0) && (
                       <div className="hour-card regular">
                         <label className="wage-label">{t('LABELS.regularDays')}</label>
                         <div className="hour-header">
@@ -599,14 +606,14 @@ const WorkSummaryPayment = ({
                       </div>
                     )}
 
-                    {((employee.overtime_type==="hourly" ? workSummary?.overtime_hours : workSummary?.over_time_day) || 0) > 0 && (
+                    {((employee.overtime_type === "hourly" ? workSummary?.overtime_hours : workSummary?.over_time_day) || 0) > 0 && (
                       <div className="hour-card overtime">
                         <label className="wage-label">{t('LABELS.overtimeHours')}</label>
                         <div className="hour-header">
-                          <div className="hour-value overtime">{employee.overtime_type==="hourly" ? workSummary?.overtime_hours || 0 : workSummary?.over_time_day || 0}</div>
+                          <div className="hour-value overtime">{employee.overtime_type === "hourly" ? workSummary?.overtime_hours || 0 : workSummary?.over_time_day || 0}</div>
                           <span style={{ fontSize: '1.25rem', fontWeight: 600 }}>*</span>
                           <div className="wage-input-group">
-                            <label className="wage-label">{t('LABELS.overtimeRate')}/{employee.overtime_type==="hourly" ? t('LABELS.hour') : t('LABELS.day')}</label>
+                            <label className="wage-label">{t('LABELS.overtimeRate')}/{employee.overtime_type === "hourly" ? t('LABELS.hour') : t('LABELS.day')}</label>
                             <input
                               type="number"
                               min="0"
@@ -714,12 +721,12 @@ const WorkSummaryPayment = ({
                   </div>
 
                   {/* Payment Details Section */}
-                  <div className="section" style={{ marginTop: '24px' }}>
+                  <div className="section" style={{ marginTop: '04px' }}>
                     <h3 className="section-title">
                       <span>💳</span> {t('LABELS.paymentDetails')}
                     </h3>
                     <div className="payment-details-grid">
-                      <div className="form-grid-three">
+                      <div className="form-grid-two">
                         <div className="form-group">
                           <label className="form-label">{t('LABELS.paymentMethod')} <span style={{ color: '#dc2626' }}>*</span></label>
                           <CFormSelect
@@ -747,7 +754,8 @@ const WorkSummaryPayment = ({
                             placeholder={t('LABELS.enterPaidAmount')}
                           />
                         </div>
-
+                      </div>
+                      <div className="form-grid-two">
                         <div className="form-group">
                           <label className="form-label">{t('LABELS.pendingAmount')}</label>
                           <CFormInput
@@ -757,16 +765,25 @@ const WorkSummaryPayment = ({
                             readOnly
                           />
                         </div>
+                        {(workSummary.payment_type != "cash") || (workSummary.payment_type != "") || (workSummary.payment_type != null) && (<div className="form-group">
+                          <label className="form-label">{t('LABELS.transactionId')}</label>
+                          <CFormInput
+                            type="text"
+                            className="form-input"
+                            value={workSummary.transaction_id || ''}
+                            onChange={(e) => handleTransactionIdChange(e.target.value)}
+                            placeholder={t('LABELS.enterTransactionId')}
+                          />
+                        </div>)}
                       </div>
                     </div>
                   </div>
                 </>
               )}
 
-             
               <div className="submit-section">
-                <CButton 
-                  className="submit-btn" 
+                <CButton
+                  className="submit-btn"
                   onClick={handleSubmit}
                   disabled={workSummary?.regular_hours === 0}
                 >

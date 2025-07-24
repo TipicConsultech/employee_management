@@ -151,6 +151,7 @@ const Monthly = ({ id, employee }) => {
       payed_amount: workSummary.payed_amount,
       salary_amount:workSummary.salary_amount,
       payment_type: workSummary.payment_type,
+      transaction_id: workSummary.transaction_id?workSummary.transaction_id:null,
     };
 
     try {
