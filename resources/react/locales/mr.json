@@ -888,9 +888,12 @@
       "selectYear": "वर्ष निवडा",
 
       "monthDays": "महिन्याचे दिवस",
-
       "monthlyPresentyPayrollChart": "मासिक उपस्थिती आणि वेतन तक्ता",
-      "paymentMethodRequired":"पेमेंट पद्धत आवश्यक आहे"
+      
+      "paymentMethodRequired":"पेमेंट पद्धत आवश्यक आहे",
+      "workHours":"कामाचे तास",
+      "notAvailable":"उपलब्ध नाही"
+
   },
 
 
@@ -1302,6 +1305,7 @@
       "employeeFetchError": "कर्मचारी डेटा प्राप्त करताना त्रुटी आली.",
       "employeeUpdatedSuccess": "कर्मचारी तपशील यशस्वीरीत्या अद्यतनित झाले.",
       "employeeUpdateFailed": "कर्मचारी तपशील अद्यतनित करण्यात अयशस्वी.",
-      "updateError": "अद्यतन दरम्यान त्रुटी आली."
+      "updateError": "अद्यतन दरम्यान त्रुटी आली.",
+      "workHoursRequired":"कामाचे तास आवश्यक आहेत"
     }
    }

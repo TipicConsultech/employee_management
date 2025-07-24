@@ -304,7 +304,7 @@ class EmployeeController extends Controller
     'attendance_type' => 'nullable|string|max:50',
     'refferal_number' => 'nullable|string|max:20',
     'user_id' => 'nullable|integer|exists:users,id',
-    'working_hours' => 'nullable|numeric',
+    'working_hours' => 'nullable|integer',
     'tolerance'=>['nullable', 'string']
 ])->validate();
 
@@ -377,11 +377,11 @@ class EmployeeController extends Controller
             'isActive' => ['boolean'],  // true / false
             'is_login' => ['nullable', 'boolean'],
             'password' => ['nullable', 'string', 'max:255'],
-
+            'working_hours'=>['nullable', 'integer','min:1','max:16'],
             'user_id' => ['nullable', 'integer'],
             'half_day_rate' => ['nullable', 'numeric', 'min:0'],
             'holiday_rate' => ['nullable', 'numeric', 'min:0'],
-            'overtime_type' => ['nullable', 'in:fixed,hourly'],
+            'overtime_type' => ['nullable', 'in:fixed,hourly,not_available'],
             'contract_type' => ['nullable', 'in:volume_based,fixed'],
             'attendance_type' => ['nullable', 'in:face_attendance,location,both'],
             'refferal_number' => ['nullable', 'string'],

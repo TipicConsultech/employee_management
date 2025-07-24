@@ -926,7 +926,9 @@
       "registrationError": "An error occurred during registration.",
       "confirmEmployeeCreationMessage": "Are you sure you want to create this employee?",
       "confirmEmployeeUpdateMessage": "Are you sure you want to update this employee's details?",
-      "paymentMethodRequired": "Payment method is required"
+      "paymentMethodRequired": "Payment method is required",
+      "workHours":"Working Hours",
+      "notAvailable":"Not Available"
     },
 
 
@@ -1331,7 +1333,8 @@
     "selectedFile": "Selected file: {{fileName}}",
 
       "pleaseSelectMonthAndYear": "Please select a month and year.",
-      "pleaseSelectReportType": "Please select a report type."
+      "pleaseSelectReportType": "Please select a report type.",
+      "workHoursRequired":"Working hours are required"
 
 
     }

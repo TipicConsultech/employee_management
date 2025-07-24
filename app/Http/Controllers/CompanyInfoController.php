@@ -26,7 +26,16 @@ class CompanyInfoController extends Controller
             return CompanyInfo::where('company_id', $user->company_id)->get();
         }
     }
-    
+
+    public function companyHours()
+   {
+    $user = Auth::user();
+
+    $hours = CompanyInfo::where('company_id', $user->company_id)->pluck('working_hours');
+
+    return response()->json(['working_hours' => $hours[0]], 200);
+    }
+
     public function store(Request $request)
     {
         $request->validate([

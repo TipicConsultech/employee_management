@@ -23,6 +23,7 @@ use App\Http\Controllers\CommonController;
 use App\Http\Controllers\CompanyCordinateController;
 use App\Http\Controllers\DocumentTypeController;
 
+
 // use App\Http\Controllers\PaymentTrackerController;   // include when you add routes
 
 /*
@@ -56,6 +57,8 @@ Route::middleware('auth:sanctum')->get('/isface-attendance', [CompanyInfoControl
 Route::middleware('auth:sanctum')->post('/contractSummary', [EmployeeTrackerController::class, 'contractSummary']);
 Route::middleware('auth:sanctum')->post('/weeklyPresenty', [EmployeeTrackerController::class, 'weeklyPresenty']);
 Route::middleware('auth:sanctum')->post('/monthlyPresenty', [EmployeeTrackerController::class, 'monthlyPresenty']);
+Route::middleware('auth:sanctum')->get('/companyHours', [CompanyInfoController::class, 'companyHours']);
+
 
 Route::middleware(['auth:sanctum'])->group(function () {
     /* ---------- EmployeeController APIs---------- */
