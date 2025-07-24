@@ -15,7 +15,7 @@ const INITIAL_FORM_DATA = {
   name: '', gender: '', payment_type: '', contract_type: '', work_type: '', overtime_type: '',
   wage_hour: '', wage_overtime: '', credit: '', debit: '', half_day_payment: '', holiday_payment: '',
   adhaar_number: '', mobile: '', refferal_by: '', referral_by_number: '', is_login: false,
-  password: '', re_enter_password: '', email: '', attendance_type: '', tolerance: ''
+  password: '', re_enter_password: '', email: '', attendance_type: '', tolerance: '',working_hours: ''
 };
 const INITIAL_NOTIFICATION = { show: false, type: '', message: '' };
 const INITIAL_TOUCHED = {
@@ -45,7 +45,7 @@ const EmployeeRegistrationForm = () => {
     
   ], [t]);
   const OVERTIME_TYPE_OPTIONS = useMemo(() => [
-    { value: 'hourly', label: t('LABELS.hourly') }, { value: 'fixed', label: t('LABELS.fixed') }
+    { value: 'not_available', label: t('LABELS.notAvailable') },{ value: 'hourly', label: t('LABELS.hourly') }, { value: 'fixed', label: t('LABELS.fixed') }
   ], [t]);
 
   const { showToast } = useToast();
@@ -62,6 +62,26 @@ const EmployeeRegistrationForm = () => {
   const [toleranceType, setToleranceType] = useState('');
   const [customTolerance, setCustomTolerance] = useState('');
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [workHours,setWorkHours]=useState(0);
+
+  console.log(formData.working_hours);
+  
+  async function workingHours() {
+    const response = await getAPICall('/api/companyHours');
+    if (response.working_hours) {
+      setWorkHours(response.working_hours);
+      setFormData(prev => ({
+        ...prev,
+        working_hours: prev.working_hours || response.working_hours.toString()
+      }));
+    }
+  }
+
+  useEffect(()=>{
+    workingHours();
+  },[])
+
+
 
   const toleranceOptions = [
     { value: '', label: t('LABELS.selectTolerance') || 'Select Tolerance' },
@@ -72,6 +92,12 @@ const EmployeeRegistrationForm = () => {
     { value: '111208680', label: t('LABELS.noLimit') || 'No Limit' }
   ];
 
+const workingHoursOptions = [
+    { value: 1, label: '1' },{ value:2, label: '2' },    { value: 3, label: '3' },
+    { value: 4, label: '4' },{ value: 5, label: '5' },{ value: 6, label: '6' },{ value: 7, label: '7' },
+    { value: 8, label: '8' },{ value: 9, label: '9' },{ value: 10, label: '10' },{ value: 11, label: '11' },{ value: 12, label: '12' },
+ 
+];
   const convertedDegree = () => {
     const meters = parseFloat(customTolerance);
     if (isNaN(meters) || meters <= 0) return null;
@@ -100,6 +126,7 @@ const EmployeeRegistrationForm = () => {
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = t('MSG.nameRequired');
     if (!formData.gender) newErrors.gender = t('MSG.genderRequired');
+    if (formData.work_type === 'fulltime' && !formData.working_hours) newErrors.working_hours = t('MSG.workHoursRequired');
     if (!formData.work_type) newErrors.work_type = t('MSG.workTypeRequired');
     if (formData.work_type === 'fulltime' && !formData.payment_type) newErrors.payment_type = t('MSG.paymentTypeRequired');
     if (formData.work_type === 'fulltime' && !formData.overtime_type) newErrors.overtime_type = t('MSG.overtimeTypeRequired');
@@ -199,7 +226,7 @@ const EmployeeRegistrationForm = () => {
     setFormSubmitted(false);
   }, []);
 
-  const handleSubmit = useCallback(async () => {
+ const handleSubmit = useCallback(async () => {
     setFormSubmitted(true);
     const newErrors = validateForm();
     setErrors(newErrors);
@@ -232,12 +259,13 @@ const EmployeeRegistrationForm = () => {
         delete payload.wage_overtime;
         delete payload.credit;
         delete payload.debit;
-      }
-      if (isFullTimeWork) {
+        delete payload.working_hours; // Remove working_hours for non-fulltime
+      } else {
         payload.wage_hour = payload.wage_hour || '0';
         payload.wage_overtime = payload.wage_overtime || '0';
         payload.credit = payload.credit || '0';
         payload.debit = payload.debit || '0';
+        payload.working_hours = payload.working_hours || workHours.toString(); // Use default if not set
       }
       payload.half_day_payment = payload.half_day_payment || '0';
       payload.holiday_payment = payload.holiday_payment || '0';
@@ -264,7 +292,7 @@ const EmployeeRegistrationForm = () => {
     } finally {
       setSubmitting(false);
     }
-  }, [formData, validateForm, showToast, resetForm, t, isFullTimeWork, scrollToTop]);
+  }, [formData, validateForm, showToast, resetForm, t, isFullTimeWork, scrollToTop, workHours]);
 
   const isFormValid = useMemo(() => {
     const base = formData.name.trim() && formData.gender && formData.work_type && formData.adhaar_number && formData.mobile;
@@ -413,26 +441,58 @@ const EmployeeRegistrationForm = () => {
                           <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.work_type}</div>
                         )}
                       </CCol>
-                      <CCol xs={12} md={4}>
-                        {formData.work_type === 'contract' && (
-                          <>
-                            <CFormLabel className="fw-semibold small">{t('LABELS.contractType')}<span className="text-danger">*</span></CFormLabel>
-                            <CFormSelect
-                              value={formData.contract_type}
-                              name="contract_type"
-                              onChange={e => handleInputChange('contract_type', e.target.value)}
-                              onBlur={() => setTouched(prev => ({ ...prev, contract_type: true }))}
-                              disabled={submitting}
-                            >
-                              <option value="">{t('LABELS.selectContractType')}</option>
-                              {CONTRACT_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                            </CFormSelect>
-                            {(touched.contract_type || formSubmitted) && errors.contract_type && (
-                              <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.contract_type}</div>
-                            )}
-                          </>
-                        )}
-                      </CCol>
+
+                     <CCol xs={12} md={4}>
+  {formData.work_type === 'fulltime' && (
+  <>
+                <CFormLabel className="fw-semibold small">
+                  {t('LABELS.workHours')}<span className="text-danger">*</span>
+                </CFormLabel>
+                <CFormSelect
+                  value={formData.working_hours}
+                  name="working_hours"
+                  onChange={e => handleInputChange('working_hours', e.target.value)} // Changed to handleInputChange
+                  onBlur={() => setTouched(prev => ({ ...prev, working_hours: true }))} // Changed to working_hours
+                  disabled={submitting}
+                >
+                  {workingHoursOptions.map(o => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </CFormSelect>
+                {(touched.working_hours || formSubmitted) && errors.working_hours && (
+                  <div className="text-danger small mt-1 animate__animated animate__fadeIn">
+                    {errors.working_hours}
+                  </div>
+                )}
+              </>
+  )}
+
+  {formData.work_type === 'contract' && (
+    <>
+      <CFormLabel className="fw-semibold small">
+        {t('LABELS.contractType')}<span className="text-danger">*</span>
+      </CFormLabel>
+      <CFormSelect
+        value={formData.contract_type}
+        name="contract_type"
+        onChange={e => handleInputChange('contract_type', e.target.value)}
+        onBlur={() => setTouched(prev => ({ ...prev, contract_type: true }))}
+        disabled={submitting}
+      >
+        <option value="">{t('LABELS.selectContractType')}</option>
+        {CONTRACT_TYPE_OPTIONS.map(o => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </CFormSelect>
+      {(touched.contract_type || formSubmitted) && errors.contract_type && (
+        <div className="text-danger small mt-1 animate__animated animate__fadeIn">
+          {errors.contract_type}
+        </div>
+      )}
+    </>
+  )}
+</CCol>
+
                     </CRow>
                   </CCardBody>
                 </CCard>
@@ -492,7 +552,40 @@ const EmployeeRegistrationForm = () => {
                             <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.wage_hour}</div>
                           )}
                         </CCol>
+                        {formData.overtime_type==="not_available" ||formData.overtime_type===""  ?(
+                         <>  <CCol xs={12} md={4}>
+                          <CFormLabel className="fw-semibold small">{t('LABELS.halfDayPayment')}</CFormLabel>
+                          <CFormInput
+                            type="text"
+                            placeholder={t('LABELS.priceZero')}
+                            value={formData.half_day_payment}
+                            name="half_day_payment"
+                            onChange={e => handleNumberInput('half_day_payment', e.target.value)}
+                            onBlur={() => setTouched(prev => ({ ...prev, half_day_payment: true }))}
+                            disabled={submitting}
+                          />
+                          {(touched.half_day_payment || formSubmitted) && errors.half_day_payment && (
+                            <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.half_day_payment}</div>
+                          )}
+                        </CCol>
                         <CCol xs={12} md={4}>
+                          <CFormLabel className="fw-semibold small">{t('LABELS.holidayPayment')}</CFormLabel>
+                          <CFormInput
+                            type="text"
+                            placeholder={t('LABELS.priceZero')}
+                            value={formData.holiday_payment}
+                            name="holiday_payment"
+                            onChange={e => handleNumberInput('holiday_payment', e.target.value)}
+                            onBlur={() => setTouched(prev => ({ ...prev, holiday_payment: true }))}
+                            disabled={submitting}
+                          />
+                          {(touched.holiday_payment || formSubmitted) && errors.holiday_payment && (
+                            <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.holiday_payment}</div>
+                          )}
+                        </CCol>
+                        </> 
+                        ):(<>
+<CCol xs={12} md={4}>
                           <CFormLabel className="fw-semibold small">{t('LABELS.wageOvertime')}</CFormLabel>
                           <CFormInput
                             type="text"
@@ -537,6 +630,9 @@ const EmployeeRegistrationForm = () => {
                             <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.holiday_payment}</div>
                           )}
                         </CCol>
+                        </>
+                        )}
+                        
                       </CRow>
                     </CCardBody>
                   </CCard>
@@ -819,48 +915,49 @@ const EmployeeRegistrationForm = () => {
           </CCard>
 
           {/* Confirmation Modal */}
-          <CModal visible={showModal} backdrop="static" keyboard={false}>
-            <CModalHeader className="border-bottom">
-              <CModalTitle className="h5 fw-semibold">{t('LABELS.confirmEmployeeCreation')}</CModalTitle>
-            </CModalHeader>
-            <CModalBody className="p-4">
-              <p className="mb-3">{t('MSG.confirmEmployeeCreationMessage')}</p>
-              <div className="bg-light rounded p-3">
-                <p className="mb-2"><strong>{t('LABELS.name')}:</strong> {formData.name}</p>
-                <p className="mb-2"><strong>{t('LABELS.gender')}:</strong> {formData.gender}</p>
-                <p className="mb-2"><strong>{t('LABELS.workType')}:</strong> {formData.work_type}</p>
-                {formData.work_type === 'fulltime' && (
-                  <>
-                    <p className="mb-2"><strong>{t('LABELS.paymentType')}:</strong> {formData.payment_type}</p>
-                    <p className="mb-2"><strong>{t('LABELS.overtimeType')}:</strong> {formData.overtime_type}</p>
-                  </>
-                )}
-                {formData.work_type === 'contract' && (
-                  <p className="mb-2"><strong>{t('LABELS.contractType')}:</strong> {formData.contract_type}</p>
-                )}
-                <p className="mb-2"><strong>{t('LABELS.mobile')}:</strong> {formData.mobile}</p>
-                <p className="mb-2"><strong>{t('LABELS.loginAccess')}:</strong> {formData.is_login ? t('LABELS.yes') : t('LABELS.no')}</p>
-                {formData.is_login && (
-                  <>
-                    <p className="mb-2"><strong>{t('LABELS.attendanceType')}:</strong> {formData.attendance_type}</p>
-                    <p className="mb-2"><strong>{t('LABELS.tolerance')}:</strong> {formData.tolerance === 'no_limit' ? 'No Limit' : formData.tolerance}</p>
-                  </>
-                )}
-                {formData.referral_by_number && (
-                  <p className="mb-2"><strong>{t('LABELS.referralByNumber')}:</strong> {formData.referral_by_number}</p>
-                )}
-              </div>
-            </CModalBody>
-            <CModalFooter className="border-top">
-              <CButton color="secondary" onClick={closeModal} className="px-4 py-2">
-                {t('LABELS.cancel')}
-              </CButton>
-              <CButton color="primary" onClick={confirmSubmit} className="px-4 py-2">
-                <CIcon icon={cilCheckCircle} className="me-2" />
-                {t('LABELS.createEmployee')}
-              </CButton>
-            </CModalFooter>
-          </CModal>
+         <CModal visible={showModal} backdrop="static" keyboard={false}>
+    <CModalHeader className="border-bottom">
+      <CModalTitle className="h5 fw-semibold">{t('LABELS.confirmEmployeeCreation')}</CModalTitle>
+    </CModalHeader>
+    <CModalBody className="p-4">
+      <p className="mb-3">{t('MSG.confirmEmployeeCreationMessage')}</p>
+      <div className="bg-light rounded p-3">
+        <p className="mb-2"><strong>{t('LABELS.name')}:</strong> {formData.name}</p>
+        <p className="mb-2"><strong>{t('LABELS.gender')}:</strong> {GENDER_OPTIONS.find(o => o.value === formData.gender)?.label || formData.gender}</p>
+        <p className="mb-2"><strong>{t('LABELS.workType')}:</strong> {WORK_TYPE_OPTIONS.find(o => o.value === formData.work_type)?.label || formData.work_type}</p>
+        {formData.work_type === 'fulltime' && (
+          <>
+            <p className="mb-2"><strong>{t('LABELS.paymentType')}:</strong> {PAYMENT_TYPE_OPTIONS.find(o => o.value === formData.payment_type)?.label || formData.payment_type}</p>
+            <p className="mb-2"><strong>{t('LABELS.overtimeType')}:</strong> {OVERTIME_TYPE_OPTIONS.find(o => o.value === formData.overtime_type)?.label || formData.overtime_type}</p>
+            <p className="mb-2"><strong>{t('LABELS.workHours')}:</strong> {workingHoursOptions.find(o => o.value === parseInt(formData.working_hours))?.label || formData.working_hours}</p>
+          </>
+        )}
+        {formData.work_type === 'contract' && (
+          <p className="mb-2"><strong>{t('LABELS.contractType')}:</strong> {CONTRACT_TYPE_OPTIONS.find(o => o.value === formData.contract_type)?.label || formData.contract_type}</p>
+        )}
+        <p className="mb-2"><strong>{t('LABELS.mobile')}:</strong> {formData.mobile}</p>
+        <p className="mb-2"><strong>{t('LABELS.loginAccess')}:</strong> {formData.is_login ? t('LABELS.yes') : t('LABELS.no')}</p>
+        {formData.is_login && (
+          <>
+            <p className="mb-2"><strong>{t('LABELS.attendanceType')}:</strong> {ATTENDANCE_TYPE_OPTIONS.find(o => o.value === formData.attendance_type)?.label || formData.attendance_type}</p>
+            {/* <p className="mb-2"><strong>{t('LABELS.tolerance')}:</strong> {toleranceOptions.find(o => o.value === (formData.tolerance === 'no_limit' ? '111208680' : formData.tolerance))?.label || formData.tolerance}</p> */}
+          </>
+        )}
+        {formData.referral_by_number && (
+          <p className="mb-2"><strong>{t('LABELS.referralByNumber')}:</strong> {formData.referral_by_number}</p>
+        )}
+      </div>
+    </CModalBody>
+    <CModalFooter className="border-top">
+      <CButton color="secondary" onClick={closeModal} className="px-4 py-2">
+        {t('LABELS.cancel')}
+      </CButton>
+      <CButton color="primary" onClick={confirmSubmit} className="px-4 py-2">
+        <CIcon icon={cilCheckCircle} className="me-2" />
+        {t('LABELS.createEmployee')}
+      </CButton>
+    </CModalFooter>
+  </CModal>
         </CCol>
       </CRow>
     </CContainer>

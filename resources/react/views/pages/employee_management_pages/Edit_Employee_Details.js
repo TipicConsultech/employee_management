@@ -16,13 +16,14 @@ const INITIAL_FORM_DATA = {
   name: '', gender: '', payment_type: '', contract_type: '', work_type: '', overtime_type: '',
   wage_hour: '', wage_overtime: '', credit: '', debit: '', half_day_payment: '',
   holiday_payment: '', adhaar_number: '', mobile: '', referral_by: '', referral_by_number: '',
-  is_login: false, email: '', attendance_type: '', tolerance: ''
+  is_login: false, email: '', attendance_type: '', tolerance: '', working_hours: ''
 };
 const INITIAL_NOTIFICATION = { show: false, type: '', message: '' };
 const INITIAL_TOUCHED = {
   name: false, gender: false, payment_type: false, contract_type: false, work_type: false, overtime_type: false,
   wage_hour: false, wage_overtime: false, credit: false, debit: false, half_day_payment: false, holiday_payment: false,
-  adhaar_number: false, mobile: false, referral_by_number: false, email: false, attendance_type: false, tolerance: false
+  adhaar_number: false, mobile: false, referral_by_number: false, email: false, attendance_type: false, tolerance: false,
+  working_hours: false
 };
 
 const EmployeeEditForm = () => {
@@ -42,7 +43,9 @@ const EmployeeEditForm = () => {
     { value: 'location', label: t('LABELS.location') }
   ], [t]);
   const OVERTIME_TYPE_OPTIONS = useMemo(() => [
-    { value: 'hourly', label: t('LABELS.hourly') }, { value: 'fixed', label: t('LABELS.fixed') }
+    { value: 'not_available', label: t('LABELS.notAvailable') },
+    { value: 'hourly', label: t('LABELS.hourly') },
+    { value: 'fixed', label: t('LABELS.fixed') }
   ], [t]);
   const toleranceOptions = [
     { value: '', label: t('LABELS.selectTolerance') || 'Select Tolerance' },
@@ -51,6 +54,12 @@ const EmployeeEditForm = () => {
     { value: '100', label: '100 meters' },
     { value: 'custom', label: t('LABELS.customTolerance') || 'Custom Tolerance' },
     { value: '111208680', label: t('LABELS.noLimit') || 'No Limit' }
+  ];
+  const workingHoursOptions = [
+    { value: 1, label: '1' }, { value: 2, label: '2' }, { value: 3, label: '3' },
+    { value: 4, label: '4' }, { value: 5, label: '5' }, { value: 6, label: '6' },
+    { value: 7, label: '7' }, { value: 8, label: '8' },{ value: 9, label: '9' }, { value: 10, label: '10' },
+    { value: 11, label: '11' }, { value: 12, label: '12' }
   ];
 
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
@@ -101,46 +110,47 @@ const EmployeeEditForm = () => {
   const closeNotification = useCallback(() => setNotification(INITIAL_NOTIFICATION), []);
 
   const validateForm = useCallback(() => {
-  const newErrors = {};
+    const newErrors = {};
 
-  // Basic Information validations
-  if (!formData.name.trim()) newErrors.name = t('MSG.nameRequired');
-  if (!formData.gender) newErrors.gender = t('MSG.genderRequired');
-  if (!formData.work_type) newErrors.work_type = t('MSG.workTypeRequired');
-  if (formData.work_type === 'fulltime' && !formData.payment_type) newErrors.payment_type = t('MSG.paymentTypeRequired');
-  if (formData.work_type === 'fulltime' && !formData.overtime_type) newErrors.overtime_type = t('MSG.overtimeTypeRequired');
-  if (formData.work_type === 'contract' && !formData.contract_type) newErrors.contract_type = t('MSG.contractTypeRequired');
+    // Basic Information validations
+    if (!formData.name.trim()) newErrors.name = t('MSG.nameRequired');
+    if (!formData.gender) newErrors.gender = t('MSG.genderRequired');
+    if (!formData.work_type) newErrors.work_type = t('MSG.workTypeRequired');
+    if (formData.work_type === 'fulltime' && !formData.working_hours) newErrors.working_hours = t('MSG.workHoursRequired');
+    if (formData.work_type === 'fulltime' && !formData.payment_type) newErrors.payment_type = t('MSG.paymentTypeRequired');
+    if (formData.work_type === 'fulltime' && !formData.overtime_type) newErrors.overtime_type = t('MSG.overtimeTypeRequired');
+    if (formData.work_type === 'contract' && !formData.contract_type) newErrors.contract_type = t('MSG.contractTypeRequired');
 
-  // Wage-related validations (only for fulltime)
-  if (formData.work_type === 'fulltime') {
-    if (!formData.wage_hour) newErrors.wage_hour = t('MSG.wageHourRequired');
-    if (formData.wage_hour && (isNaN(formData.wage_hour) || parseFloat(formData.wage_hour) < 0)) newErrors.wage_hour = t('MSG.wageHourPositiveNumber');
-    if (formData.wage_overtime && (isNaN(formData.wage_overtime) || parseFloat(formData.wage_overtime) < 0)) newErrors.wage_overtime = t('MSG.wageOvertimePositiveNumber');
-    if (formData.credit && (isNaN(formData.credit) || parseFloat(formData.credit) < 0)) newErrors.credit = t('MSG.creditPositiveNumber');
-    if (formData.debit && (isNaN(formData.debit) || parseFloat(formData.debit) < 0)) newErrors.debit = t('MSG.debitPositiveNumber');
-    if (formData.half_day_payment && (isNaN(formData.half_day_payment) || parseFloat(formData.half_day_payment) < 0)) newErrors.half_day_payment = t('MSG.halfDayPaymentPositiveNumber');
-    if (formData.holiday_payment && (isNaN(formData.holiday_payment) || parseFloat(formData.holiday_payment) < 0)) newErrors.holiday_payment = t('MSG.holidayPaymentPositiveNumber');
-  }
-
-  // Contact Information validations
-  if (!formData.adhaar_number) newErrors.adhaar_number = t('MSG.adhaarRequired');
-  else if (!/^\d{12}$/.test(formData.adhaar_number)) newErrors.adhaar_number = t('MSG.adhaarInvalid');
-  if (!formData.mobile) newErrors.mobile = t('MSG.mobileRequired');
-  else if (!/^\d{10}$/.test(formData.mobile)) newErrors.mobile = t('MSG.mobileInvalid');
-  if (formData.referral_by_number && !/^\d{10}$/.test(formData.referral_by_number)) newErrors.referral_by_number = t('MSG.referralNumberInvalid');
-  if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) newErrors.email = t('MSG.emailInvalid');
-
-  // Login-related validations (only if is_login is true)
-  if (formData.is_login) {
-    if (!formData.attendance_type) newErrors.attendance_type = t('MSG.attendanceTypeRequired');
-    if (!formData.tolerance && toleranceType !== 'no_limit') newErrors.tolerance = t('MSG.toleranceRequired');
-    else if (toleranceType === 'custom' && (!customTolerance || isNaN(customTolerance) || parseFloat(customTolerance) <= 0)) {
-      newErrors.tolerance = t('MSG.customToleranceInvalid');
+    // Wage-related validations (only for fulltime)
+    if (formData.work_type === 'fulltime') {
+      if (!formData.wage_hour) newErrors.wage_hour = t('MSG.wageHourRequired');
+      if (formData.wage_hour && (isNaN(formData.wage_hour) || parseFloat(formData.wage_hour) < 0)) newErrors.wage_hour = t('MSG.wageHourPositiveNumber');
+      if (formData.wage_overtime && (isNaN(formData.wage_overtime) || parseFloat(formData.wage_overtime) < 0)) newErrors.wage_overtime = t('MSG.wageOvertimePositiveNumber');
+      if (formData.credit && (isNaN(formData.credit) || parseFloat(formData.credit) < 0)) newErrors.credit = t('MSG.creditPositiveNumber');
+      if (formData.debit && (isNaN(formData.debit) || parseFloat(formData.debit) < 0)) newErrors.debit = t('MSG.debitPositiveNumber');
+      if (formData.half_day_payment && (isNaN(formData.half_day_payment) || parseFloat(formData.half_day_payment) < 0)) newErrors.half_day_payment = t('MSG.halfDayPaymentPositiveNumber');
+      if (formData.holiday_payment && (isNaN(formData.holiday_payment) || parseFloat(formData.holiday_payment) < 0)) newErrors.holiday_payment = t('MSG.holidayPaymentPositiveNumber');
     }
-  }
 
-  return newErrors;
-}, [formData, t, isFullTimeWork, toleranceType, customTolerance]);
+    // Contact Information validations
+    if (!formData.adhaar_number) newErrors.adhaar_number = t('MSG.adhaarRequired');
+    else if (!/^\d{12}$/.test(formData.adhaar_number)) newErrors.adhaar_number = t('MSG.adhaarInvalid');
+    if (!formData.mobile) newErrors.mobile = t('MSG.mobileRequired');
+    else if (!/^\d{10}$/.test(formData.mobile)) newErrors.mobile = t('MSG.mobileInvalid');
+    if (formData.referral_by_number && !/^\d{10}$/.test(formData.referral_by_number)) newErrors.referral_by_number = t('MSG.referralNumberInvalid');
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) newErrors.email = t('MSG.emailInvalid');
+
+    // Login-related validations (only if is_login is true)
+    if (formData.is_login) {
+      if (!formData.attendance_type) newErrors.attendance_type = t('MSG.attendanceTypeRequired');
+      if (!formData.tolerance && toleranceType !== 'no_limit') newErrors.tolerance = t('MSG.toleranceRequired');
+      else if (toleranceType === 'custom' && (!customTolerance || isNaN(customTolerance) || parseFloat(customTolerance) <= 0)) {
+        newErrors.tolerance = t('MSG.customToleranceInvalid');
+      }
+    }
+
+    return newErrors;
+  }, [formData, t, isFullTimeWork, toleranceType, customTolerance]);
 
   const handleInputChange = useCallback((field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -167,7 +177,8 @@ const EmployeeEditForm = () => {
       contract_type: value === 'contract' ? prev.contract_type : '', overtime_type: value === 'fulltime' ? prev.overtime_type : '',
       wage_hour: value === 'contract' ? '' : prev.wage_hour, wage_overtime: value === 'contract' ? '' : prev.wage_overtime,
       credit: value === 'contract' ? '' : prev.credit, debit: value === 'contract' ? '' : prev.debit,
-      half_day_payment: value === 'contract' ? '' : prev.half_day_payment, holiday_payment: value === 'contract' ? '' : prev.holiday_payment
+      half_day_payment: value === 'contract' ? '' : prev.half_day_payment, holiday_payment: value === 'contract' ? '' : prev.holiday_payment,
+      working_hours: value === 'contract' ? '' : prev.working_hours
     }));
     setTouched(prev => ({ ...prev, work_type: true }));
   }, []);
@@ -189,11 +200,7 @@ const EmployeeEditForm = () => {
     if (type === 'custom') {
       const meters = parseFloat(customValue);
       toleranceValue = isNaN(meters) || meters <= 0 ? '' : metersToDecimalDegrees(meters);
-    } 
-    // else if (type === 'no_limit') {
-    //   toleranceValue = '999';
-    // }
-     else{
+    } else {
       const meters = parseFloat(type);
       toleranceValue = isNaN(meters) ? '' : metersToDecimalDegrees(meters);
     }
@@ -224,7 +231,7 @@ const EmployeeEditForm = () => {
             toleranceType = 'no_limit';
           } else if (tolerance) {
             const meters = (parseFloat(tolerance) * 111320).toFixed(0);
-            if (['25', '50', '100','111208680'].includes(meters)) {
+            if (['25', '50', '100', '111208680'].includes(meters)) {
               toleranceType = meters;
             } else {
               toleranceType = 'custom';
@@ -241,6 +248,7 @@ const EmployeeEditForm = () => {
             overtime_type: response.overtime_type || '',
             wage_hour: response.wage_hour ? String(response.wage_hour) : '',
             wage_overtime: response.wage_overtime ? String(response.wage_overtime) : '',
+            working_hours: response.working_hours ? String(response.working_hours) : '',
             credit: response.credit ? String(response.credit) : '',
             debit: response.debit ? String(response.debit) : '',
             half_day_payment: response.half_day_rate ? String(response.half_day_rate) : '',
@@ -252,7 +260,7 @@ const EmployeeEditForm = () => {
             is_login: response.isActive || false,
             email: response.user?.[0]?.email || '',
             attendance_type: response.attendance_type || '',
-            tolerance: tolerance
+            tolerance: tolerance,
           });
           setToleranceType(toleranceType);
           setCustomTolerance(customTolerance);
@@ -336,6 +344,7 @@ const EmployeeEditForm = () => {
         delete payload.debit;
         delete payload.half_day_rate;
         delete payload.holiday_rate;
+        delete payload.working_hours;
       }
       const response = await put(`/api/employees/${id}`, payload);
       if (response && response.data.id) {
@@ -355,7 +364,7 @@ const EmployeeEditForm = () => {
   const isFormValid = useMemo(() => {
     const base = formData.name.trim() && formData.gender && formData.work_type && formData.adhaar_number && formData.mobile;
     const loginValid = !formData.is_login || (formData.attendance_type && (formData.tolerance || toleranceType === 'no_limit'));
-    return base && loginValid && (formData.work_type === 'fulltime' ? formData.payment_type && formData.overtime_type && formData.wage_hour : formData.work_type === 'contract' ? formData.contract_type : true);
+    return base && loginValid && (formData.work_type === 'fulltime' ? formData.payment_type && formData.overtime_type && formData.wage_hour && formData.working_hours : formData.work_type === 'contract' ? formData.contract_type : true);
   }, [formData, toleranceType]);
 
   const openModal = useCallback(() => {
@@ -489,6 +498,27 @@ const EmployeeEditForm = () => {
                         )}
                       </CCol>
                       <CCol xs={12} md={4}>
+                        {formData.work_type === 'fulltime' && (
+                          <>
+                          
+  <CFormLabel className="fw-semibold small">{t('LABELS.workHours')}<span className="text-danger">*</span></CFormLabel>
+  <CFormSelect
+    value={formData.working_hours}
+    name="working_hours"
+    onChange={e => handleInputChange('working_hours', e.target.value)}
+    onBlur={() => setTouched(prev => ({ ...prev, working_hours: true }))}
+    disabled={submitting}
+    style={{ maxHeight: '50px', overflowY: 'auto' }}
+  >
+   
+    {workingHoursOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+  </CFormSelect>
+  {(touched.working_hours || formSubmitted) && errors.working_hours && (
+    <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.working_hours}</div>
+  )}
+
+                          </>
+                        )}
                         {formData.work_type === 'contract' && (
                           <>
                             <CFormLabel className="fw-semibold small">{t('LABELS.contractType')}<span className="text-danger">*</span></CFormLabel>
@@ -567,51 +597,88 @@ const EmployeeEditForm = () => {
                             <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.wage_hour}</div>
                           )}
                         </CCol>
-                        <CCol xs={12} md={4}>
-                          <CFormLabel className="fw-semibold small">{t('LABELS.wageOvertime')}</CFormLabel>
-                          <CFormInput
-                            type="text"
-                            placeholder={t('LABELS.priceZero')}
-                            value={formData.wage_overtime}
-                            name="wage_overtime"
-                            onChange={e => handleNumberInput('wage_overtime', e.target.value)}
-                            onBlur={() => setTouched(prev => ({ ...prev, wage_overtime: true }))}
-                            disabled={submitting}
-                          />
-                          {(touched.wage_overtime || formSubmitted) && errors.wage_overtime && (
-                            <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.wage_overtime}</div>
-                          )}
-                        </CCol>
-                        <CCol xs={12} md={4}>
-                          <CFormLabel className="fw-semibold small">{t('LABELS.halfDayPayment')}</CFormLabel>
-                          <CFormInput
-                            type="text"
-                            placeholder={t('LABELS.priceZero')}
-                            value={formData.half_day_payment}
-                            name="half_day_payment"
-                            onChange={e => handleNumberInput('half_day_payment', e.target.value)}
-                            onBlur={() => setTouched(prev => ({ ...prev, half_day_payment: true }))}
-                            disabled={submitting}
-                          />
-                          {(touched.half_day_payment || formSubmitted) && errors.half_day_payment && (
-                            <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.half_day_payment}</div>
-                          )}
-                        </CCol>
-                        <CCol xs={12} md={4}>
-                          <CFormLabel className="fw-semibold small">{t('LABELS.holidayPayment')}</CFormLabel>
-                          <CFormInput
-                            type="text"
-                            placeholder={t('LABELS.priceZero')}
-                            value={formData.holiday_payment}
-                            name="holiday_payment"
-                            onChange={e => handleNumberInput('holiday_payment', e.target.value)}
-                            onBlur={() => setTouched(prev => ({ ...prev, holiday_payment: true }))}
-                            disabled={submitting}
-                          />
-                          {(touched.holiday_payment || formSubmitted) && errors.holiday_payment && (
-                            <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.holiday_payment}</div>
-                          )}
-                        </CCol>
+                        {formData.overtime_type === 'not_available' || formData.overtime_type === '' ? (
+                          <>
+                            <CCol xs={12} md={4}>
+                              <CFormLabel className="fw-semibold small">{t('LABELS.halfDayPayment')}</CFormLabel>
+                              <CFormInput
+                                type="text"
+                                placeholder={t('LABELS.priceZero')}
+                                value={formData.half_day_payment}
+                                name="half_day_payment"
+                                onChange={e => handleNumberInput('half_day_payment', e.target.value)}
+                                onBlur={() => setTouched(prev => ({ ...prev, half_day_payment: true }))}
+                                disabled={submitting}
+                              />
+                              {(touched.half_day_payment || formSubmitted) && errors.half_day_payment && (
+                                <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.half_day_payment}</div>
+                              )}
+                            </CCol>
+                            <CCol xs={12} md={4}>
+                              <CFormLabel className="fw-semibold small">{t('LABELS.holidayPayment')}</CFormLabel>
+                              <CFormInput
+                                type="text"
+                                placeholder={t('LABELS.priceZero')}
+                                value={formData.holiday_payment}
+                                name="holiday_payment"
+                                onChange={e => handleNumberInput('holiday_payment', e.target.value)}
+                                onBlur={() => setTouched(prev => ({ ...prev, holiday_payment: true }))}
+                                disabled={submitting}
+                              />
+                              {(touched.holiday_payment || formSubmitted) && errors.holiday_payment && (
+                                <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.holiday_payment}</div>
+                              )}
+                            </CCol>
+                          </>
+                        ) : (
+                          <>
+                            <CCol xs={12} md={4}>
+                              <CFormLabel className="fw-semibold small">{t('LABELS.wageOvertime')}</CFormLabel>
+                              <CFormInput
+                                type="text"
+                                placeholder={t('LABELS.priceZero')}
+                                value={formData.wage_overtime}
+                                name="wage_overtime"
+                                onChange={e => handleNumberInput('wage_overtime', e.target.value)}
+                                onBlur={() => setTouched(prev => ({ ...prev, wage_overtime: true }))}
+                                disabled={submitting}
+                              />
+                              {(touched.wage_overtime || formSubmitted) && errors.wage_overtime && (
+                                <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.wage_overtime}</div>
+                              )}
+                            </CCol>
+                            <CCol xs={12} md={4}>
+                              <CFormLabel className="fw-semibold small">{t('LABELS.halfDayPayment')}</CFormLabel>
+                              <CFormInput
+                                type="text"
+                                placeholder={t('LABELS.priceZero')}
+                                value={formData.half_day_payment}
+                                name="half_day_payment"
+                                onChange={e => handleNumberInput('half_day_payment', e.target.value)}
+                                onBlur={() => setTouched(prev => ({ ...prev, half_day_payment: true }))}
+                                disabled={submitting}
+                              />
+                              {(touched.half_day_payment || formSubmitted) && errors.half_day_payment && (
+                                <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.half_day_payment}</div>
+                              )}
+                            </CCol>
+                            <CCol xs={12} md={4}>
+                              <CFormLabel className="fw-semibold small">{t('LABELS.holidayPayment')}</CFormLabel>
+                              <CFormInput
+                                type="text"
+                                placeholder={t('LABELS.priceZero')}
+                                value={formData.holiday_payment}
+                                name="holiday_payment"
+                                onChange={e => handleNumberInput('holiday_payment', e.target.value)}
+                                onBlur={() => setTouched(prev => ({ ...prev, holiday_payment: true }))}
+                                disabled={submitting}
+                              />
+                              {(touched.holiday_payment || formSubmitted) && errors.holiday_payment && (
+                                <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.holiday_payment}</div>
+                              )}
+                            </CCol>
+                          </>
+                        )}
                       </CRow>
                     </CCardBody>
                   </CCard>
@@ -720,8 +787,7 @@ const EmployeeEditForm = () => {
                     </CCardHeader>
                     <CCardBody>
                       <CRow className="g-2">
-
-                           <CCol xs={12} md={4}>
+                        <CCol xs={12} md={4}>
                           {faceAttendanceEnabled && !loadingFaceAttendance && (
                             <>
                               <CFormLabel className="fw-semibold small">{t('LABELS.attendanceType')}<span className="text-danger">*</span></CFormLabel>
@@ -747,7 +813,6 @@ const EmployeeEditForm = () => {
                             </div>
                           )}
                         </CCol>
-                    
                         <CCol xs={12} md={4}>
                           <CFormLabel htmlFor="toleranceType" className="fw-semibold small">
                             {t('LABELS.tolerance') || 'Tolerance'} <span className="text-danger">*</span>
@@ -801,18 +866,17 @@ const EmployeeEditForm = () => {
                             </>
                           )}
                         </CCol>
-                     
                       </CRow>
-                       <CRow className="g-2">
-                              <CCol xs={12} md={4}>
-                          {(convertedDegree()&& toleranceType === 'custom' )&& (
+                      <CRow className="g-2">
+                        <CCol xs={12} md={4}>
+                          {(convertedDegree() && toleranceType === 'custom') && (
                             <div className="mt-2 p-2 bg-light rounded">
                               <strong>{t('LABELS.tolerancePreview') || 'Tolerance Preview'}:</strong>{' '}
                               ≈ {customTolerance} meters ≈ <code>{convertedDegree()}°</code> latitude degrees
                             </div>
                           )}
                         </CCol>
-                        </CRow>
+                      </CRow>
                     </CCardBody>
                   </CCard>
                 )}
@@ -862,23 +926,24 @@ const EmployeeEditForm = () => {
               <p className="mb-3">{t('MSG.confirmEmployeeUpdateMessage')}</p>
               <div className="bg-light rounded p-3">
                 <p className="mb-2"><strong>{t('LABELS.name')}:</strong> {formData.name}</p>
-                <p className="mb-2"><strong>{t('LABELS.gender')}:</strong> {formData.gender}</p>
-                <p className="mb-2"><strong>{t('LABELS.workType')}:</strong> {formData.work_type}</p>
+                <p className="mb-2"><strong>{t('LABELS.gender')}:</strong> {GENDER_OPTIONS.find(o => o.value === formData.gender)?.label || formData.gender}</p>
+                <p className="mb-2"><strong>{t('LABELS.workType')}:</strong> {WORK_TYPE_OPTIONS.find(o => o.value === formData.work_type)?.label || formData.work_type}</p>
                 {formData.work_type === 'fulltime' && (
                   <>
-                    <p className="mb-2"><strong>{t('LABELS.paymentType')}:</strong> {formData.payment_type}</p>
-                    <p className="mb-2"><strong>{t('LABELS.overtimeType')}:</strong> {formData.overtime_type}</p>
+                    <p className="mb-2"><strong>{t('LABELS.paymentType')}:</strong> {PAYMENT_TYPE_OPTIONS.find(o => o.value === formData.payment_type)?.label || formData.payment_type}</p>
+                    <p className="mb-2"><strong>{t('LABELS.overtimeType')}:</strong> {OVERTIME_TYPE_OPTIONS.find(o => o.value === formData.overtime_type)?.label || formData.overtime_type}</p>
+                    <p className="mb-2"><strong>{t('LABELS.workHours')}:</strong> {workingHoursOptions.find(o => o.value === parseInt(formData.working_hours))?.label || formData.working_hours}</p>
                   </>
                 )}
                 {formData.work_type === 'contract' && (
-                  <p className="mb-2"><strong>{t('LABELS.contractType')}:</strong> {formData.contract_type}</p>
+                  <p className="mb-2"><strong>{t('LABELS.contractType')}:</strong> {CONTRACT_TYPE_OPTIONS.find(o => o.value === formData.contract_type)?.label || formData.contract_type}</p>
                 )}
                 <p className="mb-2"><strong>{t('LABELS.mobile')}:</strong> {formData.mobile}</p>
                 <p className="mb-2"><strong>{t('LABELS.loginAccess')}:</strong> {formData.is_login ? t('LABELS.yes') : t('LABELS.no')}</p>
                 {formData.is_login && (
                   <>
-                    <p className="mb-2"><strong>{t('LABELS.attendanceType')}:</strong> {formData.attendance_type}</p>
-                    <p className="mb-2"><strong>{t('LABELS.tolerance')}:</strong> {formData.tolerance === 'no_limit' ? 'No Limit' : formData.tolerance}</p>
+                    <p className="mb-2"><strong>{t('LABELS.attendanceType')}:</strong> {ATTENDANCE_TYPE_OPTIONS.find(o => o.value === formData.attendance_type)?.label || formData.attendance_type}</p>
+                    {/* <p className="mb-2"><strong>{t('LABELS.tolerance')}:</strong> {toleranceOptions.find(o => o.value === (formData.tolerance === 'no_limit' ? '111208680' : formData.tolerance))?.label || formData.tolerance}</p> */}
                   </>
                 )}
                 {formData.referral_by_number && (

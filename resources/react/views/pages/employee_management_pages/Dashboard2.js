@@ -20,7 +20,7 @@ const Dashboard2 = () => {
   const navigate = useNavigate();
   
   useEffect(() => {
-    post('/api/employeeDtailsForDashboard',{date:Date})
+    post('/api/employeeDtailsForDashboard', { date: new Date().toISOString().split('T')[0] })
       .then(data => setEmployees(data))
       .catch(err => console.error('Error fetching employee data:', err));
   }, []);
@@ -31,8 +31,13 @@ const Dashboard2 = () => {
   
   const calculateTotal = (key) => employees.reduce((sum, e) => sum + Number(e[key] || 0), 0);
   const totalEmployees = employees.length;
-  const presentEmployees = employees.filter(e => e.trackers?.some(t => t.check_in)).length;
   
+const presentEmployees = employees.filter(e =>
+  Array.isArray(e.trackers) &&
+  e.trackers.some(t => t.check_in == true)  // note the double ==
+).length;
+
+
   return (
     <>
       <CContainer fluid className="px-2 px-md-4">

@@ -11,13 +11,13 @@ import {
     CBadge,
     CContainer,
     CModal,
-    CModalBody,
     CModalHeader,
     CModalTitle,
     CModalFooter,
     CToast, 
     CToaster, 
-    CToastBody
+    CToastBody,
+    CModalBody
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
 import { cilClock, cilLocationPin, cilCheckCircle, cilXCircle } from '@coreui/icons';
@@ -28,7 +28,7 @@ function CheckInWithSelfie() {
     const { t } = useTranslation("global");
 
     // State management
-    const [status, setStatus] = useState({ checkIn: false, checkOut: false });
+    const [status, setStatus] = useState({ checkIn: false, checkOut: false, under_30min: false });
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [locationLoading, setLocationLoading] = useState(false);
@@ -40,6 +40,7 @@ function CheckInWithSelfie() {
     const [capturedImage, setCapturedImage] = useState(null);
     const [compressedImage, setCompressedImage] = useState(null);
     const [gpsCoordinates, setGpsCoordinates] = useState(null);
+    const [showUnder30MinPopup, setShowUnder30MinPopup] = useState(false);
   
     // Camera refs
     const videoRef = useRef(null);
@@ -202,7 +203,7 @@ const getCurrentLocationFresh = useCallback(() => {
             let currentCoords = gpsCoordinates;
             if (!currentCoords) {
                 try {
-                    currentCoords = await getCurrentLocation();
+                    currentCoords = await getCurrentLocationFresh();
                 } catch (gpsError) {
                     console.error('GPS Error:', gpsError);
                     showNotification('warning', 'Could not get GPS coordinates. Using default location.');
@@ -254,6 +255,15 @@ const getCurrentLocationFresh = useCallback(() => {
         }
     }, [compressedImage, actionType, gpsCoordinates, getCurrentLocationFresh, showNotification, t, fetchEmployeeStatus, trackerId]);
 
+    // Handle checkout confirmation for under 30 minutes
+    const handleCheckoutConfirm = useCallback(() => {
+        if (actionType === 'checkout' && status.under_30min) {
+            setShowUnder30MinPopup(true);
+        } else {
+            handleSubmit();
+        }
+    }, [actionType, status.under_30min, handleSubmit]);
+
     // Reset camera state
     const resetCameraState = useCallback(() => {
         setCapturedImage(null);
@@ -261,9 +271,8 @@ const getCurrentLocationFresh = useCallback(() => {
         setGpsCoordinates(null);
         stopCamera();
         setCameraModal(false);
+        setShowUnder30MinPopup(false);
     }, [stopCamera]);
-
-
 
 const calculateDistance = useCallback((lat1, lon1, lat2, lon2) => {
     const R = 6371; // Radius of the Earth in kilometers
@@ -661,12 +670,6 @@ const openCameraModal = useCallback(async (type) => {
                 </CModalHeader>
                 <CModalBody>
                     <div className="text-center">
-                        {/* {gpsCoordinates && (
-                            <div className="mb-2 text-success small">
-                                📍 Location: {gpsCoordinates.latitude.toFixed(6)}, {gpsCoordinates.longitude.toFixed(6)}
-                            </div>
-                        )} */}
-
                         {!capturedImage ? (
                             <div>
                                 <div className="position-relative mb-3">
@@ -705,7 +708,11 @@ const openCameraModal = useCallback(async (type) => {
                                     >
                                         {t('LABELS.retake') || 'Retake'}
                                     </CButton>
-                                    <CButton color="success" onClick={handleSubmit} disabled={submitting}>
+                                    <CButton 
+                                        color="success" 
+                                        onClick={handleCheckoutConfirm} 
+                                        disabled={submitting}
+                                    >
                                         {submitting && <CSpinner size="sm" className="me-2" />}
                                         {actionType === 'checkin' ? t('LABELS.submitCheckIn') || 'Submit Check-In' : t('LABELS.submitCheckOut') || 'Submit Check-Out'}
                                     </CButton>
@@ -720,6 +727,39 @@ const openCameraModal = useCallback(async (type) => {
                     </CButton>
                 </CModalFooter>
             </CModal>
+
+            {/* Under 30 Minutes Confirmation Popup */}
+            {showUnder30MinPopup && (
+                <CModal visible={showUnder30MinPopup} onClose={() => setShowUnder30MinPopup(false)} alignment="center">
+                    <CModalHeader>
+                        <CModalTitle>{t('LABELS.confirmCheckout') || 'Confirm Check-Out'}</CModalTitle>
+                    </CModalHeader>
+                    <CModalBody>
+                        <p className="text-muted fs-6">
+                            {t('MSG.under30MinWarning') || 'Checking out now will mark your attendance as absent because your shift duration is less than 30 minutes. Do you want to proceed?'}
+                        </p>
+                    </CModalBody>
+                    <CModalFooter>
+                        <CButton 
+                            color="secondary" 
+                            onClick={() => setShowUnder30MinPopup(false)}
+                        >
+                            {t('LABELS.no') || 'No'}
+                        </CButton>
+                        <CButton 
+                            color="primary" 
+                            onClick={() => {
+                                setShowUnder30MinPopup(false);
+                                handleSubmit();
+                            }}
+                            disabled={submitting}
+                        >
+                            {submitting && <CSpinner size="sm" className="me-2" />}
+                            {t('LABELS.yes') || 'Yes'}
+                        </CButton>
+                    </CModalFooter>
+                </CModal>
+            )}
 
             {/* Completed Popup */}
             {showCompletedPopup && (

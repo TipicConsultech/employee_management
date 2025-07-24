@@ -27,7 +27,8 @@ const GPSLocationModal = ({
   isOpen, 
   onClose, 
   gpsCoordinates, 
-  attendanceType 
+  attendanceType,
+  isNoLimit 
 }) => {
   const [mapType, setMapType] = useState('satellite');
   const [zoom, setZoom] = useState(15);

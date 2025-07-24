@@ -653,8 +653,8 @@
 
       "totalEmployees": "Total Employees",
       "presentToday": "Present",
-      "totalCredit": "Total Credit",
-      "totalDebit": "Total Debit",
+      "totalCredit": "Advance Payments",
+      "totalDebit": "Pending Payments",
       "employeeAttendance": "Employee Attendance & Details",
       "employees": "Employee",
       "checkIn": "Check In",
@@ -926,7 +926,10 @@
       "registrationError": "An error occurred during registration.",
       "confirmEmployeeCreationMessage": "Are you sure you want to create this employee?",
       "confirmEmployeeUpdateMessage": "Are you sure you want to update this employee's details?",
-      "paymentMethodRequired": "Payment method is required"
+      "paymentMethodRequired": "Payment method is required",
+      "workHours":"Working Hours",
+      "notAvailable":"Not Available",
+      "confirmCheckout":"Confirm Check-Out"
     },
 
 
@@ -1331,7 +1334,11 @@
     "selectedFile": "Selected file: {{fileName}}",
 
       "pleaseSelectMonthAndYear": "Please select a month and year.",
-      "pleaseSelectReportType": "Please select a report type."
+      "pleaseSelectReportType": "Please select a report type.",
+      "workHoursRequired":"Working hours are required",
+      "under30MinWarning":"You have checked out within 30 minutes. As per policy, this will be treated as an absence.",
+      "locationVerified":"Your Location is Veriferd"
+
 
 
     }
