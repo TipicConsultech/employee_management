@@ -1,94 +1,51 @@
-import react from 'react'
-import { useNavigate } from "react-router-dom";
-import MobileEmployeeRow from "./MobileBulkEmployeeTracker";
-import { cilLocationPin, cilCheckCircle, cilXCircle, cilPencil, cilInput, cilClock,  cilPeople, cilCheck, cilWarning, } from '@coreui/icons';
-import { useTranslation } from "react-i18next";
 import React, { useCallback, useEffect, useState } from "react";
-import { CAlert, CButton,CButtonGroup,CCard,CBadge, CCardBody,CTableBody, CCardHeader,CTableDataCell,CTableHeaderCell,CFormCheck, CContainer, CSpinner,CTooltip,CTable,CTableHead,CTableRow} from "@coreui/react";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { cilLocationPin, cilCheckCircle, cilXCircle, cilPencil, cilInput, cilClock, cilPeople, cilCheck, cilWarning } from '@coreui/icons';
+import { CAlert, CButton, CButtonGroup, CCard, CBadge, CCardBody, CTableBody, CCardHeader, CTableDataCell, CTableHeaderCell, CFormCheck, CContainer, CSpinner, CTooltip, CTable, CTableHead, CTableRow } from "@coreui/react";
 import CIcon from "@coreui/icons-react";
+import MobileEmployeeRow from "./MobileBulkEmployeeTracker";
 import TrackerEditModal from "./TrackerEditModal";
 import GPSLocationModal from "./GPSLocationModal";
 import ImageViewModal from "./ImageViewModal";
 import { getAPICall, post } from "../../../util/api";
 import { useToast } from '../../common/toast/ToastContext';
 
-
-
 function BulkEmployeeCheckInOut() {
     const { t } = useTranslation("global");
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const [employees, setEmployees] = useState([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [selectedEmployees, setSelectedEmployees] = useState([]);
     const [notification, setNotification] = useState({ show: false, type: '', message: '' });
     const [selectAll, setSelectAll] = useState(false);
-    const [imageModal, setImageModal] = useState({isOpen: false,imageUrl: '',title: '',employeeName: '',imageType: ''});
+    const [imageModal, setImageModal] = useState({ isOpen: false, imageUrl: '', title: '', employeeName: '', imageType: '' });
     const [faceAttendanceEnabled, setFaceAttendanceEnabled] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedTrackerId, setSelectedTrackerId] = useState(null);
     const [mapVisible, setMapVisible] = useState(false);
-    const [selectedGps,setSelectedGps]= useState(null);
+    const [selectedGps, setSelectedGps] = useState(null);
     const [employeeId, setEmployeeId] = useState(null);
     const [attendanceType, setAttendanceType] = useState(0);
-
-
-  
-    
-    const { showToast } = useToast();
-
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]); // Current date in YYYY-MM-DD format
-     const [isCurrentDate, setIsCurrentDate] = useState(true);
-
-    const handleEditClick = (trackerId) => {
-        setSelectedTrackerId(trackerId);
-        setModalVisible(true);
-    };
-
-   
-    const handleDeleteClick = (empId) => {
-        // Implement delete logic here
-        console.log(`Delete employee with ID: ${empId}`);
-        // Add API call or state update to remove employee
-    };
-
-
-    
-    
-
-    const handleMapClick = (gpsCoordinates,type,empId) => {
-        setSelectedGps(gpsCoordinates);
-        if(type==="check-out"){
-             setAttendanceType(1);
-        }
-         setEmployeeId(empId);
-        setMapVisible(true);  
-
-    };
-
-
-    const fetchFaceAttendanceStatus = useCallback(async () => {
-        try {
-            const response = await getAPICall('/api/isface-attendance');
-            console.log('Face attendance response:', response);
-
-            if (response && typeof response.face_attendance === 'boolean') {
-                setFaceAttendanceEnabled(response.face_attendance);
-            } else {
-                setFaceAttendanceEnabled(false);
-            }
-        } catch (error) {
-            console.error('Error fetching face attendance status:', error);
-            setFaceAttendanceEnabled(false);
-        }
-    }, []);
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [isCurrentDate, setIsCurrentDate] = useState(true);
 
     const showNotification = useCallback((type, message) => {
         setNotification({ show: true, type, message });
         if (type === 'success') {
-            setTimeout(() => {
-                setNotification({ show: false, type: '', message: '' });
-            }, 5000);
+            setTimeout(() => setNotification({ show: false, type: '', message: '' }), 5000);
+        }
+    }, []);
+
+    const fetchFaceAttendanceStatus = useCallback(async () => {
+        try {
+            const response = await getAPICall('/api/isface-attendance');
+            setFaceAttendanceEnabled(response && typeof response.face_attendance === 'boolean' ? response.face_attendance : false);
+        } catch (error) {
+            console.error('Error fetching face attendance status:', error);
+            setFaceAttendanceEnabled(false);
         }
     }, []);
 
@@ -96,100 +53,85 @@ function BulkEmployeeCheckInOut() {
         if (!trackers || !Array.isArray(trackers) || trackers.length === 0) {
             return { checkIn: false, checkOut: false, status: 'Absent' };
         }
-
         const latestTracker = trackers[trackers.length - 1];
-
-        const checkIn = latestTracker.check_in || false;
-        const checkOut = latestTracker.check_out || false;
-
+        const checkIn = !!latestTracker.check_in;
+        const checkOut = !!latestTracker.check_out;
         let status = 'Absent';
-        if (checkIn && checkOut) {
-            status = 'Present';
-        } else if (checkIn && !checkOut) {
-            status = 'Present';
-        }
-
+        if (checkIn && checkOut) status = 'Present';
+        else if (checkIn && !checkOut) status = 'Present';
         return { checkIn, checkOut, status };
     }, []);
 
     const fetchEmployees = useCallback(async (date = null) => {
-    try {
-        setLoading(true);
-        
-        // Use provided date or selectedDate
-        const targetDate = date || selectedDate;
-        
-        // Create the payload with date
-        const payload = {
-            date: targetDate
-        };
-        
-        // Change from GET to POST request with date payload
-        const response = await post('/api/employeeDtailsForDashboard', payload);
-        
-        console.log('API Response:', response);
-
-        if (response && Array.isArray(response)) {
-            const employeesWithStatus = response.map(employee => {
-                const attendanceStatus = getAttendanceStatus(employee.trackers);
-                return {
+        try {
+            setLoading(true);
+            const targetDate = date || selectedDate;
+            const payload = { date: targetDate };
+            const response = await post('/api/employeeDtailsForDashboard', payload);
+            console.log('API Response:', response);
+            let employeesWithStatus = [];
+            if (response && Array.isArray(response)) {
+                employeesWithStatus = response.map(employee => ({
                     ...employee,
-                    ...attendanceStatus,
+                    ...getAttendanceStatus(employee.trackers),
                     selected: false
-                };
-            });
-            console.log('Processed employees:', employeesWithStatus);
-            setEmployees(employeesWithStatus);
-        } else if (response && response.data && Array.isArray(response.data)) {
-            const employeesWithStatus = response.data.map(employee => {
-                const attendanceStatus = getAttendanceStatus(employee.trackers);
-                return {
+                }));
+            } else if (response && response.data && Array.isArray(response.data)) {
+                employeesWithStatus = response.data.map(employee => ({
                     ...employee,
-                    ...attendanceStatus,
+                    ...getAttendanceStatus(employee.trackers),
                     selected: false
-                };
-            });
-            console.log('Processed employees (nested):', employeesWithStatus);
+                }));
+            } else {
+                showNotification('warning', t('MSG.failedToFetchEmployees') || 'Failed to fetch employees');
+                showToast('warning', t('MSG.failedToFetchEmployees') || 'Failed to fetch employees');
+                return;
+            }
             setEmployees(employeesWithStatus);
-        } else {
-            console.log('Invalid response format:', response);
-            showNotification('warning', t('MSG.failedToFetchEmployees') || 'Failed to fetch employees');
-            showToast('warning', t('MSG.failedToFetchEmployees') || 'Failed to fetch employees');
+        } catch (error) {
+            console.error('Error fetching employees:', error);
+            showNotification('warning', `${t('MSG.errorConnectingToServer') || 'Error connecting to server'}: ${error.message}`);
+            showToast('warning', `${t('MSG.errorConnectingToServer') || 'Error connecting to server'}: ${error.message}`);
+        } finally {
+            setLoading(false);
         }
-    } catch (error) {
-        console.error('Error fetching employees:', error);
-        showNotification('warning', `${t('MSG.errorConnectingToServer') || 'Error connecting to server'}: ${error.message}`);
-        showToast('warning', `${t('MSG.errorConnectingToServer') || 'Error connecting to server'}: ${error.message}`);
-    } finally {
-        setLoading(false);
-    }
-}, [selectedDate, showNotification, t, getAttendanceStatus]);
+    }, [selectedDate, showNotification, t, getAttendanceStatus, showToast]);
 
-const handleDateChange = useCallback((event) => {
-    const newDate = event.target.value;
-    const currentDate = new Date().toISOString().split('T')[0];
-    
-    setSelectedDate(newDate);
-    setIsCurrentDate(newDate === currentDate);
-    
-    // Fetch employees for the new date
-    fetchEmployees(newDate);
-}, [fetchEmployees,employees]);
+    const handleDateChange = useCallback((event) => {
+        const newDate = event.target.value;
+        const currentDate = new Date().toISOString().split('T')[0];
+        setSelectedDate(newDate);
+        setIsCurrentDate(newDate === currentDate);
+        fetchEmployees(newDate);
+    }, [fetchEmployees]);
 
-// 4. Add today button handler
-const handleTodayClick = useCallback(() => {
-    const currentDate = new Date().toISOString().split('T')[0];
-    setSelectedDate(currentDate);
-    setIsCurrentDate(true);
-    
-    // Fetch employees for current date
-    fetchEmployees(currentDate);
-}, [fetchEmployees]);
+    const handleTodayClick = useCallback(() => {
+        const currentDate = new Date().toISOString().split('T')[0];
+        setSelectedDate(currentDate);
+        setIsCurrentDate(true);
+        fetchEmployees(currentDate);
+    }, [fetchEmployees]);
 
-   useEffect(() => {
-    fetchFaceAttendanceStatus();
-    fetchEmployees(selectedDate);
-}, [fetchFaceAttendanceStatus, selectedDate]);
+    const handleEditClick = (trackerId) => {
+        setSelectedTrackerId(trackerId);
+        setModalVisible(true);
+    };
+
+    const handleMapClick = useCallback((gpsCoordinates, type, empId) => {
+        if (!gpsCoordinates) {
+            showToast('warning', t('MSG.noGpsData') || 'No GPS data available');
+            return;
+        }
+        setSelectedGps(gpsCoordinates);
+        setAttendanceType(type === 'check-out' ? 1 : 0);
+        setEmployeeId(empId);
+        setMapVisible(true);
+    }, [showToast, t]);
+
+    const handleDeleteClick = (empId) => {
+        console.log(`Delete employee with ID: ${empId}`);
+    };
+
     const handleEmployeeSelection = useCallback((employeeId, isSelected) => {
         setEmployees(prev =>
             prev.map(emp => {
@@ -197,7 +139,6 @@ const handleTodayClick = useCallback(() => {
                 return empId === employeeId ? { ...emp, selected: isSelected } : emp;
             })
         );
-
         if (isSelected) {
             setSelectedEmployees(prev => [...prev, employeeId]);
         } else {
@@ -209,7 +150,6 @@ const handleTodayClick = useCallback(() => {
     const handleSelectAll = useCallback(() => {
         const newSelectAll = !selectAll;
         setSelectAll(newSelectAll);
-
         if (newSelectAll) {
             const allIds = employees.map(emp => emp.id || emp.employee_id || emp.emp_id);
             setSelectedEmployees(allIds);
@@ -235,196 +175,147 @@ const handleTodayClick = useCallback(() => {
     }, [employees, selectedEmployees]);
 
     const handleBulkCheckIn = useCallback(async () => {
-    if (selectedEmployees.length === 0) {
-        showNotification('warning', t('MSG.selectEmployeesFirst') || 'Please select employees first');
-        showToast('warning', t('MSG.selectEmployeesFirst') || 'Please select employees first');
-        return;
-    }
-
-    try {
-        setNotification({ show: false, type: '', message: '' });
-        setSubmitting(true);
-
-        const payload = {
-            employees: selectedEmployees
-        };
-
-        const response = await post('/api/bulkCheckIn', payload);
-
-        if (response && (response.message || response.rows_updated)) {
-            // showNotification('success',
-            //     `${t('MSG.bulkCheckInSuccess') }`
-            // );
-
-            showToast('success',  `${t('MSG.bulkCheckInSuccess') }`);
-            
-            // -----> SCROLL TO TOP on success
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-
-            setEmployees(prev =>
-                prev.map(emp => {
-                    const empId = emp.id || emp.employee_id || emp.emp_id;
-                    return selectedEmployees.includes(empId)
-                        ? { ...emp, checkIn: true, status: 'Present', selected: false }
-                        : { ...emp, selected: false };
-                })
-            );
-            setSelectedEmployees([]);
-            setSelectAll(false);
-        } else {
-            showNotification('warning', t('MSG.failedToProcessRequest') || 'Failed to process request');
-            showToast('warning', t('MSG.failedToProcessRequest') || 'Failed to process request');
+        if (selectedEmployees.length === 0) {
+            showNotification('warning', t('MSG.selectEmployeesFirst') || 'Please select employees first');
+            showToast('warning', t('MSG.selectEmployeesFirst') || 'Please select employees first');
+            return;
         }
-    } catch (error) {
-        console.error('Error:', error);
-        showNotification('warning', `${t('MSG.error') || 'Error'}: ${error.message}`);
-         showToast('warning', `${t('MSG.error') || 'Error'}: ${error.message}`);
-    } finally {
-        setSubmitting(false);
-    }
-}, [selectedEmployees, showNotification, t]);
-
-const handleBulkCheckOut = useCallback(async () => {
-    if (selectedEmployees.length === 0) {
-        showNotification('warning', t('MSG.selectEmployeesFirst') || 'Please select employees first');
-        showToast('warning', t('MSG.selectEmployeesFirst') || 'Please select employees first');
-        return;
-    }
-
-    const employeesWithoutCheckIn = getSelectedEmployeesWithoutCheckIn();
-
-    if (employeesWithoutCheckIn.length > 0) {
-        const employeeNames = employeesWithoutCheckIn.map(emp =>
-            emp.name || emp.employee_name || emp.first_name || 'Unknown'
-        ).join(', ');
-
-        showNotification('warning',
-            `${t('MSG.checkInRequiredForCheckOut') || 'Check-in required for check-out'}: ${employeeNames}`
-        );
-        showToast('warning',
-            `${t('MSG.checkInRequiredForCheckOut') || 'Check-in required for check-out'}: ${employeeNames}`
-        );
-        return;
-    }
-
-    try {
-        setNotification({ show: false, type: '', message: '' });
-        setSubmitting(true);
-
-        const validEmployees = getSelectedEmployeesWithCheckIn().map(emp => emp.id || emp.employee_id || emp.emp_id);
-
-        const payload = {
-            employees: validEmployees
-        };
-
-        const response = await post('/api/bulkCheckOut', payload);
-
-        if (response && (response.message || response.rows_updated)) {
-            // showNotification('success',
-            //     `${t('MSG.bulkCheckOutSuccess') }`
-            // );
-             showToast('success',
-                `${t('MSG.bulkCheckOutSuccess') }`
-            );
-            
-            // -----> SCROLL TO TOP on success
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-
-            setEmployees(prev =>
-                prev.map(emp => {
-                    const empId = emp.id || emp.employee_id || emp.emp_id;
-                    return validEmployees.includes(empId)
-                        ? { ...emp, checkOut: true, status: 'Present', selected: false }
-                        : { ...emp, selected: false };
-                })
-            );
-
-            setSelectedEmployees([]);
-            setSelectAll(false);
-        } else {
-            showNotification('warning', t('MSG.failedToProcessRequest') || 'Failed to process request');
-            showToast('warning', t('MSG.failedToProcessRequest') || 'Failed to process request');
+        try {
+            setNotification({ show: false, type: '', message: '' });
+            setSubmitting(true);
+            const payload = { employees: selectedEmployees };
+            const response = await post('/api/bulkCheckIn', payload);
+            if (response && (response.message || response.rows_updated)) {
+                showToast('success', t('MSG.bulkCheckInSuccess') || 'Bulk check-in successful');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                setEmployees(prev =>
+                    prev.map(emp => {
+                        const empId = emp.id || emp.employee_id || emp.emp_id;
+                        return selectedEmployees.includes(empId)
+                            ? { ...emp, checkIn: true, status: 'Present', selected: false }
+                            : { ...emp, selected: false };
+                    })
+                );
+                setSelectedEmployees([]);
+                setSelectAll(false);
+            } else {
+                showNotification('warning', t('MSG.failedToProcessRequest') || 'Failed to process request');
+                showToast('warning', t('MSG.failedToProcessRequest') || 'Failed to process request');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification('warning', `${t('MSG.error') || 'Error'}: ${error.message}`);
+            showToast('warning', `${t('MSG.error') || 'Error'}: ${error.message}`);
+        } finally {
+            setSubmitting(false);
         }
-    } catch (error) {
-        console.error('Error:', error);
-        showNotification('warning', `${t('MSG.error') || 'Error'}: ${error.message}`);
-        showToast('warning', `${t('MSG.error') || 'Error'}: ${error.message}`);
-    } finally {
-        setSubmitting(false);
-    }
-}, [selectedEmployees, showNotification, t, getSelectedEmployeesWithoutCheckIn, getSelectedEmployeesWithCheckIn]);
+    }, [selectedEmployees, showNotification, t, showToast]);
+
+    const handleBulkCheckOut = useCallback(async () => {
+        if (selectedEmployees.length === 0) {
+            showNotification('warning', t('MSG.selectEmployeesFirst') || 'Please select employees first');
+            showToast('warning', t('MSG.selectEmployeesFirst') || 'Please select employees first');
+            return;
+        }
+        const employeesWithoutCheckIn = getSelectedEmployeesWithoutCheckIn();
+        if (employeesWithoutCheckIn.length > 0) {
+            const employeeNames = employeesWithoutCheckIn.map(emp =>
+                emp.name || emp.employee_name || emp.first_name || 'Unknown'
+            ).join(', ');
+            showNotification('warning', `${t('MSG.checkInRequiredForCheckOut') || 'Check-in required for check-out'}: ${employeeNames}`);
+            showToast('warning', `${t('MSG.checkInRequiredForCheckOut') || 'Check-in required for check-out'}: ${employeeNames}`);
+            return;
+        }
+        try {
+            setNotification({ show: false, type: '', message: '' });
+            setSubmitting(true);
+            const validEmployees = getSelectedEmployeesWithCheckIn().map(emp => emp.id || emp.employee_id || emp.emp_id);
+            const payload = { employees: validEmployees };
+            const response = await post('/api/bulkCheckOut', payload);
+            if (response && (response.message || response.rows_updated)) {
+                showToast('success', t('MSG.bulkCheckOutSuccess') || 'Bulk check-out successful');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                setEmployees(prev =>
+                    prev.map(emp => {
+                        const empId = emp.id || emp.employee_id || emp.emp_id;
+                        return validEmployees.includes(empId)
+                            ? { ...emp, checkOut: true, status: 'Present', selected: false }
+                            : { ...emp, selected: false };
+                    })
+                );
+                setSelectedEmployees([]);
+                setSelectAll(false);
+            } else {
+                showNotification('warning', t('MSG.failedToProcessRequest') || 'Failed to process request');
+                showToast('warning', t('MSG.failedToProcessRequest') || 'Failed to process request');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification('warning', `${t('MSG.error') || 'Error'}: ${error.message}`);
+            showToast('warning', `${t('MSG.error') || 'Error'}: ${error.message}`);
+        } finally {
+            setSubmitting(false);
+        }
+    }, [selectedEmployees, showNotification, t, getSelectedEmployeesWithoutCheckIn, getSelectedEmployeesWithCheckIn, showToast]);
 
     const isCheckOutDisabled = useCallback(() => {
         if (selectedEmployees.length === 0 || submitting) return true;
-
-        const employeesWithoutCheckIn = getSelectedEmployeesWithoutCheckIn();
-        return employeesWithoutCheckIn.length > 0;
+        return getSelectedEmployeesWithoutCheckIn().length > 0;
     }, [selectedEmployees.length, submitting, getSelectedEmployeesWithoutCheckIn]);
 
     const getCheckOutTooltipMessage = useCallback(() => {
-        if (selectedEmployees.length === 0) {
-            return t('MSG.selectEmployeesFirst') || 'Please select employees first';
-        }
-
-        const employeesWithoutCheckIn = getSelectedEmployeesWithoutCheckIn();
-        if (employeesWithoutCheckIn.length > 0) {
+        if (selectedEmployees.length === 0) return t('MSG.selectEmployeesFirst') || 'Please select employees first';
+        if (getSelectedEmployeesWithoutCheckIn().length > 0) {
             return t('MSG.checkInRequiredForCheckOutTooltip') || 'All selected employees must check-in before check-out';
         }
-
         return t('MSG.clickToCheckOut') || 'Click to check-out selected employees';
     }, [selectedEmployees.length, getSelectedEmployeesWithoutCheckIn, t]);
 
-    const openImageModal = useCallback((imageUrl, employeeName, imageType) => {
-        setImageModal({
-            isOpen: true,
-            imageUrl: imageUrl,
-            title: 'Employee Image',
-            employeeName: employeeName,
-            imageType: imageType
-        });
+    const hasValidImageUrl = useCallback((trackers, imageType) => {
+        if (!trackers || !Array.isArray(trackers) || trackers.length === 0) {
+            console.log('Invalid trackers for image:', trackers);
+            return false;
+        }
+        const latestTracker = trackers[trackers.length - 1];
+        console.log(`Checking ${imageType} image:`, latestTracker[`${imageType}_img`]);
+        return imageType === 'checkin'
+            ? !!latestTracker.checkin_img && latestTracker.checkin_img.trim() !== ''
+            : !!latestTracker.checkout_img && latestTracker.checkout_img.trim() !== '';
     }, []);
 
+    const hasValidGps = useCallback((trackers, type) => {
+        if (!trackers || !Array.isArray(trackers) || trackers.length === 0) {
+            console.log('Invalid trackers for GPS:', trackers);
+            return false;
+        }
+        const latestTracker = trackers[trackers.length - 1];
+        console.log(`Checking ${type} GPS:`, latestTracker[`${type === 'check-in' ? 'check_in' : 'check_out'}_gps`]);
+        return type === 'check-in' ? !!latestTracker.check_in_gps : !!latestTracker.check_out_gps;
+    }, []);
+
+    const openImageModal = useCallback((imageUrl, employeeName, imageType) => {
+        if (!imageUrl) {
+            console.warn('No image URL provided for', imageType, employeeName);
+            showToast('warning', t('MSG.noImageData') || 'No image data available');
+            return;
+        }
+        setImageModal({ isOpen: true, imageUrl, title: 'Employee Image', employeeName, imageType });
+    }, [showToast, t]);
+
     const closeImageModal = useCallback(() => {
-        setImageModal({
-            isOpen: false,
-            imageUrl: '',
-            title: '',
-            employeeName: '',
-            imageType: ''
-        });
+        setImageModal({ isOpen: false, imageUrl: '', title: '', employeeName: '', imageType: '' });
     }, []);
 
     const getImageUrl = useCallback((trackers, imageType) => {
-        if (!trackers || !Array.isArray(trackers) || trackers.length === 0) {
-            return null;
-        }
-
+        if (!trackers || !Array.isArray(trackers) || trackers.length === 0) return null;
         const latestTracker = trackers[trackers.length - 1];
-
-        if (imageType === 'checkin') {
-            return latestTracker.checkin_img || null;
-        } else if (imageType === 'checkout') {
-            return latestTracker.checkout_img || null;
-        }
-
-        return null;
+        return imageType === 'checkin' ? latestTracker.checkin_img || null : latestTracker.checkout_img || null;
     }, []);
 
-    const hasValidImageUrl = useCallback((trackers, imageType) => {
-        if (!trackers || !Array.isArray(trackers) || trackers.length === 0) {
-            return false;
-        }
-
-        const latestTracker = trackers[trackers.length - 1];
-
-        if (imageType === 'checkin') {
-            return latestTracker.checkin_img && latestTracker.checkin_img.trim() !== '';
-        } else if (imageType === 'checkout') {
-            return latestTracker.checkout_img && latestTracker.checkout_img.trim() !== '';
-        }
-
-        return false;
-    }, []);
+    useEffect(() => {
+        fetchFaceAttendanceStatus();
+        fetchEmployees(selectedDate);
+    }, [fetchFaceAttendanceStatus, selectedDate]);
 
     if (loading) {
         return (
@@ -435,98 +326,50 @@ const handleBulkCheckOut = useCallback(async () => {
     }
 
     return (
-        <>
         <div className="min-vh-100 d-flex flex-column w-100" style={{ backgroundColor: '#f8f9fa' }}>
             <CContainer fluid className="flex-grow-1 p-0 w-100">
                 <div className="w-100 px-2 px-sm-3 px-md-4 py-2 py-md-3">
                     {notification.show && (
-                        <CAlert
-                            color={notification.type}
-                            dismissible
-                            onClose={() => setNotification({ show: false, type: '', message: '' })}
-                            className="mb-3"
-                        >
+                        <CAlert color={notification.type} dismissible onClose={() => setNotification({ show: false, type: '', message: '' })} className="mb-3">
                             {notification.message}
                         </CAlert>
                     )}
-
-                    
-         
-
-{/* Remove the existing centered date picker section completely */}
-
-<CCard className="shadow-lg border-0 w-100">
-    <CCardHeader
-        className="py-3 py-md-4"
-        style={{
-            backgroundColor: "#E6E6FA",
-            borderBottom: '3px solid #6c757d'
-        }}
-    >
-        <div className="d-flex  flex-lg-row align-items-start align-items-lg-center justify-content-between gap-3">
-            {/* Left side - Title and description */}
-            <div className="d-flex mt-2 mt-md-0 align-items-center">
-                <CIcon icon={cilPeople} className="me-2 me-md-3" size="xl" />
-                <div>
-                    <h4 className="mb-1 fw-bold fs-6 fs-sm-5 fs-md-4 small d-none d-sm-block">
-                        {t('LABELS.bulkEmployeeAttendance') || 'Bulk Employee Attendance'}
-                    </h4>
-                    <p className="text-muted mb-0 small d-none d-sm-block">
-                        {t('LABELS.manageMultipleEmployees') || 'Manage multiple employees check-in/out'}
-                    </p>
-                </div>
-            </div>
-
-            {/* Right side - Date picker and selected count */}
-            <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2 gap-sm-3">
-                {/* Date picker section */}
-                <div className="d-flex align-items-center gap-2 bg-light p-2 rounded border">
-                    <CIcon icon={cilClock} className="text-primary" />
-                    <span className="text-muted small fw-medium d-none d-sm-inline">
-                        {t('LABELS.selectDate') || 'Select Date'}
-                    </span>
-                   <input
-  type="date"
-  value={selectedDate}
-  onChange={handleDateChange}
-  className="form-control form-control-sm"
-  style={{
-    width: '150px',
-    border: '1px solid #ced4da',
-    borderRadius: '4px',
-    fontSize: '0.875rem',
-    backgroundColor: 'rgba(255,255,255,0.6)',
-    backdropFilter: 'blur(10px)'
-  }}
-/>
-
-                    {!isCurrentDate && (
-                        <CButton
-                            color="primary"
-                            size="sm"
-                            onClick={handleTodayClick}
-                            className="px-3 py-1"
-                            style={{
-                                fontSize: '0.75rem',
-                                fontWeight: 'bold',
-                                borderRadius: '4px'
-                            }}
-                        >
-                            {t('LABELS.today') || 'Today'}
-                        </CButton>
-                    )}
-                </div>
-
-                {/* Selected count badge */}
-                {/* <div className="text-end">
-                    <CBadge color="primary" className="fs-6 px-2 px-md-3 py-1 py-md-2">
-                        {selectedEmployees.length} {t('LABELS.selected') || 'Selected'}
-                    </CBadge>
-                </div> */}
-            </div>
-        </div>
-    </CCardHeader>
-
+                    <CCard className="shadow-lg border-0 w-100">
+                        <CCardHeader className="py-3 py-md-4" style={{ backgroundColor: "#E6E6FA", borderBottom: '3px solid #6c757d' }}>
+                            <div className="d-flex flex-lg-row align-items-start align-items-lg-center justify-content-between gap-3">
+                                <div className="d-flex mt-2 mt-md-0 align-items-center">
+                                    <CIcon icon={cilPeople} className="me-2 me-md-3" size="xl" />
+                                    <div>
+                                        <h4 className="mb-1 fw-bold fs-6 fs-sm-5 fs-md-4 small d-none d-sm-block">
+                                            {t('LABELS.bulkEmployeeAttendance') || 'Bulk Employee Attendance'}
+                                        </h4>
+                                        <p className="text-muted mb-0 small d-none d-sm-block">
+                                            {t('LABELS.manageMultipleEmployees') || 'Manage multiple employees check-in/out'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2 gap-sm-3">
+                                    <div className="d-flex align-items-center gap-2 bg-light p-2 rounded border">
+                                        <CIcon icon={cilClock} className="text-primary" />
+                                        <span className="text-muted small fw-medium d-none d-sm-inline">
+                                            {t('LABELS.selectDate') || 'Select Date'}
+                                        </span>
+                                        <input
+                                            type="date"
+                                            value={selectedDate}
+                                            onChange={handleDateChange}
+                                            className="form-control form-control-sm"
+                                            style={{ width: '150px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '0.875rem', backgroundColor: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(10px)' }}
+                                        />
+                                        {!isCurrentDate && (
+                                            <CButton color="primary" size="sm" onClick={handleTodayClick} className="px-3 py-1" style={{ fontSize: '0.75rem', fontWeight: 'bold', borderRadius: '4px' }}>
+                                                {t('LABELS.today') || 'Today'}
+                                            </CButton>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </CCardHeader>
                         <CCardBody className="p-2 p-sm-3 p-md-4">
                             <div className="mb-3 mb-md-4">
                                 <div className="d-flex flex-column flex-sm-row gap-2">
@@ -551,22 +394,13 @@ const handleBulkCheckOut = useCallback(async () => {
                                             </>
                                         )}
                                     </CButton>
-
-                                    <CTooltip
-                                        content={getCheckOutTooltipMessage()}
-                                        placement="top"
-                                    >
+                                    <CTooltip content={getCheckOutTooltipMessage()} placement="top">
                                         <CButton
                                             color={isCheckOutDisabled() ? "secondary" : "success"}
                                             onClick={handleBulkCheckOut}
                                             disabled={isCheckOutDisabled()}
                                             className="py-2 py-md-3 flex-fill"
-                                            style={{
-                                                fontSize: '0.9rem',
-                                                fontWeight: 'bold',
-                                                opacity: isCheckOutDisabled() ? 0.6 : 1,
-                                                cursor: isCheckOutDisabled() ? 'not-allowed' : 'pointer'
-                                            }}
+                                            style={{ fontSize: '0.9rem', fontWeight: 'bold', opacity: isCheckOutDisabled() ? 0.6 : 1, cursor: isCheckOutDisabled() ? 'not-allowed' : 'pointer' }}
                                         >
                                             {submitting ? (
                                                 <>
@@ -576,10 +410,7 @@ const handleBulkCheckOut = useCallback(async () => {
                                                 </>
                                             ) : (
                                                 <>
-                                                    <CIcon
-                                                        icon={isCheckOutDisabled() ? cilWarning : cilCheck}
-                                                        className="me-1 me-md-2"
-                                                    />
+                                                    <CIcon icon={isCheckOutDisabled() ? cilWarning : cilCheck} className="me-1 me-md-2" />
                                                     <span className="d-none d-sm-inline">{t('LABELS.bulkCheckOut') || 'Bulk Check-Out'}</span>
                                                     <span className="d-sm-none">{t('LABELS.checkOut') || 'Check-Out'}</span>
                                                 </>
@@ -587,7 +418,6 @@ const handleBulkCheckOut = useCallback(async () => {
                                         </CButton>
                                     </CTooltip>
                                 </div>
-
                                 {selectedEmployees.length > 0 && getSelectedEmployeesWithoutCheckIn().length > 0 && (
                                     <div className="mt-2 p-2 rounded bg-warning-subtle border border-warning">
                                         <div className="d-flex align-items-center">
@@ -599,120 +429,37 @@ const handleBulkCheckOut = useCallback(async () => {
                                     </div>
                                 )}
                             </div>
-
                             <div className="table-responsive w-100">
-                                <CTable
-                                    align="middle"
-                                    className="mb-0 w-100"
-                                    hover
-                                    responsive
-                                    style={{
-                                        border: '2px solid #a7acb1',
-                                        borderRadius: '8px',
-                                        overflow: 'hidden',
-                                        minWidth: '100%'
-                                    }}
-                                >
+                                <CTable align="middle" className="mb-0 w-100" hover responsive style={{ border: '2px solid #a7acb1', borderRadius: '8px', overflow: 'hidden', minWidth: '100%' }}>
                                     <CTableHead className="text-nowrap">
                                         <CTableRow style={{ borderBottom: '2px solid #a7acb1' }}>
-                                            <CTableHeaderCell
-                                                className="bg-body-tertiary text-center"
-                                                style={{
-                                                    width: '60px',
-                                                    minWidth: '60px',
-                                                    borderRight: '1px solid #a7acb1',
-                                                    fontWeight: 'bold',
-                                                    padding: '12px 8px'
-                                                }}
-                                            >
+                                            <CTableHeaderCell className="bg-body-tertiary text-center" style={{ width: '60px', minWidth: '60px', borderRight: '1px solid #a7acb1', fontWeight: 'bold', padding: '12px 8px' }}>
                                                 <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '24px' }}>
                                                     <CFormCheck
                                                         checked={selectAll}
                                                         onChange={handleSelectAll}
                                                         id="selectAll"
-                                                        style={{
-                                                            width: '20px',
-                                                            height: '20px',
-                                                            border: '2px solid #007bff',
-                                                            backgroundColor: selectAll ? '#007bff' : 'white',
-                                                            borderRadius: '3px',
-                                                            cursor: 'pointer',
-                                                            position: 'relative',
-                                                            appearance: 'none',
-                                                            outline: 'none'
-                                                        }}
+                                                        style={{ width: '20px', height: '20px', border: '2px solid #007bff', backgroundColor: selectAll ? '#007bff' : 'white', borderRadius: '3px', cursor: 'pointer', position: 'relative', appearance: 'none', outline: 'none' }}
                                                     />
                                                 </div>
                                             </CTableHeaderCell>
-
-                                            <CTableHeaderCell
-                                                className="bg-body-tertiary"
-                                                style={{
-                                                    width: '80px', // Reduced width for Id column
-                                                    minWidth: '80px',
-                                                    borderRight: '1px solid #a7acb1',
-                                                    fontWeight: 'bold'
-                                                }}
-                                            >
+                                            <CTableHeaderCell className="bg-body-tertiary" style={{ width: '80px', minWidth: '80px', borderRight: '1px solid #a7acb1', fontWeight: 'bold' }}>
                                                 <span className="d-md-none">{t('LABELS.employee') || 'Employee'}</span>
                                                 <span className="d-none d-md-inline">{t('LABELS.employeeId') || 'Employee ID'}</span>
                                             </CTableHeaderCell>
-
-                                            <CTableHeaderCell
-                                                className="bg-body-tertiary d-none d-md-table-cell"
-                                                style={{
-                                                    borderRight: '1px solid #a7acb1',
-                                                    fontWeight: 'bold',
-                                                    minWidth: '150px'
-                                                }}
-                                            >
+                                            <CTableHeaderCell className="bg-body-tertiary d-none d-md-table-cell" style={{ borderRight: '1px solid #a7acb1', fontWeight: 'bold', minWidth: '150px' }}>
                                                 {t('LABELS.employee') || 'Employee'}
                                             </CTableHeaderCell>
-
-                                            <CTableHeaderCell
-                                                className="bg-body-tertiary text-center d-none d-md-table-cell"
-                                                style={{
-                                                    width: '120px',
-                                                    minWidth: '120px',
-                                                    borderRight: '1px solid #a7acb1',
-                                                    fontWeight: 'bold'
-                                                }}
-                                            >
+                                            <CTableHeaderCell className="bg-body-tertiary text-center d-none d-md-table-cell" style={{ width: '120px', minWidth: '120px', borderRight: '1px solid #a7acb1', fontWeight: 'bold' }}>
                                                 {t('LABELS.checkIn') || 'Check In'}
                                             </CTableHeaderCell>
-
-                                            <CTableHeaderCell
-                                                className="bg-body-tertiary text-center d-none d-md-table-cell"
-                                                style={{
-                                                    width: '120px',
-                                                    minWidth: '120px',
-                                                    borderRight: '1px solid #a7acb1',
-                                                    fontWeight: 'bold'
-                                                }}
-                                            >
+                                            <CTableHeaderCell className="bg-body-tertiary text-center d-none d-md-table-cell" style={{ width: '120px', minWidth: '120px', borderRight: '1px solid #a7acb1', fontWeight: 'bold' }}>
                                                 {t('LABELS.checkOut') || 'Check Out'}
                                             </CTableHeaderCell>
-
-                                            <CTableHeaderCell
-                                                className="bg-body-tertiary text-center d-none d-md-table-cell"
-                                                style={{
-                                                    width: '100px',
-                                                    minWidth: '100px',
-                                                    borderRight: '1px solid #a7acb1',
-                                                    fontWeight: 'bold'
-                                                }}
-                                            >
+                                            <CTableHeaderCell className="bg-body-tertiary text-center d-none d-md-table-cell" style={{ width: '100px', minWidth: '100px', borderRight: '1px solid #a7acb1', fontWeight: 'bold' }}>
                                                 {t('LABELS.status') || 'Status'}
                                             </CTableHeaderCell>
-
-                                            <CTableHeaderCell
-                                                className="bg-body-tertiary text-center d-none d-md-table-cell"
-                                                style={{
-                                                    width: '100px',
-                                                    minWidth: '100px',
-                                                    fontWeight: 'bold'
-                                                }}
-                                            >
+                                            <CTableHeaderCell className="bg-body-tertiary text-center d-none d-md-table-cell" style={{ width: '100px', minWidth: '100px', fontWeight: 'bold' }}>
                                                 {t('LABELS.action') || 'Action'}
                                             </CTableHeaderCell>
                                         </CTableRow>
@@ -741,275 +488,144 @@ const handleBulkCheckOut = useCallback(async () => {
                                                         t={t}
                                                         faceAttendanceEnabled={faceAttendanceEnabled}
                                                     />
-
                                                     <CTableRow
                                                         className="d-none d-md-table-row"
-                                                        style={{
-                                                            borderBottom: index === employees.length - 1 ? 'none' : '1px solid #a7acb1',
-                                                            backgroundColor: isSelected ? '#f8f9fa' : 'transparent'
-                                                        }}
+                                                        style={{ borderBottom: index === employees.length - 1 ? 'none' : '1px solid #a7acb1', backgroundColor: isSelected ? '#f8f9fa' : 'transparent' }}
                                                     >
-                                                        <CTableDataCell
-                                                            className="text-center"
-                                                            style={{ borderRight: '1px solid #a7acb1', padding: '12px 8px' }}
-                                                        >
+                                                        <CTableDataCell className="text-center" style={{ borderRight: '1px solid #a7acb1', padding: '12px 8px' }}>
                                                             <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '24px' }}>
                                                                 <CFormCheck
                                                                     checked={isSelected}
                                                                     onChange={(e) => handleEmployeeSelection(empId, e.target.checked)}
                                                                     id={`employee-${empId}`}
-                                                                    style={{
-                                                                        width: '20px',
-                                                                        height: '20px',
-                                                                        border: '2px solid #007bff',
-                                                                        backgroundColor: isSelected ? '#007bff' : 'white',
-                                                                        borderRadius: '3px',
-                                                                        cursor: 'pointer',
-                                                                        position: 'relative',
-                                                                        appearance: 'none',
-                                                                        outline: 'none'
-                                                                    }}
+                                                                    style={{ width: '20px', height: '20px', border: '2px solid #007bff', backgroundColor: isSelected ? '#007bff' : 'white', borderRadius: '3px', cursor: 'pointer', position: 'relative', appearance: 'none', outline: 'none' }}
                                                                 />
                                                             </div>
                                                         </CTableDataCell>
-
-                                                        <CTableDataCell
-                                                            className="text-center"
-                                                            style={{ 
-                                                                width: '80px', // Reduced width for Id column
-                                                                minWidth: '80px',
-                                                                borderRight: '1px solid #a7acb1' 
-                                                            }}
-                                                        >
+                                                        <CTableDataCell className="text-center" style={{ width: '80px', minWidth: '80px', borderRight: '1px solid #a7acb1' }}>
                                                             <div
                                                                 className="d-flex align-items-center justify-content-center mx-auto"
-                                                                style={{
-                                                                    width: '45px',
-                                                                    height: '45px',
-                                                                    backgroundColor: '#007bff',
-                                                                    color: 'white',
-                                                                    borderRadius: '50%',
-                                                                    fontSize: '11px',
-                                                                    fontWeight: 'bold',
-                                                                    flexShrink: 0,
-                                                                    lineHeight: '1.2',
-                                                                    textAlign: 'center',
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'center'
-                                                                }}
+                                                                style={{ width: '45px', height: '45px', backgroundColor: '#007bff', color: 'white', borderRadius: '50%', fontSize: '11px', fontWeight: 'bold', flexShrink: 0, lineHeight: '1.2', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                                             >
                                                                 {empId || 'N/A'}
                                                             </div>
                                                         </CTableDataCell>
-
-                                                        <CTableDataCell
-                                                            style={{
-                                                                borderRight: '1px solid #a7acb1',
-                                                                minWidth: '150px'
-                                                            }}
-                                                        >
+                                                        <CTableDataCell style={{ borderRight: '1px solid #a7acb1', minWidth: '150px' }}>
                                                             <div className="fw-semibold fs-6" style={{ fontSize: '0.9rem' }}>
                                                                 {empName}
                                                             </div>
                                                         </CTableDataCell>
-
-                                                        <CTableDataCell
-                                                            className="text-center"
-                                                            style={{ borderRight: '1px solid #a7acb1' }}
-                                                        >
+                                                        <CTableDataCell className="text-center" style={{ borderRight: '1px solid #a7acb1' }}>
                                                             <div className="d-flex align-items-center justify-content-center gap-2">
-                                                                <CIcon
-                                                                    icon={employee.checkIn ? cilCheckCircle : cilXCircle}
-                                                                    className={employee.checkIn ? 'text-success' : 'text-muted'}
-                                                                    size="lg"
-                                                                />
+                                                                <CIcon icon={employee.checkIn ? cilCheckCircle : cilXCircle} className={employee.checkIn ? 'text-success' : 'text-muted'} size="lg" />
                                                                 {faceAttendanceEnabled && (
                                                                     <CTooltip
-                                                                        content={hasValidImageUrl(employee.trackers, 'checkin')
-                                                                            ? (t('LABELS.clickToViewCheckInImage') || 'Click to view check-in image')
-                                                                            : (t('LABELS.noCheckInImageUploaded') || 'User did not upload the image for check-in')
-                                                                        }
+                                                                        content={hasValidImageUrl(employee.trackers, 'checkin') ? (t('LABELS.clickToViewCheckInImage') || 'Click to view check-in image') : (t('LABELS.noCheckInImageUploaded') || 'User did not upload the image for check-in')}
                                                                         placement="top"
                                                                         trigger="hover"
                                                                     >
-                                                                        <span>
+                                                                        <div>
                                                                             <CButton
                                                                                 size="sm"
                                                                                 color={hasValidImageUrl(employee.trackers, 'checkin') ? "primary" : "secondary"}
                                                                                 variant="outline"
-                                                                                style={{
-                                                                                    fontSize: '0.7rem',
-                                                                                    padding: '2px 6px',
-                                                                                    opacity: hasValidImageUrl(employee.trackers, 'checkin') ? 1 : 0.6,
-                                                                                    cursor: hasValidImageUrl(employee.trackers, 'checkin') ? 'pointer' : 'not-allowed',
-                                                                                    backgroundColor: hasValidImageUrl(employee.trackers, 'checkin') ? 'transparent' : '#f8f9fa',
-                                                                                    borderColor: hasValidImageUrl(employee.trackers, 'checkin') ? '' : '#6c757d',
-                                                                                    color: hasValidImageUrl(employee.trackers, 'checkin') ? '' : '#6c757d'
-                                                                                }}
+                                                                                style={{ fontSize: '0.7rem', padding: '2px 6px', opacity: hasValidImageUrl(employee.trackers, 'checkin') ? 1 : 0.6, cursor: hasValidImageUrl(employee.trackers, 'checkin') ? 'pointer' : 'not-allowed', backgroundColor: hasValidImageUrl(employee.trackers, 'checkin') ? 'transparent' : '#f8f9fa', borderColor: hasValidImageUrl(employee.trackers, 'checkin') ? '' : '#6c757d', color: hasValidImageUrl(employee.trackers, 'checkin') ? '' : '#6c757d', pointerEvents: hasValidImageUrl(employee.trackers, 'checkin') ? 'auto' : 'none' }}
                                                                                 disabled={!hasValidImageUrl(employee.trackers, 'checkin')}
-                                                                                onClick={() => openImageModal(
-                                                                                    getImageUrl(employee.trackers, 'checkin'),
-                                                                                    empName,
-                                                                                    'Check-in'
-                                                                                )}
+                                                                                onClick={() => openImageModal(getImageUrl(employee.trackers, 'checkin'), empName, 'Check-in')}
                                                                             >
                                                                                 {t('LABELS.view') || 'View'}
                                                                             </CButton>
-                                                                        </span>
+                                                                        </div>
                                                                     </CTooltip>
                                                                 )}
                                                                 <CTooltip
-                                                                    content={employee.trackers?.[0]?.check_in_gps
-                                                                        ? (t('LABELS.viewCheckInLocation') || 'View check-in location')
-                                                                        : (t('LABELS.noCheckInLocation') || 'No check-in location available')
-                                                                    }
+                                                                    content={hasValidGps(employee.trackers, 'check-in') ? (t('LABELS.viewCheckInLocation') || 'View check-in location') : (t('LABELS.noCheckInLocation') || 'No check-in location available')}
                                                                     placement="top"
                                                                     trigger="hover"
                                                                 >
-                                                                    <span>
+                                                                    <div>
                                                                         <CButton
                                                                             size="sm"
-                                                                            color={employee.trackers?.[0]?.check_in_gps ? "primary" : "secondary"}
+                                                                            color={hasValidGps(employee.trackers, 'check-in') ? "primary" : "secondary"}
                                                                             variant="outline"
-                                                                            style={{
-                                                                                fontSize: '0.7rem',
-                                                                                padding: '2px 6px',
-                                                                                marginLeft: '4px',
-                                                                                opacity: employee.trackers?.[0]?.check_in_gps ? 1 : 0.6,
-                                                                                cursor: employee.trackers?.[0]?.check_in_gps ? 'pointer' : 'not-allowed',
-                                                                                backgroundColor: employee.trackers?.[0]?.check_in_gps ? 'transparent' : '#f8f9fa',
-                                                                                borderColor: employee.trackers?.[0]?.check_in_gps ? '' : '#6c757d',
-                                                                                color: employee.trackers?.[0]?.check_in_gps ? '' : '#6c757d'
-                                                                            }}
-                                                                            disabled={!employee.trackers?.[0]?.check_in_gps}
-                                                                            onClick={() => handleMapClick(employee.trackers?.[0]?.check_in_gps,'check-in',employee.trackers?.[0]?.employee_id)}
+                                                                            style={{ fontSize: '0.7rem', padding: '2px 6px', marginLeft: '4px', opacity: hasValidGps(employee.trackers, 'check-in') ? 1 : 0.6, cursor: hasValidGps(employee.trackers, 'check-in') ? 'pointer' : 'not-allowed', backgroundColor: hasValidGps(employee.trackers, 'check-in') ? 'transparent' : '#f8f9fa', borderColor: hasValidGps(employee.trackers, 'check-in') ? '' : '#6c757d', color: hasValidGps(employee.trackers, 'check-in') ? '' : '#6c757d', pointerEvents: hasValidGps(employee.trackers, 'check-in') ? 'auto' : 'none' }}
+                                                                            disabled={!hasValidGps(employee.trackers, 'check-in')}
+                                                                            onClick={() => handleMapClick(employee.trackers?.[0]?.check_in_gps, 'check-in', employee.trackers?.[0]?.employee_id)}
                                                                         >
                                                                             <CIcon icon={cilLocationPin} size="sm" />
                                                                         </CButton>
-                                                                    </span>
+                                                                    </div>
                                                                 </CTooltip>
                                                             </div>
                                                         </CTableDataCell>
-                                                        <CTableDataCell
-                                                            className="text-center"
-                                                            style={{ borderRight: '1px solid #a7acb1' }}
-                                                        >
+                                                        <CTableDataCell className="text-center" style={{ borderRight: '1px solid #a7acb1' }}>
                                                             <div className="d-flex align-items-center justify-content-center gap-2">
-                                                                <CIcon
-                                                                    icon={employee.checkOut ? cilCheckCircle : cilXCircle}
-                                                                    className={employee.checkOut ? 'text-success' : 'text-muted'}
-                                                                    size="lg"
-                                                                />
+                                                                <CIcon icon={employee.checkOut ? cilCheckCircle : cilXCircle} className={employee.checkOut ? 'text-success' : 'text-muted'} size="lg" />
                                                                 {faceAttendanceEnabled && (
                                                                     <CTooltip
-                                                                        content={hasValidImageUrl(employee.trackers, 'checkout')
-                                                                            ? (t('LABELS.clickToViewCheckOutImage') || 'Click to view check-out image')
-                                                                            : (t('LABELS.noCheckOutImageUploaded') || 'User did not upload the image for check-out')
-                                                                        }
+                                                                        content={hasValidImageUrl(employee.trackers, 'checkout') ? (t('LABELS.clickToViewCheckOutImage') || 'Click to view check-out image') : (t('LABELS.noCheckOutImageUploaded') || 'User did not upload the image for check-out')}
                                                                         placement="top"
                                                                         trigger="hover"
                                                                     >
-                                                                        <span>
+                                                                        <div>
                                                                             <CButton
                                                                                 size="sm"
                                                                                 color={hasValidImageUrl(employee.trackers, 'checkout') ? "primary" : "secondary"}
                                                                                 variant="outline"
-                                                                                style={{
-                                                                                    fontSize: '0.7rem',
-                                                                                    padding: '2px 6px',
-                                                                                    opacity: hasValidImageUrl(employee.trackers, 'checkout') ? 1 : 0.6,
-                                                                                    cursor: hasValidImageUrl(employee.trackers, 'checkout') ? 'pointer' : 'not-allowed',
-                                                                                    backgroundColor: hasValidImageUrl(employee.trackers, 'checkout') ? 'transparent' : '#f8f9fa',
-                                                                                    borderColor: hasValidImageUrl(employee.trackers, 'checkout') ? '' : '#6c757d',
-                                                                                    color: hasValidImageUrl(employee.trackers, 'checkout') ? '' : '#6c757d'
-                                                                                }}
+                                                                                style={{ fontSize: '0.7rem', padding: '2px 6px', opacity: hasValidImageUrl(employee.trackers, 'checkout') ? 1 : 0.6, cursor: hasValidImageUrl(employee.trackers, 'checkout') ? 'pointer' : 'not-allowed', backgroundColor: hasValidImageUrl(employee.trackers, 'checkout') ? 'transparent' : '#f8f9fa', borderColor: hasValidImageUrl(employee.trackers, 'checkout') ? '' : '#6c757d', color: hasValidImageUrl(employee.trackers, 'checkout') ? '' : '#6c757d', pointerEvents: hasValidImageUrl(employee.trackers, 'checkout') ? 'auto' : 'none' }}
                                                                                 disabled={!hasValidImageUrl(employee.trackers, 'checkout')}
-                                                                                onClick={() => openImageModal(
-                                                                                    getImageUrl(employee.trackers, 'checkout'),
-                                                                                    empName,
-                                                                                    'Check-out'
-                                                                                )}
+                                                                                onClick={() => openImageModal(getImageUrl(employee.trackers, 'checkout'), empName, 'Check-out')}
                                                                             >
                                                                                 {t('LABELS.view') || 'View'}
                                                                             </CButton>
-                                                                        </span>
+                                                                        </div>
                                                                     </CTooltip>
                                                                 )}
                                                                 <CTooltip
-                                                                    content={employee.trackers?.[0]?.check_out_gps
-                                                                        ? (t('LABELS.viewCheckOutLocation') || 'View check-out location')
-                                                                        : (t('LABELS.noCheckOutLocation') || 'No check-out location available')
-                                                                    }
+                                                                    content={hasValidGps(employee.trackers, 'check-out') ? (t('LABELS.viewCheckOutLocation') || 'View check-out location') : (t('LABELS.noCheckOutLocation') || 'No check-out location available')}
                                                                     placement="top"
                                                                     trigger="hover"
                                                                 >
-                                                                    <span>
+                                                                    <div>
                                                                         <CButton
                                                                             size="sm"
-                                                                            color={employee.trackers?.[0]?.check_out_gps ? "primary" : "secondary"}
+                                                                            color={hasValidGps(employee.trackers, 'check-out') ? "primary" : "secondary"}
                                                                             variant="outline"
-                                                                            style={{
-                                                                                fontSize: '0.7rem',
-                                                                                padding: '2px 6px',
-                                                                                marginLeft: '4px',
-                                                                                opacity: employee.trackers?.[0]?.check_out_gps ? 1 : 0.6,
-                                                                                cursor: employee.trackers?.[0]?.check_out_gps ? 'pointer' : 'not-allowed',
-                                                                                backgroundColor: employee.trackers?.[0]?.check_out_gps ? 'transparent' : '#f8f9fa',
-                                                                                borderColor: employee.trackers?.[0]?.check_out_gps ? '' : '#6c757d',
-                                                                                color: employee.trackers?.[0]?.check_out_gps ? '' : '#6c757d'
-                                                                            }}
-                                                                            disabled={!employee.trackers?.[0]?.check_out_gps}
-                                                                            onClick={() => handleMapClick(employee.trackers?.[0]?.check_out_gps, 'check-out',employee.trackers?.[0]?.employee_id)}
+                                                                            style={{ fontSize: '0.7rem', padding: '2px 6px', marginLeft: '4px', opacity: hasValidGps(employee.trackers, 'check-out') ? 1 : 0.6, cursor: hasValidGps(employee.trackers, 'check-out') ? 'pointer' : 'not-allowed', backgroundColor: hasValidGps(employee.trackers, 'check-out') ? 'transparent' : '#f8f9fa', borderColor: hasValidGps(employee.trackers, 'check-out') ? '' : '#6c757d', color: hasValidGps(employee.trackers, 'check-out') ? '' : '#6c757d', pointerEvents: hasValidGps(employee.trackers, 'check-out') ? 'auto' : 'none' }}
+                                                                            disabled={!hasValidGps(employee.trackers, 'check-out')}
+                                                                            onClick={() => handleMapClick(employee.trackers?.[0]?.check_out_gps, 'check-out', employee.trackers?.[0]?.employee_id)}
                                                                         >
                                                                             <CIcon icon={cilLocationPin} size="sm" />
                                                                         </CButton>
-                                                                    </span>
+                                                                    </div>
                                                                 </CTooltip>
                                                             </div>
                                                         </CTableDataCell>
-
-                                                        <CTableDataCell
-                                                            className="text-center"
-                                                            style={{ borderRight: '1px solid #a7acb1' }}
-                                                        >
-                                                            <CBadge
-                                                                color={employee.status === 'Present' ? 'success' : 'secondary'}
-                                                                className="px-2 px-md-3 py-1 small"
-                                                                style={{ fontSize: '0.8rem' }}
-                                                            >
+                                                        <CTableDataCell className="text-center" style={{ borderRight: '1px solid #a7acb1' }}>
+                                                            <CBadge color={employee.status === 'Present' ? 'success' : 'secondary'} className="px-2 px-md-3 py-1 small" style={{ fontSize: '0.8rem' }}>
                                                                 {employee.status === 'Present' ? (t('LABELS.present') || 'Present') : (t('LABELS.absent') || 'Absent')}
                                                             </CBadge>
                                                         </CTableDataCell>
-
                                                         <CTableDataCell className="text-center">
-                                                           
                                                             <CButtonGroup className="mt-2">
-                            
-                                                                 <CButton
-                                                                size="sm"
-                                                                color="primary"
-                                                                variant="outline"
-                                                                onClick={() => navigate(`/employees/${empId}`)}
-                                                            >  
-                                                            <span className="d-flex align-items-center gap-1">
-                                                                <CIcon icon={cilInput} />
-                                                                {t('LABELS.details') || 'Details'}
-                                                                </span>
-                                                            </CButton>
-                                                             <CButton
-                                                                size="sm"
-                                                                color="warning"
-                                                                variant="outline"
-                                                                onClick={() => handleEditClick(employee.trackers[0]?.id)}
-                                                                disabled={!employee.trackers || employee.trackers.length === 0}
-                                                              >
-                                                                <span className="d-flex align-items-center gap-1">
-                                                                  <CIcon icon={cilPencil} />
-                                                                  {t('LABELS.smallEditButton') || 'Edit'}
-                                                                </span>
-                                                              </CButton>
-
+                                                                <CButton size="sm" color="primary" variant="outline" onClick={() => navigate(`/employees/${empId}`)}>
+                                                                    <span className="d-flex align-items-center gap-1">
+                                                                        <CIcon icon={cilInput} />
+                                                                        {t('LABELS.details') || 'Details'}
+                                                                    </span>
+                                                                </CButton>
+                                                                <CButton
+                                                                    size="sm"
+                                                                    color="warning"
+                                                                    variant="outline"
+                                                                    onClick={() => handleEditClick(employee.trackers?.[0]?.id)}
+                                                                    disabled={!employee.trackers || employee.trackers.length === 0}
+                                                                >
+                                                                    <span className="d-flex align-items-center gap-1">
+                                                                        <CIcon icon={cilPencil} />
+                                                                        {t('LABELS.smallEditButton') || 'Edit'}
+                                                                    </span>
+                                                                </CButton>
                                                             </CButtonGroup>
                                                         </CTableDataCell>
                                                     </CTableRow>
@@ -1019,7 +635,6 @@ const handleBulkCheckOut = useCallback(async () => {
                                     </CTableBody>
                                 </CTable>
                             </div>
-
                             {employees.length === 0 && (
                                 <div className="text-center py-4 py-md-5">
                                     <CIcon icon={cilPeople} className="text-muted mb-3" style={{ fontSize: '2.5rem' }} />
@@ -1044,8 +659,9 @@ const handleBulkCheckOut = useCallback(async () => {
                 visible={modalVisible}
                 onClose={() => setModalVisible(false)}
                 trackerId={selectedTrackerId}
-                onSuccess={(updatedTracker) => {
-                    setModalVisible(false)
+                onSuccess={() => {
+                    setModalVisible(false);
+                    fetchEmployees(selectedDate);
                 }}
             />
             <GPSLocationModal
@@ -1056,7 +672,6 @@ const handleBulkCheckOut = useCallback(async () => {
                 employeeId={employeeId}
             />
         </div>
-        </>
     );
 }
 

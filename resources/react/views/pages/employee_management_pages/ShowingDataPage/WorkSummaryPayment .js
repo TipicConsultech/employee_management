@@ -23,6 +23,7 @@ const WorkSummaryPayment = ({
 
   if (!workSummary) return null;
 
+
   // Calculate totals
   const regularHours = workSummary.regular_hours || 0;
   const overtimeHours = workSummary.overtime_hours || 0;
@@ -765,7 +766,7 @@ const WorkSummaryPayment = ({
                             readOnly
                           />
                         </div>
-                        {(workSummary.payment_type != "cash") || (workSummary.payment_type != "") || (workSummary.payment_type != null) && (<div className="form-group">
+                        {(workSummary.payment_type != "cash" && workSummary.payment_type != "" && workSummary.payment_type != undefined) && (<div className="form-group">
                           <label className="form-label">{t('LABELS.transactionId')}</label>
                           <CFormInput
                             type="text"
