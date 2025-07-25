@@ -59,6 +59,7 @@ Route::middleware('auth:sanctum')->post('/weeklyPresenty', [EmployeeTrackerContr
 Route::middleware('auth:sanctum')->post('/monthlyPresenty', [EmployeeTrackerController::class, 'monthlyPresenty']);
 Route::middleware('auth:sanctum')->get('/companyHours', [CompanyInfoController::class, 'companyHours']);
 Route::middleware('auth:sanctum')->get('/tolaranceLimit/{id}', [EmployeeController::class, 'checkTolerance']);
+Route::middleware('auth:sanctum')->post('/bulkPresenty', [EmployeeTrackerController::class, 'bulkPresenty']);
 
 
 

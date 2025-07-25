@@ -692,10 +692,9 @@
 "checkOutGPS": "चेक-आउट जीपीएस",
 "totalPresentDays": "एकूण उपस्थित दिवस",
 "noTrackerData": "ट्रॅकर डेटा उपलब्ध नाही.",
-
-
 "regularHours": "नियमित तास",
 "overtimeHours": "अतिरिक्त तास",
+"overtimeDays": "अतिरिक्त दिवस",
 "totalWorkedHours": "एकूण काम केलेले तास",
 "regularWagePerHour": "नियमित तासिक वेतन",
 "overtimeWagePerHour": "अतिरिक्त तासिक वेतन",
@@ -898,7 +897,11 @@
   "workDetails": "कामाचे तपशील",
   "transactionId": "व्यवहार आयडी",
   "enterTransactionId": "व्यवहार आयडी प्रविष्ट करा",
-  "exportToCSV": "CSV डाउनलोड करा"
+  "exportToCSV": "CSV डाउनलोड करा",
+      "currentCredit": "आत्ताचं क्रेडिट",
+      "currentDebit": "आत्ताचं डेबिट",
+      "updatedCredit": "पेमेंट केल्यावर होणारे क्रेडिट",
+      "updatedDebit": "पेमेंट केल्यावर होणारी डेबिट"
 
   },
 

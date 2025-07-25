@@ -29,7 +29,9 @@ class CompanyInfo extends Model
     'subscribed_plan',
     'subscription_validity',
     'refer_by_id',
-    'face_attendance'
+    'face_attendance',
+    'working_hours',
+    'start_time'
     ];
 
     protected $hidden = [

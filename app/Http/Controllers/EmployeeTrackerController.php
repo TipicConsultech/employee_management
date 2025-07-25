@@ -28,47 +28,50 @@ class EmployeeTrackerController extends Controller
     }
 
     public function updateTraker(Request $request, $id)
-    {
-        // Validate input fields
-        $validatedData = $request->validate([
-            'check_in_time' => 'nullable|date',
-            'check_out_time' => 'nullable|date',
-            'half_day' => 'nullable|boolean',
-            'status' => 'nullable|in:CL,PL,SL,NA,H',
-        ]);
+{
+    // Validate input fields
+    $validatedData = $request->validate([
+        'check_in_time' => 'nullable|date',
+        'check_out_time' => 'nullable|date',
+        'half_day' => 'nullable|boolean',
+        'status' => 'nullable|in:CL,PL,SL,NA,H',
+    ]);
 
-        // Find tracker
-        $tracker = EmployeeTracker::findOrFail($id);
-        $CompanyCoordinates = CompanyCordinate::where('company_id', auth()->user()->company_id)->first();
-        // Prepare update array
-        $updateData = [];
+    // Find tracker
+    $tracker = EmployeeTracker::findOrFail($id);
+    $CompanyCoordinates = CompanyCordinate::where('company_id', auth()->user()->company_id)->first();
 
-        if (isset($validatedData['check_in_time'])) {
-            $updateData['check_in_time'] = $validatedData['check_in_time'];
-        }
-
-        if (isset($validatedData['check_out_time'])) {
-            $updateData['check_out_time'] = $validatedData['check_out_time'];
-            $updateData['check_out'] = true; // assuming 'check_out' is a boolean column
-            $updateData['check_out_gps'] = $CompanyCoordinates->required_lat . "," . $CompanyCoordinates->required_lng;
-        }
-
-        if (isset($validatedData['half_day'])) {
-            $updateData['half_day'] = $validatedData['half_day'];
-        }
-
-        if (isset($validatedData['status'])) {
-            $updateData['status'] = $validatedData['status'];
-        }
-
-        // Update tracker
-        $tracker->update($updateData);
-
-        return response()->json([
-            'message' => 'Tracker updated successfully',
-            'data' => $tracker
-        ]);
+    // Check-in: change created_at directly
+    if (isset($validatedData['check_in_time'])) {
+        $tracker->created_at = $validatedData['check_in_time'];
     }
+
+    // Check-out
+    if (isset($validatedData['check_out_time'])) {
+        $tracker->check_out_time = $validatedData['check_out_time'];
+        $tracker->check_out = true; // assuming 'check_out' is a boolean column
+        $tracker->check_out_gps = $CompanyCoordinates->required_lat . "," . $CompanyCoordinates->required_lng;
+    }
+
+    // Half-day
+    if (isset($validatedData['half_day'])) {
+        $tracker->half_day = $validatedData['half_day'];
+    }
+
+    // Status
+    if (isset($validatedData['status'])) {
+        $tracker->status = $validatedData['status'];
+    }
+
+    // Save tracker with updated created_at
+    $tracker->save();
+
+    return response()->json([
+        'message' => 'Tracker updated successfully',
+        'data' => $tracker
+    ]);
+}
+
 
 
 
@@ -232,159 +235,323 @@ class EmployeeTrackerController extends Controller
 
 
     public function bulkCheckIn(Request $request)
-    {
-        /* --------------------------------------------------------------------
-         * 1. Validate input
-         * ------------------------------------------------------------------ */
-        $data = $request->validate([
-            'employees' => ['required', 'array', 'min:1'],
-            'employees.*' => ['integer', 'distinct'],
-        ]);
+{
+    /* --------------------------------------------------------------------
+     * 1. Validate input
+     * ------------------------------------------------------------------ */
+    $data = $request->validate([
+        'employees' => ['required', 'array', 'min:1'],
+        'employees.*' => ['integer', 'distinct'],
+        'date' => ['nullable', 'date'], // optional custom date
+    ]);
 
-        /* --------------------------------------------------------------------
-         * 2. Resolve product / company from the logged‑in user
-         * ------------------------------------------------------------------ */
-        $productId = auth()->user()->product_id;   // property, not method
-        $companyId = auth()->user()->company_id;
+    /* --------------------------------------------------------------------
+     * 2. Resolve product / company from the logged‑in user
+     * ------------------------------------------------------------------ */
+    $productId = auth()->user()->product_id;
+    $companyId = auth()->user()->company_id;
 
-        /* --------------------------------------------------------------------
-         * 3. Fetch the single reference‑coordinate row for this company
-         * ------------------------------------------------------------------ */
-        $coord = CompanyCordinate::where('product_id', $productId)
+    /* --------------------------------------------------------------------
+     * 3. Fetch reference coordinate and start_time for this company
+     * ------------------------------------------------------------------ */
+    $coord = CompanyCordinate::where('product_id', $productId)
+        ->where('company_id', $companyId)
+        ->firstOrFail();
+
+    $checkInGps = $coord->required_lat . ',' . $coord->required_lng;
+
+    // Get the start time from CompanyInfo
+    $startTime = \App\Models\CompanyInfo::where('company_id', $companyId)->value('start_time') ?? '09:00:00';
+
+    // Determine check-in date (either user-provided or today)
+    $inputDate = $data['date'] ?? now()->toDateString(); // YYYY-MM-DD
+    $checkInDateTime = \Carbon\Carbon::parse($inputDate . ' ' . $startTime); // combine date + start time
+
+    /* --------------------------------------------------------------------
+     * 4. Insert rows inside one transaction
+     * ------------------------------------------------------------------ */
+    $inserted = $skipped = 0;
+
+    DB::transaction(function () use ($data, $productId, $companyId, $checkInGps, $inputDate, $checkInDateTime, &$inserted, &$skipped) {
+        // 4‑A. Find already checked-in employees for the date
+        $already = EmployeeTracker::where('company_id', $companyId)
+            ->whereDate('created_at', $inputDate)
+            ->whereIn('employee_id', $data['employees'])
+            ->pluck('employee_id')
+            ->all();
+
+        $newIds = array_diff($data['employees'], $already);
+        $skipped = count($already);
+
+        if (empty($newIds)) {
+            return;
+        }
+
+        // 4‑B. Build the bulk‑insert array
+        $rows = [];
+
+        foreach ($newIds as $employeeId) {
+            $rows[] = [
+                'product_id' => $productId,
+                'company_id' => $companyId,
+                'employee_id' => $employeeId,
+                'check_in' => true,
+                'check_out' => false,
+                'payment_status' => false,
+                'check_in_gps' => $checkInGps,
+                'check_out_gps' => null,
+                'check_out_time' => null,
+                'created_at' => $checkInDateTime,
+                'updated_at' => $checkInDateTime,
+            ];
+        }
+
+        EmployeeTracker::insert($rows);
+        $inserted = count($rows);
+    });
+
+    /* --------------------------------------------------------------------
+     * 5. Return JSON response
+     * ------------------------------------------------------------------ */
+    return response()->json([
+        'message' => 'Bulk check‑in completed.',
+        'attempted' => count($data['employees']),
+        'inserted' => $inserted,
+        'skipped' => $skipped,
+        'product_id' => $productId,
+        'company_id' => $companyId,
+        'work_date' => $inputDate,
+        'check_in_time' => $checkInDateTime->toDateTimeString(),
+    ], 201);
+}
+
+
+
+
+public function bulkCheckOut(Request $request)
+{
+    /* 1. Validate input ---------------------------------------------------------- */
+    $data = $request->validate([
+        'employees' => ['required', 'array', 'min:1'],
+        'employees.*' => ['integer', 'distinct'],
+        'date' => ['nullable', 'date'],
+    ]);
+
+    /* 2. Resolve context ---------------------------------------------------------- */
+    $productId = auth()->user()->product_id;
+    $companyId = auth()->user()->company_id;
+
+    /* 3. Get coordinates & start time --------------------------------------------- */
+    $coord = CompanyCordinate::where('product_id', $productId)
+        ->where('company_id', $companyId)
+        ->firstOrFail();
+
+    $checkGps = $coord->required_lat . ',' . $coord->required_lng;
+
+    $startTime = \App\Models\CompanyInfo::where('company_id', $companyId)->value('start_time') ?? '09:00:00';
+
+    $workDate = $data['date'] ?? now()->toDateString();
+    $checkInTime = \Carbon\Carbon::parse($workDate . ' ' . $startTime);
+    $now = now();
+
+    $checkIns = 0;
+    $checkOuts = 0;
+    $skipped = 0;
+
+    DB::transaction(function () use (
+        $data, $productId, $companyId, $checkGps, $checkInTime, $now, $workDate,
+        &$checkIns, &$checkOuts, &$skipped
+    ) {
+        $existingTrackers = \App\Models\EmployeeTracker::where('product_id', $productId)
             ->where('company_id', $companyId)
-            ->firstOrFail();                       // 404 if missing
+            ->whereIn('employee_id', $data['employees'])
+            ->whereDate('created_at', $workDate)
+            ->get()
+            ->keyBy('employee_id');
 
-        $checkInGps = $coord->required_lat . ',' . $coord->required_lng;
-        $today = now()->toDateString();            // “YYYY‑MM‑DD” (Asia/Kolkata)
+        $rowsToInsert = [];
 
-        /* --------------------------------------------------------------------
-         * 4. Insert rows inside one transaction
-         * ------------------------------------------------------------------ */
-        $inserted = $skipped = 0;
-
-        DB::transaction(function () use ($data, $productId, $companyId, $checkInGps, $today, &$inserted, &$skipped) {
-            // 4‑A. Pull IDs already checked‑in today
-            $already = EmployeeTracker::where('company_id', $companyId)
-                ->whereDate('created_at', $today)
-                ->whereIn('employee_id', $data['employees'])
-                ->pluck('employee_id')
-                ->all();
-
-            $newIds = array_diff($data['employees'], $already);
-            $skipped = count($already);
-
-            if (empty($newIds)) {
-                // nothing to insert – leave early, transaction is cheap
-                return;
-            }
-
-            // 4‑B. Build the bulk‑insert array
-            $now = now();
-            $rows = [];
-
-            foreach ($newIds as $employeeId) {
-                $rows[] = [
+        foreach ($data['employees'] as $employeeId) {
+            if (!isset($existingTrackers[$employeeId])) {
+                // ✅ New entry: do check-in and immediate check-out (8 hrs later)
+                $rowsToInsert[] = [
                     'product_id' => $productId,
                     'company_id' => $companyId,
                     'employee_id' => $employeeId,
                     'check_in' => true,
-                    'check_out' => false,
+                    'check_out' => true,
                     'payment_status' => false,
-                    'check_in_gps' => $checkInGps,
-                    'check_out_gps' => null,
-                    'check_out_time' => null,
-                    // 'work_date'      => $today,   // <‑‑ new column with unique index
-                    'created_at' => $now,
+                    'check_in_gps' => $checkGps,
+                    'check_out_gps' => $checkGps,
+                    'check_out_time' => $checkInTime->copy()->addHours(8),
+                    'created_at' => $checkInTime,
                     'updated_at' => $now,
                 ];
+                $checkIns++;
+                $checkOuts++;
+            } else {
+                $tracker = $existingTrackers[$employeeId];
+
+                if (is_null($tracker->check_out_time)) {
+                    // 🟦 Only checked-in: do check-out
+                    $checkoutTime = \Carbon\Carbon::parse($tracker->created_at)->addHours(8);
+
+                    $tracker->update([
+                        'check_out' => true,
+                        'check_out_gps' => $checkGps,
+                        'check_out_time' => $checkoutTime,
+                        'updated_at' => $now,
+                    ]);
+                    $checkOuts++;
+                } else {
+                    // 🔴 Already checked in & out — skip
+                    $skipped++;
+                }
             }
+        }
 
-            EmployeeTracker::insert($rows);  // one round‑trip to DB
-            $inserted = count($rows);
-        });
+        if (!empty($rowsToInsert)) {
+            \App\Models\EmployeeTracker::insert($rowsToInsert);
+        }
+    });
 
-        /* --------------------------------------------------------------------
-         * 5. Return JSON response
-         * ------------------------------------------------------------------ */
-        return response()->json([
-            'message' => 'Bulk check‑in completed.',
-            'attempted' => count($data['employees']),
-            'inserted' => $inserted,
-            'skipped' => $skipped,
-            'product_id' => $productId,
-            'company_id' => $companyId,
-            'work_date' => $today,
-        ], 201);
-    }
+    /* 4. Respond ------------------------------------------------------------------ */
+    return response()->json([
+        'message' => 'Bulk check-in/out processed.',
+        'check_ins_and_outs' => $checkIns,
+        'only_check_outs' => $checkOuts - $checkIns,
+        'skipped' => $skipped,
+        'product_id' => $productId,
+        'company_id' => $companyId,
+        'work_date' => $workDate,
+    ]);
+}
 
 
-    public function bulkCheckOut(Request $request)
-    {
-        /* 1. Validate the payload -------------------------------------------------- */
-        $data = $request->validate([
-            'employees' => ['required', 'array', 'min:1'],
-            'employees.*' => ['integer', 'distinct'],
-        ]);
+public function bulkPresenty(Request $request)
+{
+    /* 1. Validate input ---------------------------------------------------------- */
+    $data = $request->validate([
+        'employees' => ['required', 'array', 'min:1'],
+        'employees.*' => ['integer', 'distinct'],
+        'date' => ['nullable', 'date'],
+    ]);
 
-        /* 2. Resolve product & company from the logged‑in user --------------------- */
-        $productId = auth()->user()->product_id;   // property, not method
-        $companyId = auth()->user()->company_id;
+    /* 2. Resolve context ---------------------------------------------------------- */
+    $productId = auth()->user()->product_id;
+    $companyId = auth()->user()->company_id;
 
-        /* 3. Look up the reference GPS once ---------------------------------------- */
-        $coord = CompanyCordinate::where('product_id', $productId)
-            ->where('company_id', $companyId)    // spelling matches migration
-            ->firstOrFail();                      // 404 if missing
+    /* 3. Get coordinates & start time --------------------------------------------- */
+    $coord = CompanyCordinate::where('product_id', $productId)
+        ->where('company_id', $companyId)
+        ->firstOrFail();
 
-        $checkOutGps = $coord->required_lat . ',' . $coord->required_lng;
-        $now = Carbon::now();
+    $checkGps = $coord->required_lat . ',' . $coord->required_lng;
 
-        /* 4. Bulk update inside a transaction -------------------------------------- */
-        $updated = DB::transaction(function () use ($data, $productId, $companyId, $checkOutGps, $now) {
-            return EmployeeTracker::where('product_id', $productId)
-                ->where('company_id', $companyId)
-                ->whereIn('employee_id', $data['employees'])
-                ->whereDate('created_at', $now->toDateString()) // “today’s” entry
-                ->update([
+    $startTime = \App\Models\CompanyInfo::where('company_id', $companyId)->value('start_time') ?? '09:00:00';
+
+    $workDate = $data['date'] ?? now()->toDateString();
+    $checkInTime = \Carbon\Carbon::parse($workDate . ' ' . $startTime);
+    $now = now();
+
+    $checkIns = 0;
+    $checkOuts = 0;
+    $skipped = 0;
+
+    DB::transaction(function () use (
+        $data, $productId, $companyId, $checkGps, $checkInTime, $now, $workDate,
+        &$checkIns, &$checkOuts, &$skipped
+    ) {
+        $existingTrackers = \App\Models\EmployeeTracker::where('product_id', $productId)
+            ->where('company_id', $companyId)
+            ->whereIn('employee_id', $data['employees'])
+            ->whereDate('created_at', $workDate)
+            ->get()
+            ->keyBy('employee_id');
+
+        $rowsToInsert = [];
+
+        foreach ($data['employees'] as $employeeId) {
+            if (!isset($existingTrackers[$employeeId])) {
+                // ✅ New entry: do check-in and immediate check-out (8 hrs later)
+                $rowsToInsert[] = [
+                    'product_id' => $productId,
+                    'company_id' => $companyId,
+                    'employee_id' => $employeeId,
+                    'check_in' => true,
                     'check_out' => true,
-                    'check_out_gps' => $checkOutGps,
-                    'check_out_time' => $now,
-                    'updated_at' => $now,   // makes the bulk update explicit
-                ]);
-        });
+                    'payment_status' => false,
+                    'check_in_gps' => $checkGps,
+                    'check_out_gps' => $checkGps,
+                    'check_out_time' => $checkInTime->copy()->addHours(8),
+                    'created_at' => $checkInTime,
+                    'updated_at' => $now,
+                ];
+                $checkIns++;
+                $checkOuts++;
+            } else {
+                $tracker = $existingTrackers[$employeeId];
 
-        /* 5. Respond ---------------------------------------------------------------- */
-        return response()->json([
-            'message' => 'Check‑out processed.',
-            'rows_updated' => $updated,           // how many employees were matched
-            'product_id' => $productId,
-            'company_id' => $companyId,
-        ], 200);
-    }
+                if (is_null($tracker->check_out_time)) {
+                    // 🟦 Only checked-in: do check-out
+                    $checkoutTime = \Carbon\Carbon::parse($tracker->created_at)->addHours(8);
+
+                    $tracker->update([
+                        'check_out' => true,
+                        'check_out_gps' => $checkGps,
+                        'check_out_time' => $checkoutTime,
+                        'updated_at' => $now,
+                    ]);
+                    $checkOuts++;
+                } else {
+                    // 🔴 Already checked in & out — skip
+                    $skipped++;
+                }
+            }
+        }
+
+        if (!empty($rowsToInsert)) {
+            \App\Models\EmployeeTracker::insert($rowsToInsert);
+        }
+    });
+
+    /* 4. Respond ------------------------------------------------------------------ */
+    return response()->json([
+        'message' => 'Bulk check-in/out processed.',
+        'check_ins_and_outs' => $checkIns,
+        'only_check_outs' => $checkOuts - $checkIns,
+        'skipped' => $skipped,
+        'product_id' => $productId,
+        'company_id' => $companyId,
+        'work_date' => $workDate,
+    ]);
+}
 
 
 
-    public function workSummary(Request $request)
-    {
-        // 1. Validate input
-        $validated = $request->validate([
-            'employee_id' => ['required', 'integer', 'exists:employee,id'],
-            'start_date' => ['required', 'date'],
-            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
-        ]);
 
-        // 2. Get employee info
-        $employee = Employee::find($validated['employee_id']);
-        $standard = (int) ($employee->working_hours ?? 9);
-        $hasOvertime = !empty($employee->overtime_type);
-        $employeeId = $employee->id;
+   public function workSummary(Request $request)
+{
+    // 1. Validate input
+    $validated = $request->validate([
+        'employee_id' => ['required', 'integer', 'exists:employee,id'],
+        'start_date' => ['required', 'date'],
+        'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+    ]);
 
-        $start = Carbon::parse($validated['start_date'], 'Asia/Kolkata')->startOfDay();
-        $end = Carbon::parse($validated['end_date'], 'Asia/Kolkata')->endOfDay();
+    // 2. Get employee info
+    $employee = Employee::find($validated['employee_id']);
+    $standard = (int) ($employee->working_hours ?? 9);
+    $hasOvertime = !empty($employee->overtime_type);
+    $employeeId = $employee->id;
 
-        // 3. Fetch daily records
-        $dailyInfo = EmployeeTracker::query()
-            ->selectRaw(
-                'DATE(created_at) AS work_date,
+    $start = Carbon::parse($validated['start_date'], 'Asia/Kolkata')->startOfDay();
+    $end = Carbon::parse($validated['end_date'], 'Asia/Kolkata')->endOfDay();
+
+    // 3. Fetch daily records
+    $dailyInfo = EmployeeTracker::query()
+        ->selectRaw(
+            'DATE(created_at) AS work_date,
              MAX(status) AS day_status,
              MAX(half_day) AS half_day,
              MAX(payment_status) AS payment_status,
@@ -395,138 +562,138 @@ class EmployeeTrackerController extends Controller
                     ELSE 0
                 END
              ) AS worked_minutes'
-            )
-            ->where('employee_id', $employeeId)
-            ->whereBetween('created_at', [$start, $end])
-            ->groupBy(DB::raw('DATE(created_at)'))
-            ->orderBy('work_date')
-            ->get();
+        )
+        ->where('employee_id', $employeeId)
+        ->whereBetween('created_at', [$start, $end])
+        ->groupBy(DB::raw('DATE(created_at)'))
+        ->orderBy('work_date')
+        ->get();
 
-        // 4. Helpers
-        $payloadType = fn(string $status, bool $halfDay) => match (true) {
-            $status === 'H' => 'H',
-            in_array($status, ['CL', 'PL', 'SL']) => 'PL',
-            $halfDay => 'HD',
-            default => 'P',
-        };
+    // 4. Helpers
+    $payloadType = fn(string $status, bool $halfDay) => match (true) {
+        $status === 'H' => 'H',
+        in_array($status, ['CL', 'PL', 'SL']) => 'PL',
+        $halfDay => 'HD',
+        default => 'P',
+    };
 
-        $attendanceType = fn(string $status, bool $halfDay) => match (true) {
-            $status === 'H' => 'H',
-            in_array($status, ['CL', 'PL', 'SL']) => $status,
-            $halfDay => 'HD',
-            default => 'P',
-        };
+    $attendanceType = fn(string $status, bool $halfDay) => match (true) {
+        $status === 'H' => 'H',
+        in_array($status, ['CL', 'PL', 'SL']) => $status,
+        $halfDay => 'HD',
+        default => 'P',
+    };
 
-        // 5. Initialize
-        $payload = [];
-        $attendance = [];
-        $totalWorkedMinutes = 0;
-        $totalOvertimeMinutes = 0;
+    // 5. Initialize
+    $payload = [];
+    $attendance = [];
+    $totalWorkedMinutes = 0;
+    $totalOvertimeMinutes = 0;
 
-        $overtimeDayCount = $regularDayCount = $paidLeavesCount = $holidayCount = $halfDayCount = 0;
+    $overtimeDayCount = $regularDayCount = $paidLeavesCount = $holidayCount = $halfDayCount = 0;
 
-        foreach ($dailyInfo as $d) {
-            $isHalfDay = (bool) $d->half_day;
-            $isPaid = (bool) $d->payment_status;
-            $workedMinutes = (int) $d->worked_minutes;
-            $isTooShort = $workedMinutes < 30;
+    foreach ($dailyInfo as $d) {
+        $isHalfDay = (bool) $d->half_day;
+        $isPaid = (bool) $d->payment_status;
+        $workedMinutes = (int) $d->worked_minutes;
+        $isTooShort = $workedMinutes < 30;
+        $status = $d->day_status;
 
-            // === ATTENDANCE: Always show
-            $attendance[] = [
-                'type' => $attendanceType($d->day_status, $isHalfDay),
-                'date' => $d->work_date,
-                'total_hours' => $isTooShort
-                    ? 0
-                    : round(
-                        $employee->overtime_type === 'not_available'
+        // === ATTENDANCE: Always show
+        $attendance[] = [
+            'type' => $attendanceType($status, $isHalfDay),
+            'date' => $d->work_date,
+            'total_hours' => $isTooShort || in_array($status, ['CL', 'PL', 'SL'])
+                ? 0
+                : round(
+                    $employee->overtime_type === 'not_available' || $isHalfDay
                         ? min($workedMinutes, $standard * 60) / 60
                         : $workedMinutes / 60,
-                        2
-                    ),
+                    2
+                ),
+            'payment_status' => $isPaid,
+        ];
 
-                'payment_status' => $isPaid,
+        // === PAYLOAD: Only if not paid
+        if (!$isPaid) {
+            $workedHours = 0;
+            $overtimeHours = 0;
+
+            if (!$isTooShort) {
+                if (in_array($status, ['CL', 'PL', 'SL'])) {
+                    // Paid leave types: No worked hours or overtime
+                    $workedHours = 0;
+                    $overtimeHours = 0;
+                } elseif ($isHalfDay) {
+                    // Half day: No overtime, cap worked hours to standard
+                    $workedHours = round(min($workedMinutes, $standard * 60) / 60, 2);
+                    $overtimeHours = 0;
+                } elseif ($employee->overtime_type === 'not_available') {
+                    // No overtime allowed: Cap worked hours to standard
+                    $workedHours = round(min($workedMinutes, $standard * 60) / 60, 2);
+                    $overtimeHours = 0;
+                } else {
+                    // Overtime allowed (including holidays)
+                    $workedHours = round($workedMinutes / 60, 2);
+                    $overtimeMinutes = max($workedMinutes - ($standard * 60), 0);
+                    $overtimeHours = round($overtimeMinutes / 60, 2);
+                }
+            }
+
+            $payload[] = [
+                'type' => $isTooShort ? 'A' : $payloadType($status, $isHalfDay),
+                'date' => $d->work_date,
+                'worked_hours' => $workedHours,
+                'overtime_hours' => $overtimeHours,
             ];
 
-            // === PAYLOAD: Only if not paid
-            if (!$isPaid) {
-                $workedHours = 0;
-                $overtimeHours = 0;
+            // Counters
+            if ($isTooShort) {
+                continue;
+            }
 
-                if (!$isTooShort) {
-                    if ($employee->overtime_type === 'not_available') {
-                        // Cap working hours to standard
-                        $workedHours = round(min($workedMinutes, $standard * 60) / 60, 2);
-                    } else {
-                        // Overtime is allowed
-                        $workedHours = round($workedMinutes / 60, 2);
-                        $overtimeMinutes = max($workedMinutes - ($standard * 60), 0);
-                        $overtimeHours = round($overtimeMinutes / 60, 2);
-                    }
-                }
-
-                $payload[] = [
-                    'type' => $isTooShort ? 'A' : $payloadType($d->day_status, $isHalfDay),
-                    'date' => $d->work_date,
-                    'worked_hours' => $workedHours,
-                    'overtime_hours' => $overtimeHours,
-                ];
-
-                // Counters
-                if ($isTooShort) {
-                    continue;
-                }
-
-                if ($isHalfDay) {
-                    $halfDayCount++;
-                } elseif ($d->day_status === 'H') {
-                    $holidayCount++;
-                } elseif (in_array($d->day_status, ['SL', 'CL', 'PL'])) {
-                    $paidLeavesCount++;
-                } else {
-                    $regularDayCount++;
-                }
-
+            if ($isHalfDay) {
+                $halfDayCount++;
                 $totalWorkedMinutes += min($workedMinutes, $standard * 60);
-
-                if (
-                    $employee->overtime_type !== 'not_available' &&
-                    !$isHalfDay &&
-                    isset($overtimeMinutes) &&
-                    $overtimeMinutes >= 60
-                ) {
+            } elseif ($status === 'H') {
+                $holidayCount++;
+                $totalWorkedMinutes += min($workedMinutes, $standard * 60);
+                if ($employee->overtime_type !== 'not_available' && $overtimeMinutes >= 60) {
+                    $totalOvertimeMinutes += $overtimeMinutes;
+                    $overtimeDayCount++;
+                }
+            } elseif (in_array($status, ['SL', 'CL', 'PL'])) {
+                $paidLeavesCount++;
+            } else {
+                $regularDayCount++;
+                $totalWorkedMinutes += min($workedMinutes, $standard * 60);
+                if ($employee->overtime_type !== 'not_available' && $overtimeMinutes >= 60) {
                     $totalOvertimeMinutes += $overtimeMinutes;
                     $overtimeDayCount++;
                 }
             }
         }
-
-
-        // 6. Totals
-        $roundHours = fn(int $m) => intdiv($m, 60) + (($m % 60) > 30 ? 1 : 0);
-        $totalWorkedHours = $roundHours($totalWorkedMinutes);
-        $overtimeHours = $hasOvertime ? $roundHours($totalOvertimeMinutes) : 0;
-        $regularHours = $totalWorkedHours;
-
-        // 7. Response
-        return response()->json([
-            'employee_id' => $employeeId,
-            'start_date' => $validated['start_date'],
-            'end_date' => $validated['end_date'],
-            'standard_day_hours' => $standard,
-            'payload' => $payload,
-            'attendance' => $attendance,
-            'total_worked_hours' => $totalWorkedHours,
-            'overtime_hours' => $overtimeHours,
-            'regular_hours' => $regularHours,
-            'wage_hour' => $employee->wage_hour,
-            'wage_overtime' => $employee->wage_overtime,
-            'over_time_day' => $overtimeDayCount,
-            'regular_day' => $regularDayCount,
-            'paid_leaves' => $paidLeavesCount,
-            'holiday' => $holidayCount,
-            'half_day' => $halfDayCount,
-        ]);
     }
+
+    return response()->json([
+        'employee_id' => $employeeId,
+        'start_date' => $validated['start_date'],
+        'end_date' => $validated['end_date'],
+        'standard_day_hours' => $standard,
+        'payload' => $payload,
+        'attendance' => $attendance,
+        'total_worked_hours' => round($totalWorkedMinutes / 60, 2),
+        'overtime_hours' => round($totalOvertimeMinutes / 60, 2),
+        'regular_hours' => round($totalWorkedMinutes / 60, 2),
+        'wage_hour' => $employee->wage_hour ?? 0,
+        'wage_overtime' => $employee->wage_overtime ?? 0,
+        'over_time_day' => $overtimeDayCount,
+        'regular_day' => $regularDayCount,
+        'paid_leaves' => $paidLeavesCount,
+        'holiday' => $holidayCount,
+        'half_day' => $halfDayCount,
+    ], 200);
+}
 
 
     public function checkTodayStatus(Request $request): JsonResponse
