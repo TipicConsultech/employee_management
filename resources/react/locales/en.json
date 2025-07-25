@@ -935,8 +935,15 @@
       "transactionId":"Transaction Id",
       "enterTransactionId":"Enter Transaction Id",
       "overtimeHours": "O.T Hours / Day",
+      "overtimeHours": "O.T Hours",
+      "overtimeDays":"O.T Days",
+      "overtimePerHour":"O.T Rate/Day",
       "serialNo": "No.",
-      "exportToCSV": "Export to CSV"
+      "exportToCSV": "Export to CSV",
+      "currentCredit": "Current Credit",
+      "currentDebit": "Current Debit",
+      "updatedCredit": "Credit after payment",
+      "updatedDebit": "Debit after payment"
 
 
     },

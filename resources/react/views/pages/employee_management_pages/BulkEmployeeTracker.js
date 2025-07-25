@@ -183,19 +183,26 @@ function BulkEmployeeCheckInOut() {
         try {
             setNotification({ show: false, type: '', message: '' });
             setSubmitting(true);
-            const payload = { employees: selectedEmployees };
+            const today = new Date().toISOString().split('T')[0];
+           let payload=null;
+             if(selectedDate!=today){
+                  payload = { employees: selectedEmployees,date:selectedDate };
+            }else{
+                  payload = { employees: selectedEmployees };
+            }
             const response = await post('/api/bulkCheckIn', payload);
             if (response && (response.message || response.rows_updated)) {
                 showToast('success', t('MSG.bulkCheckInSuccess') || 'Bulk check-in successful');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
-                setEmployees(prev =>
-                    prev.map(emp => {
-                        const empId = emp.id || emp.employee_id || emp.emp_id;
-                        return selectedEmployees.includes(empId)
-                            ? { ...emp, checkIn: true, status: 'Present', selected: false }
-                            : { ...emp, selected: false };
-                    })
-                );
+                // setEmployees(prev =>
+                //     prev.map(emp => {
+                //         const empId = emp.id || emp.employee_id || emp.emp_id;
+                //         return selectedEmployees.includes(empId)
+                //             ? { ...emp, checkIn: true, status: 'Present', selected: false }
+                //             : { ...emp, selected: false };
+                //     })
+                // );
+                  fetchEmployees();
                 setSelectedEmployees([]);
                 setSelectAll(false);
             } else {
@@ -229,20 +236,27 @@ function BulkEmployeeCheckInOut() {
         try {
             setNotification({ show: false, type: '', message: '' });
             setSubmitting(true);
+            const today = new Date().toISOString().split('T')[0];
             const validEmployees = getSelectedEmployeesWithCheckIn().map(emp => emp.id || emp.employee_id || emp.emp_id);
-            const payload = { employees: validEmployees };
+           let payload=null;
+             if(selectedDate!=today){
+                  payload = { employees: validEmployees,date:selectedDate };
+            }else{
+                  payload = { employees: validEmployees };
+            }
             const response = await post('/api/bulkCheckOut', payload);
             if (response && (response.message || response.rows_updated)) {
                 showToast('success', t('MSG.bulkCheckOutSuccess') || 'Bulk check-out successful');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
-                setEmployees(prev =>
-                    prev.map(emp => {
-                        const empId = emp.id || emp.employee_id || emp.emp_id;
-                        return validEmployees.includes(empId)
-                            ? { ...emp, checkOut: true, status: 'Present', selected: false }
-                            : { ...emp, selected: false };
-                    })
-                );
+                // setEmployees(prev =>
+                //     prev.map(emp => {
+                //         const empId = emp.id || emp.employee_id || emp.emp_id;
+                //         return validEmployees.includes(empId)
+                //             ? { ...emp, checkOut: true, status: 'Present', selected: false }
+                //             : { ...emp, selected: false };
+                //     })
+                // );
+                  fetchEmployees();
                 setSelectedEmployees([]);
                 setSelectAll(false);
             } else {
@@ -257,6 +271,51 @@ function BulkEmployeeCheckInOut() {
             setSubmitting(false);
         }
     }, [selectedEmployees, showNotification, t, getSelectedEmployeesWithoutCheckIn, getSelectedEmployeesWithCheckIn, showToast]);
+
+
+const handlePresenty = useCallback(async () => {
+        if (selectedEmployees.length === 0) {
+            showNotification('warning', t('MSG.selectEmployeesFirst') || 'Please select employees first');
+            showToast('warning', t('MSG.selectEmployeesFirst') || 'Please select employees first');
+            return;
+        }
+        try {
+            setNotification({ show: false, type: '', message: '' });
+            setSubmitting(true);
+            const today = new Date().toISOString().split('T')[0];
+           let payload=null;
+             if(selectedDate!=today){
+                  payload = { employees: selectedEmployees,date:selectedDate };
+            }else{
+                  payload = { employees: selectedEmployees };
+            }
+            const response = await post('/api/bulkPresenty', payload);
+            if (response && (response.message || response.rows_updated)) {
+                showToast('success', t('MSG.bulkCheckInSuccess') || 'Bulk check-in successful');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                // setEmployees(prev =>
+                //     prev.map(emp => {
+                //         const empId = emp.id || emp.employee_id || emp.emp_id;
+                //         return selectedEmployees.includes(empId)
+                //             ? { ...emp, checkIn: true, status: 'Present', selected: false }
+                //             : { ...emp, selected: false };
+                //     })
+                // );
+                fetchEmployees();
+                setSelectedEmployees([]);
+                setSelectAll(false);
+            } else {
+                showNotification('warning', t('MSG.failedToProcessRequest') || 'Failed to process request');
+                showToast('warning', t('MSG.failedToProcessRequest') || 'Failed to process request');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification('warning', `${t('MSG.error') || 'Error'}: ${error.message}`);
+            showToast('warning', `${t('MSG.error') || 'Error'}: ${error.message}`);
+        } finally {
+            setSubmitting(false);
+        }
+    }, [selectedEmployees, showNotification, t, showToast]);
 
     const isCheckOutDisabled = useCallback(() => {
         if (selectedEmployees.length === 0 || submitting) return true;
@@ -417,6 +476,27 @@ function BulkEmployeeCheckInOut() {
                                             )}
                                         </CButton>
                                     </CTooltip>
+                              <CButton
+                                        color="warning"
+                                        onClick={handlePresenty}
+                                        disabled={selectedEmployees.length === 0 || submitting}
+                                        className="py-2 py-md-3 flex-fill"
+                                        style={{ fontSize: '0.9rem', fontWeight: 'bold' }}
+                                    >
+                                        {submitting ? (
+                                            <>
+                                                <CSpinner size="sm" className="me-2" />
+                                                <span className="d-none d-sm-inline">{t('LABELS.processing') || 'Processing...'}</span>
+                                                <span className="d-sm-none">{t('LABELS.processing') || 'Processing...'}</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <CIcon icon={cilCheck} className="me-1 me-md-2" />
+                                                <span className="d-none d-sm-inline">Bulk Presenty</span>
+                                                <span className="d-sm-none">{t('LABELS.checkIn') || 'Check-In'}</span>
+                                            </>
+                                        )}
+                                    </CButton>
                                 </div>
                                 {selectedEmployees.length > 0 && getSelectedEmployeesWithoutCheckIn().length > 0 && (
                                     <div className="mt-2 p-2 rounded bg-warning-subtle border border-warning">

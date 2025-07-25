@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   CRow,
   CCol,
@@ -21,34 +21,103 @@ const WorkSummaryPayment = ({
   const { t } = useTranslation('global');
   const [paymentTypeError, setPaymentTypeError] = useState('');
 
-  if (!workSummary) return null;
-
-
   // Calculate totals
-  const regularHours = workSummary.regular_hours || 0;
-  const overtimeHours = workSummary.overtime_hours || 0;
+  const regularHours = workSummary?.regular_hours || 0;
+  const overtimeHours = workSummary?.overtime_hours || 0;
   const totalWorkedHours = regularHours + overtimeHours;
 
-  const regularWage = workSummary.custom_regular_wage || 0;
-  const overtimeWage = workSummary.custom_overtime_wage || 0;
-  const halfDayWage = workSummary.custom_half_day_wage || employee.half_day_rate || 0;
-  const holidayWage = workSummary.custom_holiday_wage || employee.holiday_rate || 0;
-  const paidLeaveWage = workSummary.custom_paid_leave_wage || employee.wage_hour || 0;
+  const regularWage = workSummary?.custom_regular_wage || 0;
+  const overtimeWage = workSummary?.custom_overtime_wage || 0;
+  const halfDayWage = workSummary?.custom_half_day_wage || employee?.half_day_rate || 0;
+  const holidayWage = workSummary?.custom_holiday_wage || employee?.holiday_rate || 0;
+  const paidLeaveWage = workSummary?.custom_paid_leave_wage || employee?.wage_hour || 0;
 
-  const regularPayment = workSummary.regular_day * regularWage;
+  const regularPayment = (workSummary?.regular_day || 0) * regularWage;
 
   let overtimePayment;
-  if (employee.overtime_type === "hourly") {
-    overtimePayment = (workSummary.overtime_hours || 0) * overtimeWage;
+  if (employee?.overtime_type === "hourly") {
+    overtimePayment = (workSummary?.overtime_hours || 0) * overtimeWage;
   } else {
-    overtimePayment = (workSummary.over_time_day || 0) * overtimeWage;
+    overtimePayment = (workSummary?.over_time_day || 0) * overtimeWage;
   }
 
-  const halfDayPayment = (workSummary.half_day || 0) * halfDayWage;
-  const holidayPayment = (workSummary.holiday || 0) * holidayWage;
-  const paidLeavePayment = (workSummary.paid_leaves || 0) * paidLeaveWage;
+  const halfDayPayment = (workSummary?.half_day || 0) * halfDayWage;
+  const holidayPayment = (workSummary?.holiday || 0) * holidayWage;
+  const paidLeavePayment = (workSummary?.paid_leaves || 0) * paidLeaveWage;
 
   const totalCalculatedPayment = regularPayment + overtimePayment + halfDayPayment + holidayPayment + paidLeavePayment;
+
+  // Initialize workSummary fields and update on payed_amount change
+useEffect(() => {
+  // Skip if employee or workSummary is not available
+  if (!employee || !workSummary) return;
+
+  const pending = totalCalculatedPayment - (workSummary?.payed_amount || 0);
+  let newCredit = employee?.credit || 0;
+  let newDebit = employee?.debit || 0;
+
+  if (pending > 0) {
+    // Scenario 1: Payment is less than salary, pending amount exists
+    if (newCredit > 0 && newDebit === 0) {
+      // Use available credit to offset pending amount
+      const creditUsed = Math.min(newCredit, pending);
+      newCredit -= creditUsed;
+      const remainingPending = pending - creditUsed;
+      if (remainingPending > 0) {
+        // Add remaining pending to debit
+        newDebit += remainingPending;
+      }
+    } else if (newCredit === 0 && newDebit >= 0) {
+      // No credit available, add pending to debit
+      newDebit += pending;
+    }
+  } else if (pending < 0) {
+    // Scenario: Overpayment (payed_amount > totalCalculatedPayment)
+    const overpaidAmount = Math.abs(pending);
+    if (newDebit > 0) {
+      // Reduce debit first with overpaid amount
+      const debitReduced = Math.min(newDebit, overpaidAmount);
+      newDebit -= debitReduced;
+      const remainingOverpaid = overpaidAmount - debitReduced;
+      if (remainingOverpaid > 0) {
+        // Add remaining overpaid to credit
+        newCredit += remainingOverpaid;
+      }
+    } else {
+      // No debit, add overpaid amount to credit
+      newCredit += overpaidAmount;
+    }
+  }
+  // Scenario: pending === 0 (payment equals salary), no changes to credit/debit
+
+  setWorkSummary((prev) => ({
+    ...prev,
+    current_credit: employee?.credit || 0,
+    current_debit: employee?.debit || 0,
+    updated_credit: newCredit,
+    updated_debit: newDebit,
+    payed_amount: prev?.payed_amount || 0,
+    salary_amount: totalCalculatedPayment,
+  }));
+}, [
+  employee,
+  workSummary,
+  workSummary?.payed_amount,
+  workSummary?.regular_hours,
+  workSummary?.overtime_hours,
+  workSummary?.half_day,
+  workSummary?.holiday,
+  workSummary?.paid_leaves,
+  workSummary?.custom_regular_wage,
+  workSummary?.custom_overtime_wage,
+  workSummary?.custom_half_day_wage,
+  workSummary?.custom_holiday_wage,
+  workSummary?.custom_paid_leave_wage,
+  totalCalculatedPayment,
+  setWorkSummary,
+]);
+
+  if (!workSummary) return null;
 
   // Check if salary_amount is 0
   const isSalaryZero = totalCalculatedPayment === 0;
@@ -59,12 +128,10 @@ const WorkSummaryPayment = ({
     const positiveValue = numValue < 0 ? 0 : numValue;
 
     if (fieldName === 'payed_amount') {
-      const pending = totalCalculatedPayment - positiveValue;
       setWorkSummary((prev) => ({
         ...prev,
         payed_amount: positiveValue,
-        pending_payment: pending >= 0 ? pending : 0,
-        salary_amount: totalCalculatedPayment
+        salary_amount: totalCalculatedPayment,
       }));
     } else {
       setWorkSummary((prev) => ({
@@ -321,6 +388,12 @@ const WorkSummaryPayment = ({
           gap: 12px;
         }
 
+        .form-grid-four {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 12px;
+        }
+
         .form-group {
           display: flex;
           flex-direction: column;
@@ -372,7 +445,7 @@ const WorkSummaryPayment = ({
 
         .submit-section {
           text-align: center;
-          margin-top: 06px;
+          margin-top: 6px;
         }
 
         .submit-btn {
@@ -397,12 +470,6 @@ const WorkSummaryPayment = ({
         .submit-btn:hover:not(:disabled) {
           transform: translateY(-1px);
           box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
-        }
-
-        .pending-amount {
-          background: #fef2f2;
-          border: 1px solid #fecaca;
-          color: #dc2626;
         }
 
         /* Mobile Responsiveness */
@@ -481,6 +548,11 @@ const WorkSummaryPayment = ({
 
           .form-grid-two {
             grid-template-columns: 1fr;
+            gap: 10px;
+          }
+
+          .form-grid-four {
+            grid-template-columns: repeat(2, 1fr);
             gap: 10px;
           }
 
@@ -594,7 +666,7 @@ const WorkSummaryPayment = ({
                               type="number"
                               min="0"
                               className="wage-input"
-                              value={regularWage || ''}
+                              value={workSummary.custom_regular_wage || ''}
                               onChange={(e) => handlePositiveNumberInput(e.target.value, 'custom_regular_wage')}
                               placeholder={t('LABELS.enterRegularWage')}
                             />
@@ -609,7 +681,7 @@ const WorkSummaryPayment = ({
 
                     {((employee.overtime_type === "hourly" ? workSummary?.overtime_hours : workSummary?.over_time_day) || 0) > 0 && (
                       <div className="hour-card overtime">
-                        <label className="wage-label">{t('LABELS.overtimeHours')}</label>
+                        <label className="wage-label">{employee.overtime_type === "hourly" ? t('LABELS.overtimeHours'): t('LABELS.overtimeDays')}</label>
                         <div className="hour-header">
                           <div className="hour-value overtime">{employee.overtime_type === "hourly" ? workSummary?.overtime_hours || 0 : workSummary?.over_time_day || 0}</div>
                           <span style={{ fontSize: '1.25rem', fontWeight: 600 }}>*</span>
@@ -619,7 +691,7 @@ const WorkSummaryPayment = ({
                               type="number"
                               min="0"
                               className="wage-input"
-                              value={overtimeWage || ''}
+                              value={workSummary.custom_overtime_wage || ''}
                               onChange={(e) => handlePositiveNumberInput(e.target.value, 'custom_overtime_wage')}
                               placeholder={t('LABELS.enterOvertimeWage')}
                             />
@@ -644,7 +716,7 @@ const WorkSummaryPayment = ({
                               type="number"
                               min="0"
                               className="wage-input"
-                              value={halfDayWage || ''}
+                              value={workSummary.custom_half_day_wage || ''}
                               onChange={(e) => handlePositiveNumberInput(e.target.value, 'custom_half_day_wage')}
                               placeholder={t('LABELS.enterHalfDayWage')}
                             />
@@ -669,7 +741,7 @@ const WorkSummaryPayment = ({
                               type="number"
                               min="0"
                               className="wage-input"
-                              value={holidayWage || ''}
+                              value={workSummary.custom_holiday_wage || ''}
                               onChange={(e) => handlePositiveNumberInput(e.target.value, 'custom_holiday_wage')}
                               placeholder={t('LABELS.enterHolidayWage')}
                             />
@@ -694,7 +766,7 @@ const WorkSummaryPayment = ({
                               type="number"
                               min="0"
                               className="wage-input"
-                              value={paidLeaveWage || ''}
+                              value={workSummary.custom_paid_leave_wage || ''}
                               onChange={(e) => handlePositiveNumberInput(e.target.value, 'custom_paid_leave_wage')}
                               placeholder={t('LABELS.enterPaidLeaveWage')}
                             />
@@ -710,10 +782,10 @@ const WorkSummaryPayment = ({
                     {totalWorkedHours > 0 && (
                       <div className="hour-card total">
                         <label className="wage-label">{t('LABELS.totalHours')}</label>
-                        <div className="hour-header">
+                        <div className="hour-header mb-3">
                           <div className="hour-value total">{totalWorkedHours}h</div>
                         </div>
-                        <div className="payment-display">
+                        <div className="payment-display mt-5">
                           <div className="payment-label">{t('LABELS.totalPayment')}</div>
                           <div className="payment-amount">₹{totalCalculatedPayment.toLocaleString()}</div>
                         </div>
@@ -722,7 +794,7 @@ const WorkSummaryPayment = ({
                   </div>
 
                   {/* Payment Details Section */}
-                  <div className="section" style={{ marginTop: '04px' }}>
+                  <div className="section" style={{ marginTop: '4px' }}>
                     <h3 className="section-title">
                       <span>💳</span> {t('LABELS.paymentDetails')}
                     </h3>
@@ -756,27 +828,58 @@ const WorkSummaryPayment = ({
                           />
                         </div>
                       </div>
-                      <div className="form-grid-two">
+                      <div className="form-grid-four">
                         <div className="form-group">
-                          <label className="form-label">{t('LABELS.pendingAmount')}</label>
+                          <label className="form-label">{t('LABELS.currentCredit')}</label>
                           <CFormInput
                             type="number"
-                            className="form-input pending-amount"
-                            value={workSummary.pending_payment || 0}
+                            className="form-input"
+                            value={workSummary.current_credit || 0}
                             readOnly
                           />
                         </div>
-                        {(workSummary.payment_type != "cash" && workSummary.payment_type != "" && workSummary.payment_type != undefined) && (<div className="form-group">
-                          <label className="form-label">{t('LABELS.transactionId')}</label>
+                        <div className="form-group">
+                          <label className="form-label">{t('LABELS.currentDebit')}</label>
                           <CFormInput
-                            type="text"
+                            type="number"
                             className="form-input"
-                            value={workSummary.transaction_id || ''}
-                            onChange={(e) => handleTransactionIdChange(e.target.value)}
-                            placeholder={t('LABELS.enterTransactionId')}
+                            value={workSummary.current_debit || 0}
+                            readOnly
                           />
-                        </div>)}
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">{t('LABELS.updatedCredit')}</label>
+                          <CFormInput
+                            type="number"
+                            className="form-input"
+                            value={workSummary.updated_credit || 0}
+                            readOnly
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">{t('LABELS.updatedDebit')}</label>
+                          <CFormInput
+                            type="number"
+                            className="form-input"
+                            value={workSummary.updated_debit || 0}
+                            readOnly
+                          />
+                        </div>
                       </div>
+                      {(workSummary.payment_type !== "cash" && workSummary.payment_type !== "" && workSummary.payment_type !== undefined) && (
+                        <div className="form-grid-two">
+                          <div className="form-group">
+                            <label className="form-label">{t('LABELS.transactionId')}</label>
+                            <CFormInput
+                              type="text"
+                              className="form-input"
+                              value={workSummary.transaction_id || ''}
+                              onChange={(e) => handleTransactionIdChange(e.target.value)}
+                              placeholder={t('LABELS.enterTransactionId')}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </>

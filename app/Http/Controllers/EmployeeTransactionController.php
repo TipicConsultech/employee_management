@@ -19,34 +19,59 @@ class EmployeeTransactionController extends Controller
     }
 
 
-    public function payment(Request $request)
+
+public function payment(Request $request)
 {
     /* 1. Validate input --------------------------------------------------- */
     $validated = $request->validate([
-        'start_date'   => ['required', 'date_format:Y-m-d'],   // enforce real dates
+        'start_date'   => ['required', 'date_format:Y-m-d'],
         'end_date'     => ['required', 'date_format:Y-m-d'],
         'employee_id'  => ['required', 'integer', 'exists:employee,id'],
-        'payed_amount' => ['required','numeric'],
+        'payed_amount' => ['required', 'numeric'],
         'salary_amount'=> ['required', 'numeric'],
         'payment_type' => ['required', 'in:cash,upi,bank_transfer'],
         'transaction_id'=> ['nullable', 'string']
     ]);
 
-    if ($validated['payed_amount'] > $validated['salary_amount']) {
-        return response()->json(['message' => 'Please enter a correct amount.'], 422);
-    }
-
     // Wrap everything in a single DB transaction --------------------------
-    DB::transaction(function () use (&$validated) {
-
+    $response = DB::transaction(function () use (&$validated) {
         $employee = Employee::lockForUpdate()->find($validated['employee_id']);
+        $pending = $validated['salary_amount'] - $validated['payed_amount'];
+        $newCredit = $employee->credit ?? 0;
+        $newDebit = $employee->debit ?? 0;
+        $message = '';
 
-        // 2. Handle debit logic --------------------------------------------
-        if ($validated['payed_amount'] < $validated['salary_amount']) {
-            $debit = $validated['salary_amount'] - $validated['payed_amount'];
-            $employee->debit += $debit;
-            $employee->save();                // remember: save(), not update()
+        // 2. Handle credit and debit logic --------------------------------
+        if ($pending > 0) {
+            if ($newCredit > 0 && $newDebit == 0) {
+                // Scenario 1: Employee has credit, no debit, payment less than salary
+                $creditUsed = min($newCredit, $pending);
+                $newCredit -= $creditUsed;
+                $remainingPending = $pending - $creditUsed;
+                if ($remainingPending > 0) {
+                    // Extended Scenario 1: Insufficient credit, add to debit (Scenario 4)
+                    $newDebit += $remainingPending;
+                    $message = "Used $creditUsed from credit, added $remainingPending to debit. New credit: $newCredit, new debit: $newDebit.";
+                } else {
+                    $message = "Used $creditUsed from credit. New credit: $newCredit.";
+                }
+            } else {
+                // Scenario 4: Employee has no credit, has debit, payment less than salary
+                $newDebit += $pending;
+                $message = "Added $pending to debit. New debit: $newDebit.";
+            }
+        } else if ($pending == 0) {
+            // Scenario 2: Payment equals salary
+            $message = "Payment covers full salary. No changes to credit or debit.";
+        } else {
+            // Payment exceeds salary
+            return ['error' => 'Please enter a correct amount.', 'status' => 422];
         }
+
+        // Update employee credit and debit
+        $employee->credit = $newCredit;
+        $employee->debit = $newDebit;
+        $employee->save();
 
         // 3. Create the employee transaction -------------------------------
         $validated += [
@@ -60,12 +85,19 @@ class EmployeeTransactionController extends Controller
         EmployeeTracker::where('employee_id', $employee->id)
             ->whereDate('created_at', '>=', $validated['start_date'])
             ->whereDate('created_at', '<=', $validated['end_date'])
-            ->where('payment_status', 0)      // only unpaid rows
+            ->where('payment_status', 0)
             ->update(['payment_status' => 1]);
+
+        return ['message' => $message, 'status' => 201];
     });
 
-    return response()->json(['message' => 'Payment recorded and trackers updated.'], 201);
+    if (isset($response['error'])) {
+        return response()->json(['message' => $response['error']], $response['status']);
+    }
+
+    return response()->json(['message' => $response['message']], $response['status']);
 }
+
 
     /* POST /api/employee-transactions */
    public function store(Request $request)
