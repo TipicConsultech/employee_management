@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cilLocationPin, cilCheckCircle, cilXCircle, cilPencil, cilInput, cilClock, cilPeople, cilCheck, cilWarning } from '@coreui/icons';
@@ -31,6 +31,13 @@ function BulkEmployeeCheckInOut() {
     const [attendanceType, setAttendanceType] = useState(0);
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
     const [isCurrentDate, setIsCurrentDate] = useState(true);
+     const inputRef = useRef(null);
+
+  const handleFocus = () => {
+    if (inputRef.current?.showPicker) {
+      inputRef.current.showPicker(); // This will open the date picker
+    }
+  };
 
     const showNotification = useCallback((type, message) => {
         setNotification({ show: true, type, message });
@@ -224,15 +231,15 @@ function BulkEmployeeCheckInOut() {
             showToast('warning', t('MSG.selectEmployeesFirst') || 'Please select employees first');
             return;
         }
-        const employeesWithoutCheckIn = getSelectedEmployeesWithoutCheckIn();
-        if (employeesWithoutCheckIn.length > 0) {
-            const employeeNames = employeesWithoutCheckIn.map(emp =>
-                emp.name || emp.employee_name || emp.first_name || 'Unknown'
-            ).join(', ');
-            showNotification('warning', `${t('MSG.checkInRequiredForCheckOut') || 'Check-in required for check-out'}: ${employeeNames}`);
-            showToast('warning', `${t('MSG.checkInRequiredForCheckOut') || 'Check-in required for check-out'}: ${employeeNames}`);
-            return;
-        }
+        // const employeesWithoutCheckIn = getSelectedEmployeesWithoutCheckIn();
+        // if (employeesWithoutCheckIn.length > 0) {
+        //     const employeeNames = employeesWithoutCheckIn.map(emp =>
+        //         emp.name || emp.employee_name || emp.first_name || 'Unknown'
+        //     ).join(', ');
+        //     showNotification('warning', `${t('MSG.checkInRequiredForCheckOut') || 'Check-in required for check-out'}: ${employeeNames}`);
+        //     showToast('warning', `${t('MSG.checkInRequiredForCheckOut') || 'Check-in required for check-out'}: ${employeeNames}`);
+        //     return;
+        // }
         try {
             setNotification({ show: false, type: '', message: '' });
             setSubmitting(true);
@@ -265,8 +272,9 @@ function BulkEmployeeCheckInOut() {
             }
         } catch (error) {
             console.error('Error:', error);
-            showNotification('warning', `${t('MSG.error') || 'Error'}: ${error.message}`);
-            showToast('warning', `${t('MSG.error') || 'Error'}: ${error.message}`);
+            // showNotification('warning', `${t('MSG.error') || 'Error'}: ${error.message}`);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            showToast('danger', `${error.message ==="The employees field is required." ? "Check-In required for selected employee":error.message}`);
         } finally {
             setSubmitting(false);
         }
@@ -319,7 +327,7 @@ const handlePresenty = useCallback(async () => {
 
     const isCheckOutDisabled = useCallback(() => {
         if (selectedEmployees.length === 0 || submitting) return true;
-        return getSelectedEmployeesWithoutCheckIn().length > 0;
+        // return getSelectedEmployeesWithoutCheckIn().length > 0;
     }, [selectedEmployees.length, submitting, getSelectedEmployeesWithoutCheckIn]);
 
     const getCheckOutTooltipMessage = useCallback(() => {
@@ -408,18 +416,26 @@ const handlePresenty = useCallback(async () => {
                                     </div>
                                 </div>
                                 <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2 gap-sm-3">
-                                    <div className="d-flex align-items-center gap-2 bg-light p-2 rounded border">
+                                    <div className="d-flex align-items-center gap-2  p-2 ">
                                         <CIcon icon={cilClock} className="text-primary" />
-                                        <span className="text-muted small fw-medium d-none d-sm-inline">
+                                        {/* <span className="text-muted small fw-medium d-none d-sm-inline">
                                             {t('LABELS.selectDate') || 'Select Date'}
-                                        </span>
-                                        <input
-                                            type="date"
-                                            value={selectedDate}
-                                            onChange={handleDateChange}
-                                            className="form-control form-control-sm"
-                                            style={{ width: '150px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '0.875rem', backgroundColor: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(10px)' }}
-                                        />
+                                        </span> */}
+                                       <input
+      type="date"
+      ref={inputRef}
+      value={selectedDate}
+      onChange={handleDateChange}
+      onFocus={handleFocus}
+      className="form-control form-control-sm"
+      style={{
+        width: '150px',
+        fontSize: '0.875rem',
+        border: '2px',
+        backgroundColor: 'rgba(255,255,255,0.6)',
+        backdropFilter: 'blur(10px)'
+      }}
+    />
                                         {!isCurrentDate && (
                                             <CButton color="primary" size="sm" onClick={handleTodayClick} className="px-3 py-1" style={{ fontSize: '0.75rem', fontWeight: 'bold', borderRadius: '4px' }}>
                                                 {t('LABELS.today') || 'Today'}

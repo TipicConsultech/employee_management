@@ -13,7 +13,8 @@ import {
   CFormCheck,
   CRow,
   CCol,
-  CSpinner
+  CSpinner,
+  CButtonGroup
 } from '@coreui/react';
 import { getAPICall, put } from '../../../util/api';
 
@@ -234,11 +235,12 @@ const TrackerEditModal = ({ fetchEmployees,visible, onClose, trackerId, onSucces
     <CModal visible={visible} onClose={handleClose} backdrop="static">
       <CModalHeader>
         <CModalTitle>Edit Tracker</CModalTitle>
+        
       </CModalHeader>
       
       <CForm onSubmit={handleSubmit}>
         <CModalBody>
-          <CRow className="mb-3">
+          <CRow className="mb-3 ">
             <CCol>
               <CFormCheck
                 id="half_day"
@@ -246,8 +248,36 @@ const TrackerEditModal = ({ fetchEmployees,visible, onClose, trackerId, onSucces
                 checked={formData.half_day}
                 onChange={(e) => handleInputChange('half_day', e.target.checked)}
               />
-            </CCol>
+               </CCol>
+
+          <CCol>
+  <div className="d-flex gap-2 justify-content-end">
+    
+      <CButton color="secondary" onClick={handleClose} disabled={loading}>
+        Cancel
+      </CButton>
+
+      <CButton 
+        color="primary" 
+        type="submit" 
+        disabled={loading || !hasFormChanged()}
+      >
+        {loading ? (
+          <>
+            <CSpinner size="sm" className="me-2" />
+            Updating...
+          </>
+        ) : (
+          'Update'
+        )}
+      </CButton>
+
+  </div>
+</CCol>
+
+
           </CRow>
+
 
           <CRow className="mb-3">
             <CCol md={6}>
@@ -309,23 +339,7 @@ const TrackerEditModal = ({ fetchEmployees,visible, onClose, trackerId, onSucces
         </CModalBody>
 
         <CModalFooter>
-          <CButton color="secondary" onClick={handleClose} disabled={loading}>
-            Cancel
-          </CButton>
-          <CButton 
-            color="primary" 
-            type="submit" 
-            disabled={loading || !hasFormChanged()}
-          >
-            {loading ? (
-              <>
-                <CSpinner size="sm" className="me-2" />
-                Updating...
-              </>
-            ) : (
-              'Update'
-            )}
-          </CButton>
+          
         </CModalFooter>
       </CForm>
     </CModal>

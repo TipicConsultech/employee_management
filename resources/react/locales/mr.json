@@ -730,7 +730,7 @@
     "faceAttendance": "चेहरा आणि स्थान",
     "location": "स्थान",
     "both": "दोन्ही",
-    "hourly": "तासाप्रमाणे",
+    "hourly": "तास",
     "fixed": "निश्चित",
     "noPaymentData":"पेमेंट डेटा उपलब्ध नाही",
     "paymentMethodRequired":"paymentMethodRequired",
@@ -901,7 +901,9 @@
       "currentCredit": "आत्ताचं क्रेडिट",
       "currentDebit": "आत्ताचं डेबिट",
       "updatedCredit": "पेमेंट केल्यावर होणारे क्रेडिट",
-      "updatedDebit": "पेमेंट केल्यावर होणारी डेबिट"
+      "updatedDebit": "पेमेंट केल्यावर होणारी डेबिट",
+      "oTRate": "ओ.टा दर",
+    "na": "नाही"
 
   },
 

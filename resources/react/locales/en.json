@@ -943,7 +943,9 @@
       "currentCredit": "Current Credit",
       "currentDebit": "Current Debit",
       "updatedCredit": "Credit after payment",
-      "updatedDebit": "Debit after payment"
+      "updatedDebit": "Debit after payment",
+      "oTRate": "OT Rate",
+    "na": "N/A"
 
 
     },
