@@ -899,6 +899,8 @@ class EmployeeTrackerController extends Controller
                 }
             }
 
+
+
             // Final payment calculation
             $regularPayment = $regularDays * ($employee->wage_hour ?? 0);
             // $overtimePayment = $totalOvertimeHours * ($employee->wage_overtime ?? 0);
@@ -916,6 +918,7 @@ class EmployeeTrackerController extends Controller
                 'half_day_rate' => $employee->half_day_rate ?? 0,
                 'holiday_day_rate' => $employee->holiday_rate ?? 0,
                 'working_hours' => $employee->working_hours ?? 0,
+                'overtime_type' => $employee->overtime_type ?? "null",
                 'attendance' => $attendance,
                 'payment_details' => [
                     'regular_day_payment' => $regularPayment,
@@ -1093,6 +1096,7 @@ class EmployeeTrackerController extends Controller
                 'half_day_rate' => $employee->half_day_rate ?? 0,
                 'holiday_day_rate' => $employee->holiday_rate ?? 0,
                 'working_hours' => $employee->working_hours ?? 0,
+                'overtime_type' => $employee->overtime_type ?? "null",
                 'attendance' => $attendance,
                 'payment_details' => [
                     'regular_day_payment' => $regularPayment,
