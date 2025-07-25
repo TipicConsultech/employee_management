@@ -43,11 +43,11 @@ const WeeklyMonthlyPresentyPayroll = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(() => {
-  const currentDate = new Date();
-  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                     'July', 'August', 'September', 'October', 'November', 'December'];
-  return monthNames[currentDate.getMonth()];
-});
+    const currentDate = new Date();
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                        'July', 'August', 'September', 'October', 'November', 'December'];
+    return monthNames[currentDate.getMonth()];
+  });
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [employeeData, setEmployeeData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -217,29 +217,27 @@ const WeeklyMonthlyPresentyPayroll = () => {
   };
 
   const handleReportTypeChange = (e) => {
-  const type = e.target.value;
-  setReportType(type);
-  setSelectedWeek('');
-  setStartDate('');
-  setEndDate('');
+    const type = e.target.value;
+    setReportType(type);
+    setSelectedWeek('');
+    setStartDate('');
+    setEndDate('');
 
-  // Only reset month if switching away from monthly, otherwise keep current month
-  if (type !== 'monthly') {
-    setSelectedMonth('');
-  } else if (!selectedMonth) {
-    // Set current month if monthly is selected and no month is set
-    const currentDate = new Date();
-    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                       'July', 'August', 'September', 'October', 'November', 'December'];
-    setSelectedMonth(monthNames[currentDate.getMonth()]);
-  }
+    if (type !== 'monthly') {
+      setSelectedMonth('');
+    } else if (!selectedMonth) {
+      const currentDate = new Date();
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                          'July', 'August', 'September', 'October', 'November', 'December'];
+      setSelectedMonth(monthNames[currentDate.getMonth()]);
+    }
 
-  setEmployeeData([]);
-  setWeekDates([]);
-  setMonthlyWeeks([]);
-  setHasFetchedData(false);
-  setNotification({ show: false, type: '', message: '' });
-};
+    setEmployeeData([]);
+    setWeekDates([]);
+    setMonthlyWeeks([]);
+    setHasFetchedData(false);
+    setNotification({ show: false, type: '', message: '' });
+  };
 
   const handleWeekDayChange = (e) => {
     const weekDay = e.target.value;
@@ -308,7 +306,6 @@ const WeeklyMonthlyPresentyPayroll = () => {
           weekStart = response.data.week_start;
           weekEnd = response.data.week_end;
         } else {
-          // Fallback to calculated week range if API response lacks week_start or week_end
           const weekRange = getWeekFromDate(selectedWeek, selectedWeekDay);
           weekStart = weekRange.start;
           weekEnd = weekRange.end;
@@ -328,7 +325,6 @@ const WeeklyMonthlyPresentyPayroll = () => {
           monthStart = response.data.month_start;
           monthEnd = response.data.month_end;
         } else {
-          // Fallback to calculated month range
           const monthIndex = months.findIndex(m => m.value.toLowerCase() === selectedMonth.toLowerCase()) + 1;
           monthStart = `${selectedYear}-${monthIndex.toString().padStart(2, '0')}-01`;
           const lastDay = new Date(selectedYear, monthIndex, 0);
@@ -343,7 +339,7 @@ const WeeklyMonthlyPresentyPayroll = () => {
         setMonthlyWeeks(weeks);
       }
 
-      const employees = response.data.employees || response.data;
+      const employees = response.data.data || response.data.employees || response.data;
       if (Array.isArray(employees) && employees.length > 0) {
         setEmployeeData(employees);
         setHasFetchedData(true);
@@ -377,41 +373,78 @@ const WeeklyMonthlyPresentyPayroll = () => {
     return Object.values(attendance).filter(day => day?.status === 'P').length;
   };
 
-  const calculateOvertimeHours = (attendance) => {
+  const calculateOvertimeHours = (attendance, overtimeType) => {
     if (!attendance) return 0;
-    return Object.values(attendance).reduce((total, day) => {
-      return total + (day?.overtime_hours || 0);
-    }, 0);
-  };
-
-  const calculateHolidayRate = (employee) => {
-    if (!employee?.attendance) return 0;
-    const sundayAttendance = Object.entries(employee.attendance).find(([date, data]) => {
-      const dayOfWeek = new Date(date).getDay();
-      return dayOfWeek === 0 && data?.status === 'P';
-    });
-    return sundayAttendance ? (employee.wage_hour || 0) : 0;
-  };
-
-  const calculateHalfDayRate = (employee) => {
-    if (!employee?.attendance) return 0;
-    const halfDayAttendance = Object.values(employee.attendance).find(day => day?.status === 'H');
-    return halfDayAttendance ? (employee.half_day_rate || (employee.wage_hour / 2) || 0) : 0;
+    const type = overtimeType ? String(overtimeType).trim().toLowerCase() : 'not available';
+    if (type === 'fixed') {
+      // For fixed overtime, count the number of days with overtime
+      return Object.values(attendance).reduce((total, day) => {
+        return total + (day?.overtime_hours > 0 ? 1 : 0);
+      }, 0);
+    } else {
+      // For hourly overtime, sum the overtime hours
+      return Object.values(attendance).reduce((total, day) => {
+        return total + (day?.overtime_hours || 0);
+      }, 0);
+    }
   };
 
   const calculateTotalAmount = (employee) => {
-    if (!employee?.attendance) return 0;
-    const totalDays = calculateTotalDays(employee.attendance);
-    const overtimeHours = calculateOvertimeHours(employee.attendance);
-    const holidayRate = calculateHolidayRate(employee);
-    const halfDayRate = calculateHalfDayRate(employee);
+    if (!employee || !employee.attendance || !employee.payment_details) return 0;
 
-    return (
-      (totalDays * employee.wage_hour || 0) +
-      (overtimeHours * employee.wage_overtime || 0) +
-      holidayRate +
-      halfDayRate
-    );
+    const { regular_day_payment = 0, half_day_payment = 0, holiday_payment = 0 } = employee.payment_details;
+    const overtimeType = employee.overtime_type ? String(employee.overtime_type).trim().toLowerCase() : 'not available';
+    const overtimeRate = employee.wage_overtime || 0;
+
+    // Calculate regular days payment (based on present days)
+    const totalRegularDays = calculateTotalDays(employee.attendance);
+    const regularPayment = totalRegularDays * (employee.wage_hour || 0);
+
+    // Calculate overtime payment based on overtime type
+    let overtimePayment = 0;
+    if (overtimeType === 'fixed') {
+      // For fixed overtime, multiply number of overtime days by overtime rate
+      const overtimeDays = calculateOvertimeHours(employee.attendance, overtimeType);
+      overtimePayment = overtimeDays * overtimeRate;
+    } else if (overtimeType === 'hourly') {
+      // For hourly overtime, multiply total overtime hours by overtime rate
+      const overtimeHours = calculateOvertimeHours(employee.attendance, overtimeType);
+      overtimePayment = overtimeHours * overtimeRate;
+    }
+
+    // Sum all components
+    return regularPayment + overtimePayment + half_day_payment + holiday_payment;
+  };
+
+  const getOvertimeDisplay = (employee, date) => {
+    const attendance = employee.attendance && employee.attendance[date];
+    const overtimeHours = attendance?.overtime_hours || 0;
+    const overtimeType = employee.overtime_type ? String(employee.overtime_type).trim().toLowerCase() : 'not available';
+
+    switch (overtimeType) {
+      case 'hourly':
+        return overtimeHours > 0 ? `${overtimeHours}h` : '-';
+      case 'fixed':
+        return overtimeHours > 0 ? '1 D' : '-';
+      case 'not available':
+        return '-';
+      default:
+        return '-';
+    }
+  };
+
+  const getOvertimeTypeLabel = (overtimeType) => {
+    const type = overtimeType ? String(overtimeType).trim().toLowerCase() : 'not available';
+    switch (type) {
+      case 'hourly':
+        return <span className="badge bg-primary">{t('LABELS.hourly')}</span>;
+      case 'fixed':
+        return <span className="badge bg-success">{t('LABELS.fixed')}</span>;
+      case 'not available':
+        return <span className="badge bg-secondary">{t('LABELS.na')}</span>;
+      default:
+        return <span className="badge bg-secondary">{t('LABELS.na')}</span>;
+    }
   };
 
   const exportToPDF = () => {
@@ -429,25 +462,31 @@ const WeeklyMonthlyPresentyPayroll = () => {
     doc.text(dateRange, 14, 30);
 
     const tableHeaders = [
+      t('LABELS.serialNo'),
       t('LABELS.employeeName'),
       ...weekDates.map(date => new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })),
       t('LABELS.totalDays'),
-      t('LABELS.overtime'),
+      t('LABELS.oTRate'),
+      t('LABELS.overtimeHours'),
+      t('LABELS.dayRate'),
       t('LABELS.holidayRate'),
       t('LABELS.halfDayRate'),
       t('LABELS.totalAmount')
     ];
 
-    const tableData = employeeData.map(employee => [
-      employee.employee_name || 'Unknown',
+    const tableData = employeeData.map((employee, index) => [
+      index + 1,
+      `${employee.employee_name || 'Unknown'} (${employee.overtime_type ? employee.overtime_type : 'N/A'})`,
       ...weekDates.map(date => {
         const attendance = employee.attendance && employee.attendance[date];
         return attendance ? attendance.status : '-';
       }),
       calculateTotalDays(employee.attendance),
-      calculateOvertimeHours(employee.attendance),
-      calculateHolidayRate(employee),
-      calculateHalfDayRate(employee),
+      employee.wage_overtime || 0,
+      calculateOvertimeHours(employee.attendance, employee.overtime_type),
+      employee.wage_hour || 0,
+      employee.holiday_day_rate || 0,
+      employee.half_day_rate || 0,
       calculateTotalAmount(employee)
     ]);
 
@@ -476,126 +515,98 @@ const WeeklyMonthlyPresentyPayroll = () => {
     showNotification('success', t('MSG.pdfExportedSuccess'));
   };
 
-  // REPLACE THE EXISTING exportToCSV function with this updated version:
-
-const exportToCSV = () => {
-  // Create CSV headers matching the table structure
-  const headers = [
-    t('LABELS.serialNo'),
-    t('LABELS.employeeName'),
-    // Add date headers
-    ...weekDates.map(date => new Date(date).toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: '2-digit'
-    })),
-    t('LABELS.totalDays'),
-    t('LABELS.overtimeHours'),
-    t('LABELS.dayRate'),
-    t('LABELS.holidayRate'),
-    t('LABELS.halfDayRate'),
-    t('LABELS.totalAmount'),
-    t('LABELS.paidAmount')
-  ];
-
-  // Create CSV data rows
-  const csvData = [];
-
-  // Add title row
-  const title = reportType === 'weekly'
-    ? t('LABELS.weeklyPresentyPayrollChart')
-    : t('LABELS.monthlyPresentyPayrollChart');
-  csvData.push([title]);
-
-  // Add date range row
-  const dateRange = reportType === 'weekly'
-    ? `${t('LABELS.week')}: ${formatDate(startDate)} ${t('LABELS.to')} ${formatDate(endDate)}`
-    : `${t('LABELS.month')}: ${selectedMonth} ${selectedYear}`;
-  csvData.push([dateRange]);
-
-  // Add empty row for spacing
-  csvData.push([]);
-
-  // Add headers
-  csvData.push(headers);
-
-  // Add employee data rows
-  employeeData.forEach((employee, index) => {
-    // Main employee row with attendance status
-    const mainRow = [
-      index + 1, // Serial number
-      employee.employee_name || 'Unknown',
-      // Attendance status for each date
-      ...weekDates.map(date => {
-        const attendance = employee.attendance && employee.attendance[date];
-        return attendance?.status || '-';
-      }),
-      calculateTotalDays(employee.attendance),
-      calculateOvertimeHours(employee.attendance),
-      employee.wage_hour || 0, // Clean numeric value
-      calculateHolidayRate(employee), // Clean numeric value
-      calculateHalfDayRate(employee), // Clean numeric value
-      calculateTotalAmount(employee), // Clean numeric value
-      calculateTotalAmount(employee) // Clean numeric value
+  const exportToCSV = () => {
+    const headers = [
+      t('LABELS.serialNo'),
+      t('LABELS.employeeName'),
+      ...weekDates.map(date => new Date(date).toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit'
+      })),
+      t('LABELS.totalDays'),
+      t('LABELS.oTRate'),
+      t('LABELS.overtimeHours'),
+      t('LABELS.dayRate'),
+      t('LABELS.holidayRate'),
+      t('LABELS.halfDayRate'),
+      t('LABELS.totalAmount')
     ];
-    csvData.push(mainRow);
 
-    // Overtime hours row (matching the frontend structure)
-    const overtimeRow = [
-      '', // Empty serial number
-      t('LABELS.overTime'), // Overtime label
-      // Overtime hours for each date
-      ...weekDates.map(date => {
-        const attendance = employee.attendance && employee.attendance[date];
-        const overtimeHours = attendance?.overtime_hours || 0;
-        return overtimeHours > 0 ? overtimeHours : 0; // Clean numeric value
-      }),
-      '', '', '', '', '', '', '' // Empty cells for summary columns
-    ];
-    csvData.push(overtimeRow);
-  });
+    const csvData = [];
 
-  // Convert to CSV string with proper escaping
-  const csvString = csvData.map(row =>
-    row.map(cell => {
-      // Convert to string and handle special characters
-      let cellString = String(cell);
+    const title = reportType === 'weekly'
+      ? t('LABELS.weeklyPresentyPayrollChart')
+      : t('LABELS.monthlyPresentyPayrollChart');
+    csvData.push([title]);
 
-      // If cell contains comma, newline, or quotes, wrap in quotes
-      if (cellString.includes(',') || cellString.includes('\n') || cellString.includes('"')) {
-        cellString = `"${cellString.replace(/"/g, '""')}"`;
-      }
+    const dateRange = reportType === 'weekly'
+      ? `${t('LABELS.week')}: ${formatDate(startDate)} ${t('LABELS.to')} ${formatDate(endDate)}`
+      : `${t('LABELS.month')}: ${selectedMonth} ${selectedYear}`;
+    csvData.push([dateRange]);
 
-      return cellString;
-    }).join(',')
-  ).join('\r\n'); // Use \r\n for better Excel compatibility
+    csvData.push([]);
 
-  // Create and download the CSV file with proper BOM for Excel
-  const BOM = '\uFEFF'; // Byte Order Mark for proper UTF-8 encoding in Excel
-  const blob = new Blob([BOM + csvString], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
+    csvData.push(headers);
 
-  if (link.download !== undefined) {
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
+    employeeData.forEach((employee, index) => {
+      const mainRow = [
+        index + 1,
+        `${employee.employee_name || 'Unknown'} (${employee.overtime_type ? employee.overtime_type : 'N/A'})`,
+        ...weekDates.map(date => {
+          const attendance = employee.attendance && employee.attendance[date];
+          return attendance?.status || '-';
+        }),
+        calculateTotalDays(employee.attendance),
+        employee.wage_overtime || 0,
+        calculateOvertimeHours(employee.attendance, employee.overtime_type),
+        employee.wage_hour || 0,
+        employee.holiday_day_rate || 0,
+        employee.half_day_rate || 0,
+        calculateTotalAmount(employee)
+      ];
+      csvData.push(mainRow);
 
-    // Generate filename
-    const fileName = reportType === 'weekly'
-      ? `weekly-presenty-${startDate}-to-${endDate}.csv`
-      : `monthly-presenty-${selectedMonth}-${selectedYear}.csv`;
+      const overtimeRow = [
+        '',
+        `${t('LABELS.overTime')} (${employee.overtime_type ? employee.overtime_type : 'N/A'})`,
+        ...weekDates.map(date => getOvertimeDisplay(employee, date)),
+        '', '', '', '', '', '', ''
+      ];
+      csvData.push(overtimeRow);
+    });
 
-    link.setAttribute('download', fileName);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csvString = csvData.map(row =>
+      row.map(cell => {
+        let cellString = String(cell);
+        if (cellString.includes(',') || cellString.includes('\n') || cellString.includes('"')) {
+          cellString = `"${cellString.replace(/"/g, '""')}"`;
+        }
+        return cellString;
+      }).join(',')
+    ).join('\r\n');
 
-    // Clean up
-    URL.revokeObjectURL(url);
-  }
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvString], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
 
-  showNotification('success', t('MSG.csvExportedSuccess'));
-};
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
 
+      const fileName = reportType === 'weekly'
+        ? `weekly-presenty-${startDate}-to-${endDate}.csv`
+        : `monthly-presenty-${selectedMonth}-${selectedYear}.csv`;
+
+      link.setAttribute('download', fileName);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    showNotification('success', t('MSG.csvExportedSuccess'));
+  };
 
   const getDateRangeDisplay = () => {
     if (reportType === 'weekly' && startDate && endDate) {
@@ -616,14 +627,13 @@ const exportToCSV = () => {
 
   return (
     <CContainer fluid>
-    <style>{styles}</style>
-    <CRow className="mb-2">  {/* Changed from mb-4 to mb-2 */}
+      <style>{styles}</style>
+      <CRow className="mb-2">
         <CCol>
-        <CCard className="mb-2 shadow-sm">  {/* Changed from mb-4 to mb-2 */}
-        <CCardHeader style={{ backgroundColor: "#E6E6FA" }}>
-            <strong>{t('LABELS.selectReportParameters')}</strong>
-        </CCardHeader>
-
+          <CCard className="mb-2 shadow-sm">
+            <CCardHeader style={{ backgroundColor: "#E6E6FA" }}>
+              <strong>{t('LABELS.selectReportParameters')}</strong>
+            </CCardHeader>
 
             {notification.show && (
               <CAlert
@@ -772,11 +782,11 @@ const exportToCSV = () => {
       </CRow>
 
       {employeeData.length > 0 && weekDates.length > 0 && (
-      <CRow>  {/* No margin class needed here */}
-        <CCol>
-          <CCard className="shadow-sm">  {/* Removed mb-4 completely */}
-            <CCardHeader style={{ backgroundColor: "#E6E6FA" }} className="d-flex justify-content-between align-items-center flex-wrap">
-              <strong>{t('LABELS.employeeAttendancePayrollReport')}</strong>
+        <CRow>
+          <CCol>
+            <CCard className="shadow-sm">
+              <CCardHeader style={{ backgroundColor: "#E6E6FA" }} className="d-flex justify-content-between align-items-center flex-wrap">
+                <strong>{t('LABELS.employeeAttendancePayrollReport')}</strong>
                 <small className="text-muted">
                   {reportType === 'weekly' && `${t('LABELS.week')}: `}
                   {reportType === 'monthly' && `${t('LABELS.month')}: `}
@@ -801,6 +811,9 @@ const exportToCSV = () => {
                           {t('LABELS.totalDays')}
                         </CTableHeaderCell>
                         <CTableHeaderCell rowSpan="2" className="text-center align-middle">
+                          {t('LABELS.oTRate')}
+                        </CTableHeaderCell>
+                        <CTableHeaderCell rowSpan="2" className="text-center align-middle">
                           {t('LABELS.overtimeHours')}
                         </CTableHeaderCell>
                         <CTableHeaderCell rowSpan="2" className="text-center align-middle">
@@ -815,16 +828,13 @@ const exportToCSV = () => {
                         <CTableHeaderCell rowSpan="2" className="text-center align-middle">
                           {t('LABELS.totalAmount')}
                         </CTableHeaderCell>
-                        <CTableHeaderCell rowSpan="2" className="text-center align-middle">
-                          {t('LABELS.paidAmount')}
-                        </CTableHeaderCell>
                       </CTableRow>
                       <CTableRow>
                         {weekDates.map((date, index) => (
                           <CTableHeaderCell key={index} className="text-center">
                             {new Date(date).toLocaleDateString('en-GB', {
                               day: '2-digit',
-                            //   month: '2-digit'
+                              month: '2-digit'
                             })}
                           </CTableHeaderCell>
                         ))}
@@ -845,7 +855,7 @@ const exportToCSV = () => {
                                   <span className={`badge ${
                                     attendance?.status === 'P' ? 'bg-success' :
                                     attendance?.status === 'A' ? 'bg-danger' :
-                                    attendance?.status === 'H' ? 'bg-warning' : 'bg-secondary'
+                                    attendance?.status === 'HF' ? 'bg-warning' : 'bg-secondary'
                                   }`}>
                                     {attendance?.status || '-'}
                                   </span>
@@ -856,37 +866,38 @@ const exportToCSV = () => {
                               {calculateTotalDays(employee.attendance)}
                             </CTableDataCell>
                             <CTableDataCell className="text-center" rowSpan="2">
-                              {calculateOvertimeHours(employee.attendance)}
+                              ₹{employee.wage_overtime || 0}
+                            </CTableDataCell>
+                            <CTableDataCell className="text-center" rowSpan="2">
+                              {calculateOvertimeHours(employee.attendance, employee.overtime_type)}
                             </CTableDataCell>
                             <CTableDataCell className="text-center" rowSpan="2">
                               ₹{employee.wage_hour || 0}
                             </CTableDataCell>
                             <CTableDataCell className="text-center" rowSpan="2">
-                              ₹{calculateHolidayRate(employee)}
+                              ₹{employee.holiday_day_rate || 0}
                             </CTableDataCell>
                             <CTableDataCell className="text-center" rowSpan="2">
-                              ₹{calculateHalfDayRate(employee)}
+                              ₹{employee.half_day_rate || 0}
                             </CTableDataCell>
                             <CTableDataCell className="text-center font-weight-bold" rowSpan="2">
                               ₹{calculateTotalAmount(employee)}
                             </CTableDataCell>
-                            <CTableDataCell className="text-center" rowSpan="2">
-                              ₹{calculateTotalAmount(employee)}
-                            </CTableDataCell>
                           </CTableRow>
                           <CTableRow className="bg-light">
-                            <CTableDataCell className="small text-muted" style={{paddingLeft: '20px'}}>
-                              {t('LABELS.overTime')}
+                            <CTableDataCell className="small text-muted">
+                              <span className="d-inline">
+                                {t('LABELS.overTime')}
+                              </span>
+                              <span className="ms-1 d-inline">
+                                {getOvertimeTypeLabel(employee.overtime_type)}
+                              </span>
                             </CTableDataCell>
-                            {weekDates.map((date, dateIndex) => {
-                              const attendance = employee.attendance && employee.attendance[date];
-                              const overtimeHours = attendance?.overtime_hours || 0;
-                              return (
-                                <CTableDataCell key={dateIndex} className="text-center small text-muted">
-                                  {overtimeHours > 0 ? `${overtimeHours}h` : '-'}
-                                </CTableDataCell>
-                              );
-                            })}
+                            {weekDates.map((date, dateIndex) => (
+                              <CTableDataCell key={dateIndex} className="text-center small text-muted">
+                                {getOvertimeDisplay(employee, date)}
+                              </CTableDataCell>
+                            ))}
                           </CTableRow>
                         </React.Fragment>
                       ))}

@@ -787,7 +787,7 @@
     "holidayRate": "Holiday Rate",
     "halfDayRate": "Half Day Rate",
     "paidAmount": "Paid Amount",
-    "overTime": "Over Time",
+    "overTime": "O.T :",
     "payrollAndAttendanceReport":"Payroll & Presenty Report",
     "uploadDocumentsDescription": "Upload important documents for your employees securely",
     "uploadDocumentsInstruction": "Upload at least one document to proceed",
@@ -934,7 +934,7 @@
       "workDetails":"Work Details",
       "transactionId":"Transaction Id",
       "enterTransactionId":"Enter Transaction Id",
-      "overtimeHours": "O.T Hours",
+      "overtimeHours": "O.T Hours / Day",
       "serialNo": "No.",
       "exportToCSV": "Export to CSV"
 
