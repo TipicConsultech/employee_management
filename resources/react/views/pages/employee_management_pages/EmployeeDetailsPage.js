@@ -21,7 +21,7 @@ import { useToast } from '../../common/toast/ToastContext';
 
 const EmployeeDetailsPage = () => {
   const { showToast } = useToast();
-  
+
   const { t } = useTranslation("global");
   const { id } = useParams();
   const navigate = useNavigate();
@@ -366,15 +366,16 @@ const EmployeeDetailsPage = () => {
                   <div className="d-flex align-items-center">
                     <h6 className="mb-0 fw-semibold text-success d-md-none">{formatCurrency(employee.wage_hour)} </h6>
                     <h5 className="mb-0 fw-semibold text-success d-none d-md-block">{formatCurrency(employee.wage_hour)} </h5>
-                    <small className="text-muted me-1">{t('LABELS.perHour')}</small>
+                    <small className="text-muted me-1">&nbsp;{t('LABELS.perDay')}</small>
                   </div>
                 </div>
                 <div className="col-6 col-md-6">
                   <small className="text-muted d-block">{t('LABELS.overtime')}</small>
                   <div className="d-flex align-items-center">
                     <h6 className="mb-0 fw-semibold text-warning d-md-none">{formatCurrency(employee.wage_overtime)} </h6>
-                    <h5 className="mb-0 fw-semibold text-warning d-none d-md-block">{formatCurrency(employee.wage_overtime)} </h5>
-                    <small className="text-muted me-1">{employee.overtime_type === "hourly" ? t('LABELS.perHour') : t('LABELS.perDay')}</small>
+                    <h5 className="mb-0 fw-semibold text-warning d-none d-md-block">{employee.overtime_type != "not_available" ? formatCurrency(employee.wage_overtime) : "" }</h5>
+                    {employee.overtime_type != "not_available" &&(<small className="text-muted me-1">&nbsp;{employee.overtime_type === "hourly" ? t('LABELS.perHour') : t('LABELS.perDay')}</small>)}
+                    {employee.overtime_type === "not_available" && (<small className="text-danger me-1 fw-bold" style={{ color: 'red' }}>&nbsp;&nbsp;{t('LABELS.na')}</small>)}
                   </div>
                 </div>
               </div>

@@ -933,7 +933,7 @@
       "transactionId":"Transaction Id",
       "enterTransactionId":"Enter Transaction Id",
       "overtimeHours": "O.T Hours / Day",
-      "overtimeHours": "O.T Hours",
+      "overtimeHours": "O.T Count",
       "overtimeDays":"O.T Days",
       "overtimePerHour":"O.T Rate/Day",
       "serialNo": "No.",
@@ -951,7 +951,8 @@
     "taluka": "Taluka",
     "district": "District",
     "pincode": "Pincode",
-    "company_id": "Company ID"
+    "company_id": "Company ID",
+    "updating": "Updating"
 
     },
 
