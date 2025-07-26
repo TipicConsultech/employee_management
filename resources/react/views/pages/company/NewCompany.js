@@ -376,23 +376,23 @@ function NewCompany() {
 
       setPreparedData(preparedFormData);
 
-      try {
-        await post('/api/company/check-duplicate', {
-          email_id: preparedFormData.email_id,
-          phone_no: preparedFormData.phone_no,
-        });
-      } catch (error) {
-        if (error.response && error.response.status === 422 && error.response.data.errors) {
-          const errors = error.response.data.errors;
-          const messages = Object.values(errors).join(' ');
-          showToast('danger', messages);
-        } else if (error.response && error.response.data && error.response.data.message) {
-          showToast('danger', error.response.data.message);
-        } else {
-          showToast('danger', 'Email id or Mobile number is already taken');
-        }
-        return;
-      }
+      // try {
+      //   await post('/api/company/check-duplicate', {
+      //     email_id: preparedFormData.email_id,
+      //     phone_no: preparedFormData.phone_no,
+      //   });
+      // } catch (error) {
+      //   if (error.response && error.response.status === 422 && error.response.data.errors) {
+      //     const errors = error.response.data.errors;
+      //     const messages = Object.values(errors).join(' ');
+      //     showToast('danger', messages);
+      //   } else if (error.response && error.response.data && error.response.data.message) {
+      //     showToast('danger', error.response.data.message);
+      //   } else {
+      //     showToast('danger', 'Email id or Mobile number is already taken');
+      //   }
+      //   return;
+      // }
 
       const currentPlan = refData.plans.find(p => p.id == preparedFormData.subscribed_plan);
       const paymentAmount = totalAmount();
