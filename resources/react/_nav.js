@@ -38,12 +38,12 @@ export default function fetchNavItems(t1) {
   /* ─────────── SUPER‑ADMIN ─────────── */
   if (user === 0) {
     _nav = [
-        {
-        component: CNavItem,
-        name: t('LABELS.TipicDashboard'),
-        to: '/tipicDashboard',
-        icon: <CIcon icon={cibPostgresql} customClassName="nav-icon" />,
-      },
+      //   {
+      //   component: CNavItem,
+      //   name: t('LABELS.TipicDashboard'),
+      //   to: '/tipicDashboard',
+      //   icon: <CIcon icon={cibPostgresql} customClassName="nav-icon" />,
+      // },
       {
         component: CNavGroup,
         name: t('LABELS.company'),
@@ -51,7 +51,7 @@ export default function fetchNavItems(t1) {
         items: [
           { component: CNavItem, name: t('LABELS.new_company'),  to: '/company/new' },
           { component: CNavItem, name: t('LABELS.all_companies'), to: '/company/all' },
-          { component: CNavItem, name: 'Company Subscription',   to: '/company/companyReceipt' },
+          // { component: CNavItem, name: 'Company Subscription',   to: '/company/companyReceipt' },
         ],
       },
       {
@@ -59,31 +59,31 @@ export default function fetchNavItems(t1) {
         name: t('LABELS.plans'),
         to: '/plans',
         icon: <CIcon icon={cibPostgresql} customClassName="nav-icon" />,
-      },
-      {
-        component: CNavItem,
-        name: t('LABELS.onboarding-partner-configure'),
-        to: '/onboarding-partner-configure',
-        icon: <CIcon icon={cibPostgresql} customClassName="nav-icon" />,
-      },
-      {
-        component: CNavGroup,
-        name: t('LABELS.user_management'),
-        icon: <CIcon icon={cilGroup} customClassName="nav-icon" />,
-        items: [
-          { component: CNavItem, name: t('LABELS.all_Users'),   to: 'usermanagement/all-users' },
-          { component: CNavItem, name: t('LABELS.create_user'), to: 'usermanagement/create-user' },
-        ],
-      },
-      {
-        component: CNavGroup,
-        name: t('LABELS.Onboarding_Partners'),
-        icon: <CIcon icon={cilGroup} customClassName="nav-icon" />,
-        items: [
-          { component: CNavItem, name: t('LABELS.New_Partners'),   to: '/OnboardingNewPartnere' },
-          { component: CNavItem, name: t('LABELS.All_Partners'), to: '/OnboardingAllPartnere' },
-        ],
-      },
+      }
+      // {
+      //   component: CNavItem,
+      //   name: t('LABELS.onboarding-partner-configure'),
+      //   to: '/onboarding-partner-configure',
+      //   icon: <CIcon icon={cibPostgresql} customClassName="nav-icon" />,
+      // },
+      // {
+      //   component: CNavGroup,
+      //   name: t('LABELS.user_management'),
+      //   icon: <CIcon icon={cilGroup} customClassName="nav-icon" />,
+      //   items: [
+      //     { component: CNavItem, name: t('LABELS.all_Users'),   to: 'usermanagement/all-users' },
+      //     { component: CNavItem, name: t('LABELS.create_user'), to: 'usermanagement/create-user' },
+      //   ],
+      // },
+      // {
+      //   component: CNavGroup,
+      //   name: t('LABELS.Onboarding_Partners'),
+      //   icon: <CIcon icon={cilGroup} customClassName="nav-icon" />,
+      //   items: [
+      //     { component: CNavItem, name: t('LABELS.New_Partners'),   to: '/OnboardingNewPartnere' },
+      //     { component: CNavItem, name: t('LABELS.All_Partners'), to: '/OnboardingAllPartnere' },
+      //   ],
+      // },
     ]
   }
 

@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\CompanyInfo;
 use App\Models\Plan;
 use App\Models\User;
+use App\Models\Products;
+
     
  use Illuminate\Http\JsonResponse;
 
@@ -26,6 +28,12 @@ class CompanyInfoController extends Controller
             return CompanyInfo::where('company_id', $user->company_id)->get();
         }
     }
+
+     public function getProducts()
+    {   
+       return Products::all();
+    }
+
 
     public function companyHours()
    {
@@ -60,6 +68,12 @@ class CompanyInfoController extends Controller
             'subscribed_plan' => 'required|integer',
             'refer_by_id' => 'required',
             'subscription_validity' => 'required',
+            'product_id'=> 'required|integer',
+            'start_time'=>'required',
+            'working_hours'=>'required|integer',
+            'company_id'=>'required|integer'
+
+
         ]);
 
         // Save the company info to the database
@@ -82,6 +96,13 @@ class CompanyInfoController extends Controller
         $CompanyInfo->subscription_validity = $request->input('subscription_validity');  
         $CompanyInfo->refer_by_id = $request->input('refer_by_id');  
         $CompanyInfo->block_status = 0;
+        $CompanyInfo->product_id =$request->input('product_id');
+        $CompanyInfo->start_time =$request->input('start_time');
+        $CompanyInfo->working_hours =$request->input('working_hours');
+        $CompanyInfo->company_id =$request->input('company_id');
+
+
+        
 
         $CompanyInfo->save();
         //$companyDetails = CompanyInfo::create($CompanyInfo);

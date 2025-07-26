@@ -893,6 +893,8 @@
       "workHours":"कामाचे तास",
       "notAvailable":"उपलब्ध नाही",
       "confirmCheckout":"चेकआउट निश्चित करा",
+      "checkOut":"आउट",
+      "checkIn":"इन",
       "workPeriod": "कामकाज कालावधी",
   "workDetails": "कामाचे तपशील",
   "transactionId": "व्यवहार आयडी",
@@ -903,7 +905,15 @@
       "updatedCredit": "पेमेंट केल्यावर होणारे क्रेडिट",
       "updatedDebit": "पेमेंट केल्यावर होणारी डेबिट",
       "oTRate": "ओ.टा दर",
-    "na": "नाही"
+    "na": "नाही",
+    "bulkPresenty": "सर्वांची उपस्थिती",
+    "bulkPresentySM": "उपस्थिती",
+ "working_hours": "कामाचे तास",
+    "start_time": "सुरुवातीची वेळ",
+    "taluka": "तालुका",
+    "district": "जिल्हा",
+    "pincode": "पिनकोड",
+    "company_id": "कंपनी आयडी"
 
   },
 
@@ -1320,6 +1330,8 @@
       "workHoursRequired":"कामाचे तास आवश्यक आहेत",
       "under30MinWarning":"आपण ३० मिनिटांच्या आतच चेक-आउट केले आहे. धोरणानुसार हे अनुपस्थित म्हणून गणले जाईल.",
       "locationVerified":"स्थानाची खात्री झाली आहे",
-      "csvExportedSuccess": "CSV डाउनलोड झाले"
+      "csvExportedSuccess": "CSV डाउनलोड झाले",
+       "payedAmountRequired": "भरलेली रक्कम आवश्यक आहे.",
+       "payedAmountExceedsTotal": "भरलेली रक्कम एकूण रकमेपेक्षा जास्त असू शकत नाही."
     }
    }

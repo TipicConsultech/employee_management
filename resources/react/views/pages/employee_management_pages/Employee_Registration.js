@@ -227,72 +227,90 @@ const workingHoursOptions = [
   }, []);
 
  const handleSubmit = useCallback(async () => {
-    setFormSubmitted(true);
-    const newErrors = validateForm();
-    setErrors(newErrors);
+  setFormSubmitted(true);
+  const newErrors = validateForm();
+  setErrors(newErrors);
+  
+  if (Object.keys(newErrors).length > 0) {
+    const firstErrorField = Object.keys(newErrors)[0];
+    const firstErrorElement = document.querySelector(`[name="${firstErrorField}"]`) || 
+      document.querySelector(`#${firstErrorField}`) || 
+      document.querySelector(`input[placeholder*="${t(`LABELS.${firstErrorField}`)}"]`);
     
-    if (Object.keys(newErrors).length > 0) {
-      const firstErrorField = Object.keys(newErrors)[0];
-      const firstErrorElement = document.querySelector(`[name="${firstErrorField}"]`) || 
-        document.querySelector(`#${firstErrorField}`) || 
-        document.querySelector(`input[placeholder*="${t(`LABELS.${firstErrorField}`)}"]`);
-      
-      if (firstErrorElement) {
-        firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        firstErrorElement.focus();
-      }
-      showToast('warning', t('MSG.fixErrorsBeforeSubmit'));
-      return;
+    if (firstErrorElement) {
+      firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      firstErrorElement.focus();
     }
+    showToast('warning', t('MSG.fixErrorsBeforeSubmit'));
+    return;
+  }
 
-    setSubmitting(true);
-    try {
-      const payload = { ...formData };
-      if (!formData.is_login) {
-        delete payload.password;
-        delete payload.re_enter_password;
-        delete payload.attendance_type;
-      }
+  setSubmitting(true);
+  try {
+    const payload = { ...formData };
+    if (!formData.is_login) {
+      delete payload.password;
       delete payload.re_enter_password;
-      if (!isFullTimeWork) {
-        delete payload.wage_hour;
-        delete payload.wage_overtime;
-        delete payload.credit;
-        delete payload.debit;
-        delete payload.working_hours; // Remove working_hours for non-fulltime
+      delete payload.attendance_type;
+    }
+    delete payload.re_enter_password;
+    if (!isFullTimeWork) {
+      delete payload.wage_hour;
+      delete payload.wage_overtime;
+      delete payload.credit;
+      delete payload.debit;
+      delete payload.working_hours; // Remove working_hours for non-fulltime
+    } else {
+      // Handle credit and debit calculation
+      const creditValue = parseFloat(payload.credit) || 0;
+      const debitValue = parseFloat(payload.debit) || 0;
+      
+      if (creditValue > 0 && debitValue > 0) {
+        if (creditValue > debitValue) {
+          payload.credit = (creditValue - debitValue).toString();
+          payload.debit = '0';
+        } else if (debitValue > creditValue) {
+          payload.debit = (debitValue - creditValue).toString();
+          payload.credit = '0';
+        } else {
+          payload.credit = '0';
+          payload.debit = '0';
+        }
       } else {
-        payload.wage_hour = payload.wage_hour || '0';
-        payload.wage_overtime = payload.wage_overtime || '0';
-        payload.credit = payload.credit || '0';
-        payload.debit = payload.debit || '0';
-        payload.working_hours = payload.working_hours || workHours.toString(); // Use default if not set
-      }
-      payload.half_day_payment = payload.half_day_payment || '0';
-      payload.holiday_payment = payload.holiday_payment || '0';
-      if (formData.is_login && !payload.tolerance) {
-        payload.tolerance = 'no_limit';
+        payload.credit = creditValue.toString() || '0';
+        payload.debit = debitValue.toString() || '0';
       }
 
-      const response = await post('/api/employees', payload);
-      showToast(
-        response.message === "Email already taken" || response.message === "Mobile number already taken" || response.message === "Aadhaar number already taken" 
-          ? 'danger' 
-          : response && response.employee?.id 
-            ? 'success' 
-            : 'danger',
-        response.message || (response && response.employee?.id ? t('MSG.employeeRegisteredSuccess') : t('MSG.employeeRegistrationFailed'))
-      );
-      if (response && response.employee?.id) {
-        resetForm();
-        scrollToTop();
-      }
-    } catch (error) {
-      console.error('Error registering employee:', error);
-      showToast('danger', error.message || t('MSG.registrationError'));
-    } finally {
-      setSubmitting(false);
+      payload.wage_hour = payload.wage_hour || '0';
+      payload.wage_overtime = payload.wage_overtime || '0';
+      payload.working_hours = payload.working_hours || workHours.toString(); // Use default if not set
     }
-  }, [formData, validateForm, showToast, resetForm, t, isFullTimeWork, scrollToTop, workHours]);
+    payload.half_day_payment = payload.half_day_payment || '0';
+    payload.holiday_payment = payload.holiday_payment || '0';
+    if (formData.is_login && !payload.tolerance) {
+      payload.tolerance = 'no_limit';
+    }
+
+    const response = await post('/api/employees', payload);
+    showToast(
+      response.message === "Email already taken" || response.message === "Mobile number already taken" || response.message === "Aadhaar number already taken" 
+        ? 'danger' 
+        : response && response.employee?.id 
+          ? 'success' 
+          : 'danger',
+      response.message || (response && response.employee?.id ? t('MSG.employeeRegisteredSuccess') : t('MSG.employeeRegistrationFailed'))
+    );
+    if (response && response.employee?.id) {
+      resetForm();
+      scrollToTop();
+    }
+  } catch (error) {
+    console.error('Error registering employee:', error);
+    showToast('danger', error.message || t('MSG.registrationError'));
+  } finally {
+    setSubmitting(false);
+  }
+}, [formData, validateForm, showToast, resetForm, t, isFullTimeWork, scrollToTop, workHours]);
 
   const isFormValid = useMemo(() => {
     const base = formData.name.trim() && formData.gender && formData.work_type && formData.adhaar_number && formData.mobile;

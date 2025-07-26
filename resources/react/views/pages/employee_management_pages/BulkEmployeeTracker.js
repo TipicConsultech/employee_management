@@ -392,6 +392,58 @@ const handlePresenty = useCallback(async () => {
         );
     }
 
+    const tableStyles = `
+  .table-container {
+    height: 500px;
+    overflow-y: auto;
+    overflow-x: auto;
+    border: 2px solid #a7acb1;
+    border-radius: 8px;
+    position: relative;
+  }
+  
+  .table-container::-webkit-scrollbar {
+    display: none; /* Hide scrollbar for Chrome, Safari and Opera */
+  }
+  
+  .table-container {
+    -ms-overflow-style: none;  /* Hide scrollbar for IE and Edge */
+    scrollbar-width: none;  /* Hide scrollbar for Firefox */
+  }
+  
+  .sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    background-color: var(--bs-tertiary-bg) !important;
+  }
+  
+  .table-responsive-custom {
+    min-width: 800px; /* Ensure horizontal scroll on mobile */
+  }
+  
+  @media (max-width: 767.98px) {
+    .table-responsive-custom {
+      min-width: 100%;
+    }
+    
+    .mobile-employee-row {
+      display: table-row !important;
+    }
+    
+    .desktop-employee-row {
+      display: none !important;
+    }
+  }
+`;
+
+// Add the styles to the document
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement("style");
+  styleSheet.innerText = tableStyles;
+  document.head.appendChild(styleSheet);
+}
+
     return (
         <div className="min-vh-100 d-flex flex-column w-100" style={{ backgroundColor: '#f8f9fa' }}>
             <CContainer fluid className="flex-grow-1 p-0 w-100">
@@ -447,7 +499,8 @@ const handlePresenty = useCallback(async () => {
                         </CCardHeader>
                         <CCardBody className="p-2 p-sm-3 p-md-4">
                             <div className="mb-3 mb-md-4">
-                                <div className="d-flex flex-column flex-sm-row gap-2">
+                                <div className="d-flex flex-column flex-sm-row gap-2 d-block d-md-none">
+                                    <CButtonGroup >
                                     <CButton
                                         color="primary"
                                         onClick={handleBulkCheckIn}
@@ -508,12 +561,84 @@ const handlePresenty = useCallback(async () => {
                                         ) : (
                                             <>
                                                 <CIcon icon={cilCheck} className="me-1 me-md-2" />
-                                                <span className="d-none d-sm-inline">Bulk Presenty</span>
-                                                <span className="d-sm-none">{t('LABELS.checkIn') || 'Check-In'}</span>
+                                                <span className="d-none d-sm-inline">{t('LABELS.bulkPresenty') || 'Bulk Presenty'}</span>
+                                                <span className="d-sm-none">{t('LABELS.bulkPresentySM') || 'Presenty'}</span>
                                             </>
                                         )}
                                     </CButton>
+                                    </CButtonGroup>
                                 </div>
+
+                           <div className="d-flex flex-column flex-sm-row gap-2 d-none d-md-flex w-100">
+  <CButton
+    color="primary"
+    onClick={handleBulkCheckIn}
+    disabled={selectedEmployees.length === 0 || submitting}
+    className="py-2 py-md-3 w-100"
+    style={{ fontSize: '0.9rem', fontWeight: 'bold' }}
+  >
+    {submitting ? (
+      <>
+        <CSpinner size="sm" className="me-2" />
+        <span className="d-none d-sm-inline">{t('LABELS.processing') || 'Processing...'}</span>
+        <span className="d-sm-none">{t('LABELS.processing') || 'Processing...'}</span>
+      </>
+    ) : (
+      <>
+        <CIcon icon={cilCheck} className="me-1 me-md-2" />
+        <span className="d-none d-sm-inline">{t('LABELS.bulkCheckIn') || 'Bulk Check-In'}</span>
+        <span className="d-sm-none">{t('LABELS.checkIn') || 'Check-In'}</span>
+      </>
+    )}
+  </CButton>
+
+  <CTooltip content={getCheckOutTooltipMessage()} placement="top">
+    <CButton
+      color={isCheckOutDisabled() ? "secondary" : "success"}
+      onClick={handleBulkCheckOut}
+      disabled={isCheckOutDisabled()}
+      className="py-2 py-md-3 w-100"
+      style={{ fontSize: '0.9rem', fontWeight: 'bold', opacity: isCheckOutDisabled() ? 0.6 : 1, cursor: isCheckOutDisabled() ? 'not-allowed' : 'pointer' }}
+    >
+      {submitting ? (
+        <>
+          <CSpinner size="sm" className="me-2" />
+          <span className="d-none d-sm-inline">{t('LABELS.processing') || 'Processing...'}</span>
+          <span className="d-sm-none">{t('LABELS.processing') || 'Processing...'}</span>
+        </>
+      ) : (
+        <>
+          <CIcon icon={isCheckOutDisabled() ? cilWarning : cilCheck} className="me-1 me-md-2" />
+          <span className="d-none d-sm-inline">{t('LABELS.bulkCheckOut') || 'Bulk Check-Out'}</span>
+          <span className="d-sm-none">{t('LABELS.checkOut') || 'Check-Out'}</span>
+        </>
+      )}
+    </CButton>
+  </CTooltip>
+
+  <CButton
+    color="warning"
+    onClick={handlePresenty}
+    disabled={selectedEmployees.length === 0 || submitting}
+    className="py-2 py-md-3 w-100"
+    style={{ fontSize: '0.9rem', fontWeight: 'bold' }}
+  >
+    {submitting ? (
+      <>
+        <CSpinner size="sm" className="me-2" />
+        <span className="d-none d-sm-inline">{t('LABELS.processing') || 'Processing...'}</span>
+        <span className="d-sm-none">{t('LABELS.processing') || 'Processing...'}</span>
+      </>
+    ) : (
+      <>
+        <CIcon icon={cilCheck} className="me-1 me-md-2" />
+        <span className="d-none d-sm-inline">{t('LABELS.bulkPresenty') || 'Bulk Presenty'}</span>
+        <span className="d-sm-none">{t('LABELS.bulkPresentySM') || 'Presenty'}</span>
+      </>
+    )}
+  </CButton>
+</div>
+
                                 {selectedEmployees.length > 0 && getSelectedEmployeesWithoutCheckIn().length > 0 && (
                                     <div className="mt-2 p-2 rounded bg-warning-subtle border border-warning">
                                         <div className="d-flex align-items-center">
@@ -525,212 +650,200 @@ const handlePresenty = useCallback(async () => {
                                     </div>
                                 )}
                             </div>
-                            <div className="table-responsive w-100">
-                                <CTable align="middle" className="mb-0 w-100" hover responsive style={{ border: '2px solid #a7acb1', borderRadius: '8px', overflow: 'hidden', minWidth: '100%' }}>
-                                    <CTableHead className="text-nowrap">
-                                        <CTableRow style={{ borderBottom: '2px solid #a7acb1' }}>
-                                            <CTableHeaderCell className="bg-body-tertiary text-center" style={{ width: '60px', minWidth: '60px', borderRight: '1px solid #a7acb1', fontWeight: 'bold', padding: '12px 8px' }}>
-                                                <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '24px' }}>
-                                                    <CFormCheck
-                                                        checked={selectAll}
-                                                        onChange={handleSelectAll}
-                                                        id="selectAll"
-                                                        style={{ width: '20px', height: '20px', border: '2px solid #007bff', backgroundColor: selectAll ? '#007bff' : 'white', borderRadius: '3px', cursor: 'pointer', position: 'relative', appearance: 'none', outline: 'none' }}
-                                                    />
-                                                </div>
-                                            </CTableHeaderCell>
-                                            <CTableHeaderCell className="bg-body-tertiary" style={{ width: '80px', minWidth: '80px', borderRight: '1px solid #a7acb1', fontWeight: 'bold' }}>
-                                                <span className="d-md-none">{t('LABELS.employee') || 'Employee'}</span>
-                                                <span className="d-none d-md-inline">{t('LABELS.employeeId') || 'Employee ID'}</span>
-                                            </CTableHeaderCell>
-                                            <CTableHeaderCell className="bg-body-tertiary d-none d-md-table-cell" style={{ borderRight: '1px solid #a7acb1', fontWeight: 'bold', minWidth: '150px' }}>
-                                                {t('LABELS.employee') || 'Employee'}
-                                            </CTableHeaderCell>
-                                            <CTableHeaderCell className="bg-body-tertiary text-center d-none d-md-table-cell" style={{ width: '120px', minWidth: '120px', borderRight: '1px solid #a7acb1', fontWeight: 'bold' }}>
-                                                {t('LABELS.checkIn') || 'Check In'}
-                                            </CTableHeaderCell>
-                                            <CTableHeaderCell className="bg-body-tertiary text-center d-none d-md-table-cell" style={{ width: '120px', minWidth: '120px', borderRight: '1px solid #a7acb1', fontWeight: 'bold' }}>
-                                                {t('LABELS.checkOut') || 'Check Out'}
-                                            </CTableHeaderCell>
-                                            <CTableHeaderCell className="bg-body-tertiary text-center d-none d-md-table-cell" style={{ width: '100px', minWidth: '100px', borderRight: '1px solid #a7acb1', fontWeight: 'bold' }}>
-                                                {t('LABELS.status') || 'Status'}
-                                            </CTableHeaderCell>
-                                            <CTableHeaderCell className="bg-body-tertiary text-center d-none d-md-table-cell" style={{ width: '100px', minWidth: '100px', fontWeight: 'bold' }}>
-                                                {t('LABELS.action') || 'Action'}
-                                            </CTableHeaderCell>
-                                        </CTableRow>
-                                    </CTableHead>
-                                    <CTableBody>
-                                        {employees.length > 0 ? employees.map((employee, index) => {
-                                            const empId = employee.id || employee.employee_id || employee.emp_id;
-                                            const empName = employee.name || employee.employee_name || employee.first_name || `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || 'Unknown Employee';
-                                            const isSelected = employee.selected || false;
+                            {/* <div className="table-responsive w-100">
+                      
+                            </div> */}
+<div className="table-container">
+    <CTable align="middle" className="mb-0 table-responsive-custom" hover responsive={false} style={{ minWidth: '100%' }}>
+        <CTableHead className="text-nowrap sticky-header">
+            <CTableRow style={{ borderBottom: '2px solid #a7acb1' }}>
+                <CTableHeaderCell className="bg-body-tertiary text-center sticky-header" style={{ width: '60px', minWidth: '60px', borderRight: '1px solid #a7acb1', fontWeight: 'bold', padding: '12px 8px' }}>
+                    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '24px' }}>
+                        <CFormCheck
+                            checked={selectAll}
+                            onChange={handleSelectAll}
+                            id="selectAll"
+                            style={{ width: '20px', height: '20px', border: '2px solid #007bff', backgroundColor: selectAll ? '#007bff' : 'white', borderRadius: '3px', cursor: 'pointer', position: 'relative', appearance: 'none', outline: 'none' }}
+                        />
+                    </div>
+                </CTableHeaderCell>
+                <CTableHeaderCell className="bg-body-tertiary sticky-header" style={{ width: '80px', minWidth: '80px', borderRight: '1px solid #a7acb1', fontWeight: 'bold' }}>
+                    <span className="d-md-none">{t('LABELS.employee') || 'Employee'}</span>
+                    <span className="d-none d-md-inline">{t('LABELS.employeeId') || 'Employee ID'}</span>
+                </CTableHeaderCell>
+                <CTableHeaderCell className="bg-body-tertiary d-none d-md-table-cell sticky-header" style={{ borderRight: '1px solid #a7acb1', fontWeight: 'bold', minWidth: '150px' }}>
+                    {t('LABELS.employee') || 'Employee'}
+                </CTableHeaderCell>
+                <CTableHeaderCell className="bg-body-tertiary text-center d-none d-md-table-cell sticky-header" style={{ width: '120px', minWidth: '120px', borderRight: '1px solid #a7acb1', fontWeight: 'bold' }}>
+                    {t('LABELS.checkIn') || 'Check In'}
+                </CTableHeaderCell>
+                <CTableHeaderCell className="bg-body-tertiary text-center d-none d-md-table-cell sticky-header" style={{ width: '120px', minWidth: '120px', borderRight: '1px solid #a7acb1', fontWeight: 'bold' }}>
+                    {t('LABELS.checkOut') || 'Check Out'}
+                </CTableHeaderCell>
+                <CTableHeaderCell className="bg-body-tertiary text-center d-none d-md-table-cell sticky-header" style={{ width: '100px', minWidth: '100px', borderRight: '1px solid #a7acb1', fontWeight: 'bold' }}>
+                    {t('LABELS.status') || 'Status'}
+                </CTableHeaderCell>
+                <CTableHeaderCell className="bg-body-tertiary text-center d-none d-md-table-cell sticky-header" style={{ width: '100px', minWidth: '100px', fontWeight: 'bold' }}>
+                    {t('LABELS.action') || 'Action'}
+                </CTableHeaderCell>
+            </CTableRow>
+        </CTableHead>
+        <CTableBody>
+            {employees.length > 0 ? employees.map((employee, index) => {
+                const empId = employee.id || employee.employee_id || employee.emp_id;
+                const empName = employee.name || employee.employee_name || employee.first_name || `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || 'Unknown Employee';
+                const isSelected = employee.selected || false;
 
-                                            return (
-                                                <React.Fragment key={empId}>
-                                                    <MobileEmployeeRow
-                                                        handleEditClick={handleEditClick}
-                                                        handleMapClick={handleMapClick}
-                                                        handleDeleteClick={handleDeleteClick}
-                                                        employee={employee}
-                                                        empId={empId}
-                                                        empName={empName}
-                                                        isSelected={isSelected}
-                                                        handleEmployeeSelection={handleEmployeeSelection}
-                                                        openImageModal={openImageModal}
-                                                        getImageUrl={getImageUrl}
-                                                        hasValidImageUrl={hasValidImageUrl}
-                                                        navigate={navigate}
-                                                        t={t}
-                                                        faceAttendanceEnabled={faceAttendanceEnabled}
-                                                    />
-                                                    <CTableRow
-                                                        className="d-none d-md-table-row"
-                                                        style={{ borderBottom: index === employees.length - 1 ? 'none' : '1px solid #a7acb1', backgroundColor: isSelected ? '#f8f9fa' : 'transparent' }}
-                                                    >
-                                                        <CTableDataCell className="text-center" style={{ borderRight: '1px solid #a7acb1', padding: '12px 8px' }}>
-                                                            <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '24px' }}>
-                                                                <CFormCheck
-                                                                    checked={isSelected}
-                                                                    onChange={(e) => handleEmployeeSelection(empId, e.target.checked)}
-                                                                    id={`employee-${empId}`}
-                                                                    style={{ width: '20px', height: '20px', border: '2px solid #007bff', backgroundColor: isSelected ? '#007bff' : 'white', borderRadius: '3px', cursor: 'pointer', position: 'relative', appearance: 'none', outline: 'none' }}
-                                                                />
-                                                            </div>
-                                                        </CTableDataCell>
-                                                        <CTableDataCell className="text-center" style={{ width: '80px', minWidth: '80px', borderRight: '1px solid #a7acb1' }}>
-                                                            <div
-                                                                className="d-flex align-items-center justify-content-center mx-auto"
-                                                                style={{ width: '45px', height: '45px', backgroundColor: '#007bff', color: 'white', borderRadius: '50%', fontSize: '11px', fontWeight: 'bold', flexShrink: 0, lineHeight: '1.2', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                                            >
-                                                                {empId || 'N/A'}
-                                                            </div>
-                                                        </CTableDataCell>
-                                                        <CTableDataCell style={{ borderRight: '1px solid #a7acb1', minWidth: '150px' }}>
-                                                            <div className="fw-semibold fs-6" style={{ fontSize: '0.9rem' }}>
-                                                                {empName}
-                                                            </div>
-                                                        </CTableDataCell>
-                                                        <CTableDataCell className="text-center" style={{ borderRight: '1px solid #a7acb1' }}>
-                                                            <div className="d-flex align-items-center justify-content-center gap-2">
-                                                                <CIcon icon={employee.checkIn ? cilCheckCircle : cilXCircle} className={employee.checkIn ? 'text-success' : 'text-muted'} size="lg" />
-                                                                {faceAttendanceEnabled && (
-                                                                    <CTooltip
-                                                                        content={hasValidImageUrl(employee.trackers, 'checkin') ? (t('LABELS.clickToViewCheckInImage') || 'Click to view check-in image') : (t('LABELS.noCheckInImageUploaded') || 'User did not upload the image for check-in')}
-                                                                        placement="top"
-                                                                        trigger="hover"
-                                                                    >
-                                                                        <div>
-                                                                            <CButton
-                                                                                size="sm"
-                                                                                color={hasValidImageUrl(employee.trackers, 'checkin') ? "primary" : "secondary"}
-                                                                                variant="outline"
-                                                                                style={{ fontSize: '0.7rem', padding: '2px 6px', opacity: hasValidImageUrl(employee.trackers, 'checkin') ? 1 : 0.6, cursor: hasValidImageUrl(employee.trackers, 'checkin') ? 'pointer' : 'not-allowed', backgroundColor: hasValidImageUrl(employee.trackers, 'checkin') ? 'transparent' : '#f8f9fa', borderColor: hasValidImageUrl(employee.trackers, 'checkin') ? '' : '#6c757d', color: hasValidImageUrl(employee.trackers, 'checkin') ? '' : '#6c757d', pointerEvents: hasValidImageUrl(employee.trackers, 'checkin') ? 'auto' : 'none' }}
-                                                                                disabled={!hasValidImageUrl(employee.trackers, 'checkin')}
-                                                                                onClick={() => openImageModal(getImageUrl(employee.trackers, 'checkin'), empName, 'Check-in')}
-                                                                            >
-                                                                                {t('LABELS.view') || 'View'}
-                                                                            </CButton>
-                                                                        </div>
-                                                                    </CTooltip>
-                                                                )}
-                                                                <CTooltip
-                                                                    content={hasValidGps(employee.trackers, 'check-in') ? (t('LABELS.viewCheckInLocation') || 'View check-in location') : (t('LABELS.noCheckInLocation') || 'No check-in location available')}
-                                                                    placement="top"
-                                                                    trigger="hover"
-                                                                >
-                                                                    <div>
-                                                                        <CButton
-                                                                            size="sm"
-                                                                            color={hasValidGps(employee.trackers, 'check-in') ? "primary" : "secondary"}
-                                                                            variant="outline"
-                                                                            style={{ fontSize: '0.7rem', padding: '2px 6px', marginLeft: '4px', opacity: hasValidGps(employee.trackers, 'check-in') ? 1 : 0.6, cursor: hasValidGps(employee.trackers, 'check-in') ? 'pointer' : 'not-allowed', backgroundColor: hasValidGps(employee.trackers, 'check-in') ? 'transparent' : '#f8f9fa', borderColor: hasValidGps(employee.trackers, 'check-in') ? '' : '#6c757d', color: hasValidGps(employee.trackers, 'check-in') ? '' : '#6c757d', pointerEvents: hasValidGps(employee.trackers, 'check-in') ? 'auto' : 'none' }}
-                                                                            disabled={!hasValidGps(employee.trackers, 'check-in')}
-                                                                            onClick={() => handleMapClick(employee.trackers?.[0]?.check_in_gps, 'check-in', employee.trackers?.[0]?.employee_id)}
-                                                                        >
-                                                                            <CIcon icon={cilLocationPin} size="sm" />
-                                                                        </CButton>
-                                                                    </div>
-                                                                </CTooltip>
-                                                            </div>
-                                                        </CTableDataCell>
-                                                        <CTableDataCell className="text-center" style={{ borderRight: '1px solid #a7acb1' }}>
-                                                            <div className="d-flex align-items-center justify-content-center gap-2">
-                                                                <CIcon icon={employee.checkOut ? cilCheckCircle : cilXCircle} className={employee.checkOut ? 'text-success' : 'text-muted'} size="lg" />
-                                                                {faceAttendanceEnabled && (
-                                                                    <CTooltip
-                                                                        content={hasValidImageUrl(employee.trackers, 'checkout') ? (t('LABELS.clickToViewCheckOutImage') || 'Click to view check-out image') : (t('LABELS.noCheckOutImageUploaded') || 'User did not upload the image for check-out')}
-                                                                        placement="top"
-                                                                        trigger="hover"
-                                                                    >
-                                                                        <div>
-                                                                            <CButton
-                                                                                size="sm"
-                                                                                color={hasValidImageUrl(employee.trackers, 'checkout') ? "primary" : "secondary"}
-                                                                                variant="outline"
-                                                                                style={{ fontSize: '0.7rem', padding: '2px 6px', opacity: hasValidImageUrl(employee.trackers, 'checkout') ? 1 : 0.6, cursor: hasValidImageUrl(employee.trackers, 'checkout') ? 'pointer' : 'not-allowed', backgroundColor: hasValidImageUrl(employee.trackers, 'checkout') ? 'transparent' : '#f8f9fa', borderColor: hasValidImageUrl(employee.trackers, 'checkout') ? '' : '#6c757d', color: hasValidImageUrl(employee.trackers, 'checkout') ? '' : '#6c757d', pointerEvents: hasValidImageUrl(employee.trackers, 'checkout') ? 'auto' : 'none' }}
-                                                                                disabled={!hasValidImageUrl(employee.trackers, 'checkout')}
-                                                                                onClick={() => openImageModal(getImageUrl(employee.trackers, 'checkout'), empName, 'Check-out')}
-                                                                            >
-                                                                                {t('LABELS.view') || 'View'}
-                                                                            </CButton>
-                                                                        </div>
-                                                                    </CTooltip>
-                                                                )}
-                                                                <CTooltip
-                                                                    content={hasValidGps(employee.trackers, 'check-out') ? (t('LABELS.viewCheckOutLocation') || 'View check-out location') : (t('LABELS.noCheckOutLocation') || 'No check-out location available')}
-                                                                    placement="top"
-                                                                    trigger="hover"
-                                                                >
-                                                                    <div>
-                                                                        <CButton
-                                                                            size="sm"
-                                                                            color={hasValidGps(employee.trackers, 'check-out') ? "primary" : "secondary"}
-                                                                            variant="outline"
-                                                                            style={{ fontSize: '0.7rem', padding: '2px 6px', marginLeft: '4px', opacity: hasValidGps(employee.trackers, 'check-out') ? 1 : 0.6, cursor: hasValidGps(employee.trackers, 'check-out') ? 'pointer' : 'not-allowed', backgroundColor: hasValidGps(employee.trackers, 'check-out') ? 'transparent' : '#f8f9fa', borderColor: hasValidGps(employee.trackers, 'check-out') ? '' : '#6c757d', color: hasValidGps(employee.trackers, 'check-out') ? '' : '#6c757d', pointerEvents: hasValidGps(employee.trackers, 'check-out') ? 'auto' : 'none' }}
-                                                                            disabled={!hasValidGps(employee.trackers, 'check-out')}
-                                                                            onClick={() => handleMapClick(employee.trackers?.[0]?.check_out_gps, 'check-out', employee.trackers?.[0]?.employee_id)}
-                                                                        >
-                                                                            <CIcon icon={cilLocationPin} size="sm" />
-                                                                        </CButton>
-                                                                    </div>
-                                                                </CTooltip>
-                                                            </div>
-                                                        </CTableDataCell>
-                                                        <CTableDataCell className="text-center" style={{ borderRight: '1px solid #a7acb1' }}>
-                                                            <CBadge color={employee.status === 'Present' ? 'success' : 'secondary'} className="px-2 px-md-3 py-1 small" style={{ fontSize: '0.8rem' }}>
-                                                                {employee.status === 'Present' ? (t('LABELS.present') || 'Present') : (t('LABELS.absent') || 'Absent')}
-                                                            </CBadge>
-                                                        </CTableDataCell>
-                                                        <CTableDataCell className="text-center">
-                                                            <CButtonGroup className="mt-2">
-                                                                <CButton size="sm" color="primary" variant="outline" onClick={() => navigate(`/employees/${empId}`)}>
-                                                                    <span className="d-flex align-items-center gap-1">
-                                                                        <CIcon icon={cilInput} />
-                                                                        {t('LABELS.details') || 'Details'}
-                                                                    </span>
-                                                                </CButton>
-                                                                <CButton
-                                                                    size="sm"
-                                                                    color="warning"
-                                                                    variant="outline"
-                                                                    onClick={() => handleEditClick(employee.trackers?.[0]?.id)}
-                                                                    disabled={!employee.trackers || employee.trackers.length === 0}
-                                                                >
-                                                                    <span className="d-flex align-items-center gap-1">
-                                                                        <CIcon icon={cilPencil} />
-                                                                        {t('LABELS.smallEditButton') || 'Edit'}
-                                                                    </span>
-                                                                </CButton>
-                                                            </CButtonGroup>
-                                                        </CTableDataCell>
-                                                    </CTableRow>
-                                                </React.Fragment>
-                                            );
-                                        }) : null}
-                                    </CTableBody>
-                                </CTable>
-                            </div>
+                return (
+                    <React.Fragment key={empId}>
+                        <MobileEmployeeRow
+                            handleEditClick={handleEditClick}
+                            handleMapClick={handleMapClick}
+                            handleDeleteClick={handleDeleteClick}
+                            employee={employee}
+                            empId={empId}
+                            empName={empName}
+                            isSelected={isSelected}
+                            handleEmployeeSelection={handleEmployeeSelection}
+                            openImageModal={openImageModal}
+                            getImageUrl={getImageUrl}
+                            hasValidImageUrl={hasValidImageUrl}
+                            navigate={navigate}
+                            t={t}
+                            faceAttendanceEnabled={faceAttendanceEnabled}
+                        />
+                        <CTableRow
+                            className="d-none d-md-table-row desktop-employee-row"
+                            style={{ borderBottom: index === employees.length - 1 ? 'none' : '1px solid #a7acb1', backgroundColor: isSelected ? '#f8f9fa' : 'transparent' }}
+                        >
+                            <CTableDataCell className="text-center" style={{ borderRight: '1px solid #a7acb1', padding: '12px 8px' }}>
+                                <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '24px' }}>
+                                    <CFormCheck
+                                        checked={isSelected}
+                                        onChange={(e) => handleEmployeeSelection(empId, e.target.checked)}
+                                        id={`employee-${empId}`}
+                                        style={{ width: '20px', height: '20px', border: '2px solid #007bff', backgroundColor: isSelected ? '#007bff' : 'white', borderRadius: '3px', cursor: 'pointer', position: 'relative', appearance: 'none', outline: 'none' }}
+                                    />
+                                </div>
+                            </CTableDataCell>
+                            <CTableDataCell className="text-center" style={{ width: '80px', minWidth: '80px', borderRight: '1px solid #a7acb1' }}>
+                                <div
+                                    className="d-flex align-items-center justify-content-center mx-auto"
+                                    style={{ width: '45px', height: '45px', backgroundColor: '#007bff', color: 'white', borderRadius: '50%', fontSize: '11px', fontWeight: 'bold', flexShrink: 0, lineHeight: '1.2', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                    {empId || 'N/A'}
+                                </div>
+                            </CTableDataCell>
+                            <CTableDataCell style={{ borderRight: '1px solid #a7acb1', minWidth: '150px' }}>
+                                <div className="fw-semibold fs-6" style={{ fontSize: '0.9rem' }}>
+                                    {empName}
+                                </div>
+                            </CTableDataCell>
+                            <CTableDataCell className="text-center" style={{ borderRight: '1px solid #a7acb1' }}>
+                                <div className="d-flex align-items-center justify-content-center gap-2">
+                                    <CIcon icon={employee.checkIn ? cilCheckCircle : cilXCircle} className={employee.checkIn ? 'text-success' : 'text-muted'} size="lg" />
+                                    {faceAttendanceEnabled && (
+                                        
+                                            <div>
+                                                <CButton
+                                                    size="sm"
+                                                    color={hasValidImageUrl(employee.trackers, 'checkin') ? "primary" : "secondary"}
+                                                    variant="outline"
+                                                    style={{ fontSize: '0.7rem', padding: '2px 6px', opacity: hasValidImageUrl(employee.trackers, 'checkin') ? 1 : 0.6, cursor: hasValidImageUrl(employee.trackers, 'checkin') ? 'pointer' : 'not-allowed', backgroundColor: hasValidImageUrl(employee.trackers, 'checkin') ? 'transparent' : '#f8f9fa', borderColor: hasValidImageUrl(employee.trackers, 'checkin') ? '' : '#6c757d', color: hasValidImageUrl(employee.trackers, 'checkin') ? '' : '#6c757d', pointerEvents: hasValidImageUrl(employee.trackers, 'checkin') ? 'auto' : 'none' }}
+                                                    disabled={!hasValidImageUrl(employee.trackers, 'checkin')}
+                                                    onClick={() => openImageModal(getImageUrl(employee.trackers, 'checkin'), empName, 'Check-in')}
+                                                >
+                                                    {t('LABELS.view') || 'View'}
+                                                </CButton>
+                                            </div>
+                                    
+                                    )}
+                                   
+                                        <div>
+                                            <CButton
+                                                size="sm"
+                                                color={hasValidGps(employee.trackers, 'check-in') ? "primary" : "secondary"}
+                                                variant="outline"
+                                                style={{ fontSize: '0.7rem', padding: '2px 6px', marginLeft: '4px', opacity: hasValidGps(employee.trackers, 'check-in') ? 1 : 0.6, cursor: hasValidGps(employee.trackers, 'check-in') ? 'pointer' : 'not-allowed', backgroundColor: hasValidGps(employee.trackers, 'check-in') ? 'transparent' : '#f8f9fa', borderColor: hasValidGps(employee.trackers, 'check-in') ? '' : '#6c757d', color: hasValidGps(employee.trackers, 'check-in') ? '' : '#6c757d', pointerEvents: hasValidGps(employee.trackers, 'check-in') ? 'auto' : 'none' }}
+                                                disabled={!hasValidGps(employee.trackers, 'check-in')}
+                                                onClick={() => handleMapClick(employee.trackers?.[0]?.check_in_gps, 'check-in', employee.trackers?.[0]?.employee_id)}
+                                            >
+                                                <CIcon icon={cilLocationPin} size="sm" />
+                                            </CButton>
+                                        </div>
+                                    
+                                </div>
+                            </CTableDataCell>
+                            <CTableDataCell className="text-center" style={{ borderRight: '1px solid #a7acb1' }}>
+                                <div className="d-flex align-items-center justify-content-center gap-2">
+                                    <CIcon icon={employee.checkOut ? cilCheckCircle : cilXCircle} className={employee.checkOut ? 'text-success' : 'text-muted'} size="lg" />
+                                    {faceAttendanceEnabled && (
+                                       
+                                            <div>
+                                                <CButton
+                                                    size="sm"
+                                                    color={hasValidImageUrl(employee.trackers, 'checkout') ? "primary" : "secondary"}
+                                                    variant="outline"
+                                                    style={{ fontSize: '0.7rem', padding: '2px 6px', opacity: hasValidImageUrl(employee.trackers, 'checkout') ? 1 : 0.6, cursor: hasValidImageUrl(employee.trackers, 'checkout') ? 'pointer' : 'not-allowed', backgroundColor: hasValidImageUrl(employee.trackers, 'checkout') ? 'transparent' : '#f8f9fa', borderColor: hasValidImageUrl(employee.trackers, 'checkout') ? '' : '#6c757d', color: hasValidImageUrl(employee.trackers, 'checkout') ? '' : '#6c757d', pointerEvents: hasValidImageUrl(employee.trackers, 'checkout') ? 'auto' : 'none' }}
+                                                    disabled={!hasValidImageUrl(employee.trackers, 'checkout')}
+                                                    onClick={() => openImageModal(getImageUrl(employee.trackers, 'checkout'), empName, 'Check-out')}
+                                                >
+                                                    {t('LABELS.view') || 'View'}
+                                                </CButton>
+                                            </div>
+                                     
+                                    )}
+                                    
+                                        <div>
+                                            <CButton
+                                                size="sm"
+                                                color={hasValidGps(employee.trackers, 'check-out') ? "primary" : "secondary"}
+                                                variant="outline"
+                                                style={{ fontSize: '0.7rem', padding: '2px 6px', marginLeft: '4px', opacity: hasValidGps(employee.trackers, 'check-out') ? 1 : 0.6, cursor: hasValidGps(employee.trackers, 'check-out') ? 'pointer' : 'not-allowed', backgroundColor: hasValidGps(employee.trackers, 'check-out') ? 'transparent' : '#f8f9fa', borderColor: hasValidGps(employee.trackers, 'check-out') ? '' : '#6c757d', color: hasValidGps(employee.trackers, 'check-out') ? '' : '#6c757d', pointerEvents: hasValidGps(employee.trackers, 'check-out') ? 'auto' : 'none' }}
+                                                disabled={!hasValidGps(employee.trackers, 'check-out')}
+                                                onClick={() => handleMapClick(employee.trackers?.[0]?.check_out_gps, 'check-out', employee.trackers?.[0]?.employee_id)}
+                                            >
+                                                <CIcon icon={cilLocationPin} size="sm" />
+                                            </CButton>
+                                        </div>
+                                    
+                                </div>
+                            </CTableDataCell>
+                            <CTableDataCell className="text-center" style={{ borderRight: '1px solid #a7acb1' }}>
+                                <CBadge color={employee.status === 'Present' ? 'success' : 'secondary'} className="px-2 px-md-3 py-1 small" style={{ fontSize: '0.8rem' }}>
+                                    {employee.status === 'Present' ? (t('LABELS.present') || 'Present') : (t('LABELS.absent') || 'Absent')}
+                                </CBadge>
+                            </CTableDataCell>
+                            <CTableDataCell className="text-center">
+                                <CButtonGroup className="mt-2">
+                                    <CButton size="sm" color="primary" variant="outline" onClick={() => navigate(`/employees/${empId}`)}>
+                                        <span className="d-flex align-items-center gap-1">
+                                            <CIcon icon={cilInput} />
+                                            {t('LABELS.details') || 'Details'}
+                                        </span>
+                                    </CButton>
+                                    <CButton
+                                        size="sm"
+                                        color="warning"
+                                        variant="outline"
+                                        onClick={() => handleEditClick(employee.trackers?.[0]?.id)}
+                                        disabled={!employee.trackers || employee.trackers.length === 0}
+                                    >
+                                        <span className="d-flex align-items-center gap-1">
+                                            <CIcon icon={cilPencil} />
+                                            {t('LABELS.smallEditButton') || 'Edit'}
+                                        </span>
+                                    </CButton>
+                                </CButtonGroup>
+                            </CTableDataCell>
+                        </CTableRow>
+                    </React.Fragment>
+                );
+            }) : null}
+        </CTableBody>
+    </CTable>
+</div>
+                            
                             {employees.length === 0 && (
                                 <div className="text-center py-4 py-md-5">
                                     <CIcon icon={cilPeople} className="text-muted mb-3" style={{ fontSize: '2.5rem' }} />

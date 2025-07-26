@@ -616,8 +616,8 @@
     "employeeAttendance": "Employee Attendance",
     "checkInOutSecurely": "Check in and out securely",
     "currentStatus": "Current Status",
-    "checkIn": "Check In",
-    "checkOut": "Check Out",
+    "checkIn": "In",
+    "checkOut": "Out",
     "completed": "Completed",
     "pending": "Pending",
     "allSet": "All Set!",
@@ -657,8 +657,7 @@
       "totalDebit": "Pending Payments",
       "employeeAttendance": "Employee Attendance & Details",
       "employees": "Employee",
-      "checkIn": "Check In",
-      "checkOut": "Check Out",
+
       "status": "Status",
       "actions": "Actions",
       "details": "Details",
@@ -692,8 +691,7 @@
 
 "attendanceHistory": "Attendance History",
 "date": "Date",
-"checkIn": "Check In",
-"checkOut": "Check Out",
+
 "checkInGPS": "Check-In GPS",
 "checkOutGPS": "Check-Out GPS",
 "totalPresentDays": "Total Present Days",
@@ -788,7 +786,7 @@
     "halfDayRate": "Half Day Rate",
     "paidAmount": "Paid Amount",
     "overTime": "O.T :",
-    "payrollAndAttendanceReport":"Payroll & Presenty Report",
+    "payrollAndAttendanceReport":"Payment Report",
     "uploadDocumentsDescription": "Upload important documents for your employees securely",
     "uploadDocumentsInstruction": "Upload at least one document to proceed",
     "documentType": "Document Type",
@@ -945,8 +943,15 @@
       "updatedCredit": "Credit after payment",
       "updatedDebit": "Debit after payment",
       "oTRate": "OT Rate",
-    "na": "N/A"
-
+    "na": "N/A",
+   "bulkPresenty": "Bulk Presenty",
+  "bulkPresentySM": "Presenty",
+       "working_hours": "Working Hours",
+    "start_time": "Start Time",
+    "taluka": "Taluka",
+    "district": "District",
+    "pincode": "Pincode",
+    "company_id": "Company ID"
 
     },
 
@@ -1356,7 +1361,9 @@
       "workHoursRequired":"Working hours are required",
       "under30MinWarning":"You have checked out within 30 minutes. As per policy, this will be treated as an absence.",
       "locationVerified":"Your Location is Veriferd",
-      "csvExportedSuccess": "CSV exported successfully"
+      "csvExportedSuccess": "CSV exported successfully",
+       "payedAmountRequired": "Payed amount is required.",
+        "payedAmountExceedsTotal": "Payed amount cannot exceed total amount."
 
 
 

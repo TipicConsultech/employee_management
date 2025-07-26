@@ -38,7 +38,7 @@ const CreditSalaryScreen = () => {
   const { showToast } = useToast();
   // State management
   const [employees, setEmployees] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [notification, setNotification] = useState({ show: false, type: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
@@ -47,7 +47,11 @@ const CreditSalaryScreen = () => {
     selectedEmployee: '',
     creditAmount: '',
     paymentType: 'cash',
-    transactionId: ''
+    transactionId: '',
+    currentCredit: 0,
+    currentDebit: 0,
+    updatedCredit: 0,
+    updatedDebit: 0
   });
 
   // Memoized helper functions to prevent recreating on every render
@@ -154,23 +158,57 @@ const CreditSalaryScreen = () => {
     }
   }, [showToast, t]);
 
-  const fetchInitialData = useCallback(async () => {
-    try {
-      setError(null);
-      await fetchEmployees();
-    } catch (err) {
-      console.error('Error during initialization:', err);
-      setError(err.message || 'Initialization failed');
-      showToast('danger', `${t('MSG.errorInitializingData') || 'Error initializing data'}: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchEmployees, showToast, t]);
-
-  // Fetch data on component mount
+  // Calculate credit and debit values
   useEffect(() => {
-    fetchInitialData();
-  }, [fetchInitialData]);
+    if (!formData.selectedEmployee) {
+      setFormData(prev => ({
+        ...prev,
+        currentCredit: 0,
+        currentDebit: 0,
+        updatedCredit: 0,
+        updatedDebit: 0
+      }));
+      return;
+    }
+
+    const selectedEmployee = employees.find(emp => emp.id.toString() === formData.selectedEmployee);
+    if (!selectedEmployee) return;
+
+    let newCredit = selectedEmployee.credit || 0;
+    let newDebit = selectedEmployee.debit || 0;
+
+    // Only calculate updated values if creditAmount is entered and valid
+    if (formData.creditAmount) {
+      const creditAmount = parseFloat(formData.creditAmount) || 0;
+      if (creditAmount > 0) {
+        if (newDebit > 0) {
+          // Reduce debit first with credit amount
+          const debitReduced = Math.min(newDebit, creditAmount);
+          newDebit -= debitReduced;
+          const remainingCredit = creditAmount - debitReduced;
+          if (remainingCredit > 0) {
+            // Add remaining credit to credit balance
+            newCredit += remainingCredit;
+          }
+        } else {
+          // No debit, add credit amount to credit balance
+          newCredit += creditAmount;
+        }
+      }
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      currentCredit: selectedEmployee.credit || 0,
+      currentDebit: selectedEmployee.debit || 0,
+      updatedCredit: formData.creditAmount ? newCredit : 0,
+      updatedDebit: formData.creditAmount ? newDebit : 0
+    }));
+  }, [formData.selectedEmployee, formData.creditAmount, employees]);
+
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
 
   const handleFormChange = useCallback((field, value) => {
     setFormData(prev => ({
@@ -189,7 +227,11 @@ const CreditSalaryScreen = () => {
       selectedEmployee: '',
       creditAmount: '',
       paymentType: 'cash',
-      transactionId: ''
+      transactionId: '',
+      currentCredit: 0,
+      currentDebit: 0,
+      updatedCredit: 0,
+      updatedDebit: 0
     });
     setValidationErrors({});
   }, []);
@@ -210,7 +252,9 @@ const CreditSalaryScreen = () => {
       const data = {
         employee_id: parseInt(formData.selectedEmployee),
         payment_type: formData.paymentType,
-        payed_amount: parseFloat(formData.creditAmount)
+        payed_amount: parseFloat(formData.creditAmount),
+        updated_credit: formData.updatedCredit,
+        updated_debit: formData.updatedDebit
       };
 
       // Add transaction_id only for UPI or Bank Transfer if provided
@@ -227,9 +271,12 @@ const CreditSalaryScreen = () => {
       const response = await post('/api/employeeCredit', data, { signal: controller.signal });
       clearTimeout(timeoutId);
 
-      if (response && response.id) {
+
+      if (response.transaction) {
         showToast('success', t('MSG.advanceCreditedSuccess') || 'Advance Payment credited successfully');
         resetForm();
+        // Refresh employee data to reflect updated credit/debit
+        await fetchEmployees();
       } else {
         showToast('warning', response?.message || t('MSG.failedToCreditSalary') || 'Failed to credit salary');
       }
@@ -245,7 +292,7 @@ const CreditSalaryScreen = () => {
     } finally {
       setSubmitting(false);
     }
-  }, [formData, employees, validateForm, showToast, resetForm, t]);
+  }, [formData, employees, validateForm, showToast, resetForm, fetchEmployees, t]);
 
   // Loading state
   if (loading) {
@@ -254,7 +301,7 @@ const CreditSalaryScreen = () => {
         <div className="text-center">
           <CSpinner color="primary" className="mb-3" />
           <p className="text-muted">{t('LABELS.loadingEmployees') || 'Loading employees...'}</p>
-          <CButton color="primary" variant="outline" onClick={fetchInitialData} className="mt-3">
+          <CButton color="primary" variant="outline" onClick={fetchEmployees} className="mt-3">
             <CIcon icon={cilReload} className="me-2" />
             {t('LABELS.retry') || 'Retry'}
           </CButton>
@@ -273,7 +320,7 @@ const CreditSalaryScreen = () => {
             <h5 className="mb-0">Error Loading Data</h5>
           </div>
           <p className="mb-3">{error}</p>
-          <CButton color="primary" onClick={fetchInitialData} className="px-4">
+          <CButton color="primary" onClick={fetchEmployees} className="px-4">
             <CIcon icon={cilReload} className="me-2" />
             {t('LABELS.retry') || 'Retry'}
           </CButton>
@@ -285,6 +332,16 @@ const CreditSalaryScreen = () => {
   // Render component
   return (
     <div className="p-1" style={{ backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
+      <style jsx>{`
+        @media (max-width: 768px) {
+          .credit-debit-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+          }
+        }
+      `}</style>
+
       {/* Notifications */}
       {notification.show && (
         <CAlert
@@ -476,6 +533,88 @@ const CreditSalaryScreen = () => {
                 )}
               </CRow>
 
+              {/* Credit and Debit Information */}
+              {formData.selectedEmployee && (
+                <CRow className="credit-debit-row">
+                  <CCol md={3} className="mb-4">
+                    <CFormLabel className="fw-semibold text-dark mb-2">
+                      {t('LABELS.currentCredit') || 'Current Credit'}
+                    </CFormLabel>
+                    <CFormInput
+                      type="number"
+                      value={formData.currentCredit}
+                      readOnly
+                      className="form-control"
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: '14px',
+                        borderRadius: '4px',
+                        backgroundColor: '#f9fafb',
+                        border: '1px solid #d1d5db',
+                        boxShadow: 'none'
+                      }}
+                    />
+                  </CCol>
+                  <CCol md={3} className="mb-4">
+                    <CFormLabel className="fw-semibold text-dark mb-2">
+                      {t('LABELS.currentDebit') || 'Current Debit'}
+                    </CFormLabel>
+                    <CFormInput
+                      type="number"
+                      value={formData.currentDebit}
+                      readOnly
+                      className="form-control"
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: '14px',
+                        borderRadius: '4px',
+                        backgroundColor: '#f9fafb',
+                        border: '1px solid #d1d5db',
+                        boxShadow: 'none'
+                      }}
+                    />
+                  </CCol>
+                  <CCol md={3} className="mb-4">
+                    <CFormLabel className="fw-semibold text-dark mb-2">
+                      {t('LABELS.updatedCredit') || 'Updated Credit'}
+                    </CFormLabel>
+                    <CFormInput
+                      type="number"
+                      value={formData.updatedCredit}
+                      readOnly
+                      className="form-control"
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: '14px',
+                        borderRadius: '4px',
+                        backgroundColor: '#f9fafb',
+                        border: '1px solid #d1d5db',
+                        boxShadow: 'none'
+                      }}
+                    />
+                  </CCol>
+                  <CCol md={3} className="mb-4">
+                    <CFormLabel className="fw-semibold text-dark mb-2">
+                      {t('LABELS.updatedDebit') || 'Updated Debit'}
+                    </CFormLabel>
+                    <CFormInput
+                      type="number"
+                      value={formData.updatedDebit}
+                      readOnly
+                      className="form-control"
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: '14px',
+                        borderRadius: '4px',
+                        backgroundColor: '#f9fafb',
+                        border: '1px solid #d1d5db',
+                        boxShadow: 'none'
+                      }}
+                    />
+                  </CCol>
+                </CRow>
+              )}
+
               {/* No employees state */}
               {employees.length === 0 && !loading && (
                 <div className="text-center py-5">
@@ -484,7 +623,7 @@ const CreditSalaryScreen = () => {
                     <h5 className="text-dark">{t('MSG.noEmployeesAvailable') || 'No Employees Available'}</h5>
                     <p className="text-muted">{t('MSG.contactAdminToAddEmployees') || 'Please contact your administrator to add employees.'}</p>
                   </div>
-                  <CButton color="primary" variant="outline" onClick={fetchInitialData} className="px-4">
+                  <CButton color="primary" variant="outline" onClick={fetchEmployees} className="px-4">
                     <CIcon icon={cilReload} className="me-2" />
                     {t('LABELS.refresh') || 'Refresh'}
                   </CButton>

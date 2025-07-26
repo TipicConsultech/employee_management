@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   CModal,
   CModalBody,
@@ -29,7 +29,13 @@ const TrackerEditModal = ({ fetchEmployees,visible, onClose, trackerId, onSucces
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [tracker, setTracker] = useState({});
+    const inputRef = useRef(null);
 
+   const handleFocus = () => {
+    if (inputRef.current?.showPicker) {
+      inputRef.current.showPicker(); // Only works in Chrome
+    }
+  };
   // Status options for dropdown
   const statusOptions = [
     { value: 'NA', label: 'Present' },
@@ -282,14 +288,16 @@ const TrackerEditModal = ({ fetchEmployees,visible, onClose, trackerId, onSucces
           <CRow className="mb-3">
             <CCol md={6}>
               <CFormLabel htmlFor="check_in_time">Check In Time</CFormLabel>
-              <CFormInput
-                type="datetime-local"
-                id="check_in_time"
-                value={formData.check_in_time}
-                onChange={(e) => handleInputChange('check_in_time', e.target.value)}
-                invalid={!!errors.check_in_time}
-              />
-              {errors.check_in_time && (
+          <CFormInput
+      type="datetime-local"
+      id="check_in_time"
+      value={formData.check_in_time}
+      onChange={(e) => handleInputChange('check_in_time', e.target.value)}
+      onFocus={handleFocus}
+      invalid={!!errors.check_in_time}
+      innerRef={inputRef} // required for CFormInput
+    />
+              {errors.check_in_time && (  
                 <div className="invalid-feedback d-block">{errors.check_in_time}</div>
               )}
             </CCol>

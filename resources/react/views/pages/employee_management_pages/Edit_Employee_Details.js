@@ -20,10 +20,10 @@ const INITIAL_FORM_DATA = {
 };
 const INITIAL_NOTIFICATION = { show: false, type: '', message: '' };
 const INITIAL_TOUCHED = {
-  name: false, gender: false, payment_type: false, contract_type: false, work_type: false, overtime_type: false,
-  wage_hour: false, wage_overtime: false, credit: false, debit: false, half_day_payment: false, holiday_payment: false,
-  adhaar_number: false, mobile: false, referral_by_number: false, email: false, attendance_type: false, tolerance: false,
-  working_hours: false
+    name: false, gender: false, payment_type: false, contract_type: false, work_type: false,
+    wage_hour: false, wage_overtime: false, credit: false, debit: false, half_day_payment: false, holiday_payment: false,
+    adhaar_number: false, mobile: false, referral_by_number: false, email: false, attendance_type: false, tolerance: false,
+    working_hours: false
 };
 
 const EmployeeEditForm = () => {
@@ -326,17 +326,17 @@ const EmployeeEditForm = () => {
         half_day_rate: formData.half_day_payment || '0',
         holiday_rate: formData.holiday_payment || '0',
         wage_overtime: formData.wage_overtime || '0',
-        credit: formData.credit || '0',
-        debit: formData.debit || '0',
         refferal_by: formData.referral_by,
         refferal_number: formData.referral_by_number,
         isActive: formData.is_login,
         tolerance: formData.is_login && !formData.tolerance ? 'no_limit' : formData.tolerance
       };
+
       if (!formData.is_login) {
         delete payload.attendance_type;
         delete payload.tolerance;
       }
+
       if (!isFullTimeWork) {
         delete payload.wage_hour;
         delete payload.wage_overtime;
@@ -345,7 +345,28 @@ const EmployeeEditForm = () => {
         delete payload.half_day_rate;
         delete payload.holiday_rate;
         delete payload.working_hours;
+      } else {
+        // Handle credit and debit calculation
+        const creditValue = parseFloat(payload.credit) || 0;
+        const debitValue = parseFloat(payload.debit) || 0;
+
+        if (creditValue > 0 && debitValue > 0) {
+          if (creditValue > debitValue) {
+            payload.credit = (creditValue - debitValue).toString();
+            payload.debit = '0';
+          } else if (debitValue > creditValue) {
+            payload.debit = (debitValue - creditValue).toString();
+            payload.credit = '0';
+          } else {
+            payload.credit = '0';
+            payload.debit = '0';
+          }
+        } else {
+          payload.credit = creditValue.toString() || '0';
+          payload.debit = debitValue.toString() || '0';
+        }
       }
+
       const response = await put(`/api/employees/${id}`, payload);
       if (response && response.data.id) {
         showNotification('success', response.message || t('MSG.employeeUpdatedSuccess'));
@@ -500,23 +521,20 @@ const EmployeeEditForm = () => {
                       <CCol xs={12} md={4}>
                         {formData.work_type === 'fulltime' && (
                           <>
-                          
-  <CFormLabel className="fw-semibold small">{t('LABELS.workHours')}<span className="text-danger">*</span></CFormLabel>
-  <CFormSelect
-    value={formData.working_hours}
-    name="working_hours"
-    onChange={e => handleInputChange('working_hours', e.target.value)}
-    onBlur={() => setTouched(prev => ({ ...prev, working_hours: true }))}
-    disabled={submitting}
-    style={{ maxHeight: '50px', overflowY: 'auto' }}
-  >
-   
-    {workingHoursOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-  </CFormSelect>
-  {(touched.working_hours || formSubmitted) && errors.working_hours && (
-    <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.working_hours}</div>
-  )}
-
+                            <CFormLabel className="fw-semibold small">{t('LABELS.workHours')}<span className="text-danger">*</span></CFormLabel>
+                            <CFormSelect
+                              value={formData.working_hours}
+                              name="working_hours"
+                              onChange={e => handleInputChange('working_hours', e.target.value)}
+                              onBlur={() => setTouched(prev => ({ ...prev, working_hours: true }))}
+                              disabled={submitting}
+                              style={{ maxHeight: '50px', overflowY: 'auto' }}
+                            >
+                              {workingHoursOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                            </CFormSelect>
+                            {(touched.working_hours || formSubmitted) && errors.working_hours && (
+                              <div className="text-danger small mt-1 animate__animated animate__fadeIn">{errors.working_hours}</div>
+                            )}
                           </>
                         )}
                         {formData.work_type === 'contract' && (
@@ -954,7 +972,7 @@ const EmployeeEditForm = () => {
             <CModalFooter className="border-top">
               <CButton color="secondary" onClick={closeModal} className="px-4 py-2">{t('LABELS.cancel')}</CButton>
               <CButton color="primary" onClick={confirmSubmit} className="px-4 py-2">
-                <CIcon icon={cilCheckCircle} className="me-2" />
+                <CIcon icon={cilCheckCircle} className="ms-2 me-2"/>
                 {t('LABELS.saveUpdatedDetails')}
               </CButton>
             </CModalFooter>

@@ -828,7 +828,7 @@ useEffect(() => {
                           />
                         </div>
                       </div>
-                      <div className="form-grid-four">
+                      <div className="form-grid-four mb-2 mt-2">
                         <div className="form-group">
                           <label className="form-label">{t('LABELS.currentCredit')}</label>
                           <CFormInput
@@ -889,7 +889,7 @@ useEffect(() => {
                 <CButton
                   className="submit-btn"
                   onClick={handleSubmit}
-                  disabled={workSummary?.regular_hours === 0}
+                  disabled={workSummary?.regular_hours === 0 || workSummary.salary_amount<workSummary.payed_amount}
                 >
                   {t('LABELS.submitSavePayment')}
                 </CButton>

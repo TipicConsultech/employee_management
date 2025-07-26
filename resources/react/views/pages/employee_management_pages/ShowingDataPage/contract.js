@@ -3,10 +3,7 @@ import { post } from '../../../../util/api';
 import { useTranslation } from 'react-i18next';
 
 function Contract({employee}) {
-  // Mock translation function with your LABELS and MSG structure
- 
- const { t } = useTranslation('global');
-  // Mock useToast hook
+  const { t } = useTranslation('global');
   const showToast = useCallback((type, message) => {
     console.log(`Toast: ${type} - ${message}`);
   }, []);
@@ -24,12 +21,13 @@ function Contract({employee}) {
     payed_amount: '',
     pending_payment: 0,
     payment_type: '',
-    transactionId: ''
+    transactionId: '',
+    current_credit: 0,
+    current_debit: 0,
+    updated_credit: 0,
+    updated_debit: 0
   });
 
-
-
-  // Show notification
   const showNotification = useCallback((type, message) => {
     setNotification({ show: true, type, message });
     setTimeout(() => {
@@ -37,7 +35,6 @@ function Contract({employee}) {
     }, 4000);
   }, []);
 
-  // Calculate totals whenever price, quantity, or paid amount changes
   useEffect(() => {
     const price = parseFloat(workSummary.price) || 0;
     const quantity = parseFloat(workSummary.quantity) || 0;
@@ -45,14 +42,45 @@ function Contract({employee}) {
     const payed_amount = parseFloat(workSummary.payed_amount) || 0;
     const pending_payment = Math.max(0, total_salary - payed_amount);
 
+    let newCredit = employee?.credit || 0;
+    let newDebit = employee?.debit || 0;
+
+    if (pending_payment > 0) {
+      if (newCredit > 0 && newDebit === 0) {
+        const creditUsed = Math.min(newCredit, pending_payment);
+        newCredit -= creditUsed;
+        const remainingPending = pending_payment - creditUsed;
+        if (remainingPending > 0) {
+          newDebit += remainingPending;
+        }
+      } else if (newCredit === 0 && newDebit >= 0) {
+        newDebit += pending_payment;
+      }
+    } else if (pending_payment < 0) {
+      const overpaidAmount = Math.abs(pending_payment);
+      if (newDebit > 0) {
+        const debitReduced = Math.min(newDebit, overpaidAmount);
+        newDebit -= debitReduced;
+        const remainingOverpaid = overpaidAmount - debitReduced;
+        if (remainingOverpaid > 0) {
+          newCredit += remainingOverpaid;
+        }
+      } else {
+        newCredit += overpaidAmount;
+      }
+    }
+
     setWorkSummary(prev => ({
       ...prev,
       total_salary,
       pending_payment,
+      current_credit: employee?.credit || 0,
+      current_debit: employee?.debit || 0,
+      updated_credit: newCredit,
+      updated_debit: newDebit
     }));
-  }, [workSummary.price, workSummary.quantity, workSummary.payed_amount]);
+  }, [workSummary.price, workSummary.quantity, workSummary.payed_amount, employee]);
 
-  // Enhanced validation functions
   const validateField = (name, value) => {
     let error = '';
 
@@ -80,7 +108,6 @@ function Contract({employee}) {
       case 'payment_type':
         if (!value) error = t('MSG.paymentMethodRequired');
         break;
-     
       default:
         break;
     }
@@ -119,19 +146,17 @@ function Contract({employee}) {
     }
   };
 
-  // Check if form is valid
   const isFormValid = () => {
     const hasNoErrors = Object.keys(errors).every(key => !errors[key]);
     const hasRequiredFields = startDate && endDate && workSummary.working_type && 
-      workSummary.price && workSummary.quantity && workSummary.payed_amount 
-    
+      workSummary.price && workSummary.quantity && workSummary.payed_amount;
+
     return hasNoErrors && hasRequiredFields;
   };
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
     
-    // Validate all fields
     const isDateValid = validateDates();
     const isWorkingTypeValid = validateField('working_type', workSummary.working_type);
     const isPriceValid = validateField('price', workSummary.price);
@@ -153,21 +178,21 @@ function Contract({employee}) {
       payed_amount: parseFloat(workSummary.payed_amount) || 0,
       salary_amount: workSummary.total_salary,
       payment_type: workSummary.payment_type,
-      // working_type: workSummary.working_type,
+      current_credit: workSummary.current_credit,
+      current_debit: workSummary.current_debit,
+      updated_credit: workSummary.updated_credit,
+      updated_debit: workSummary.updated_debit
     };
 
-    // Add transaction_id only for UPI or Bank Transfer
-    if (['upi', 'bank_transfer'].includes(workSummary.payment_type) && payload.transaction_id !="") {
+    if (['upi', 'bank_transfer'].includes(workSummary.payment_type) && workSummary.transactionId !== "") {
       payload.transaction_id = workSummary.transactionId.trim();
     }
 
     try {
-      // Simulate API call
       await post('/api/payment', payload);
       showNotification('success', t('MSG.paymentSubmittedSuccess'));
       showToast('success', t('MSG.paymentSubmittedSuccess'));
       
-      // Reset form after successful submission
       setStartDate('');
       setEndDate('');
       setWorkSummary({
@@ -178,7 +203,11 @@ function Contract({employee}) {
         payed_amount: '',
         pending_payment: 0,
         payment_type: '',
-        transactionId: ''
+        transactionId: '',
+        current_credit: 0,
+        current_debit: 0,
+        updated_credit: 0,
+        updated_debit: 0
       });
       setErrors({});
     } catch (err) {
@@ -198,7 +227,6 @@ function Contract({employee}) {
             <div className="col-12">
               <div className="card shadow-lg border-0">
                 <div className="card-body p-3">
-                  {/* Notifications */}
                   {notification.show && (
                     <div className="mb-4">
                       <div className={`alert alert-${notification.type === 'success' ? 'success' : notification.type === 'danger' ? 'danger' : 'warning'} alert-dismissible fade show`} role="alert">
@@ -212,7 +240,6 @@ function Contract({employee}) {
                     </div>
                   )}
 
-                  {/* Work Period Section */}
                   <div className="mb-2">
                     <div className="border-start border-primary border-4 bg-light p-3 mb-4 rounded-end">
                       <h5 className="text-primary mb-0 d-flex align-items-center">
@@ -260,7 +287,6 @@ function Contract({employee}) {
                     </div>
                   </div>
 
-                  {/* Work Details Section */}
                   <div className="mb-3">
                     <div className="border-start border-success border-4 bg-light p-3 mb-2 rounded-end">
                       <h5 className="text-success mb-0 d-flex align-items-center">
@@ -328,7 +354,6 @@ function Contract({employee}) {
                     </div>
                   </div>
 
-                  {/* Payment Details Section */}
                   <div className="mb-5">
                     <div className="border-start border-warning border-4 bg-light p-3 mb-4 rounded-end">
                       <h5 className="text-warning mb-0 d-flex align-items-center">
@@ -383,10 +408,57 @@ function Contract({employee}) {
                             disabled
                           />
                         </div>
+
+                        <div className="col-md-3 mb-3">
+                          <label className="form-label fw-medium">
+                            {t('LABELS.currentCredit')}
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            value={`₹${workSummary.current_credit.toFixed(2)}`}
+                            disabled
+                          />
+                        </div>
+
+                        <div className="col-md-3 mb-3">
+                          <label className="form-label fw-medium">
+                            {t('LABELS.currentDebit')}
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            value={`₹${workSummary.current_debit.toFixed(2)}`}
+                            disabled
+                          />
+                        </div>
+
+                        <div className="col-md-3 mb-3">
+                          <label className="form-label fw-medium">
+                            {t('LABELS.updatedCredit')}
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            value={`₹${workSummary.updated_credit.toFixed(2)}`}
+                            disabled
+                          />
+                        </div>
+
+                        <div className="col-md-3 mb-3">
+                          <label className="form-label fw-medium">
+                            {t('LABELS.updatedDebit')}
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            value={`₹${workSummary.updated_debit.toFixed(2)}`}
+                            disabled
+                          />
+                        </div>
                       </div>
                     </div>
 
-                    {/* Payment Method and Transaction ID */}
                     <div className="row">
                       <div className="col-md-6 mb-3">
                         <label className="form-label fw-medium">
@@ -440,7 +512,6 @@ function Contract({employee}) {
                     </div>
                   </div>
 
-                  {/* Error Summary */}
                   {Object.keys(errors).some(key => errors[key]) && (
                     <div className="mb-4">
                       <div className="alert alert-danger">
@@ -454,7 +525,6 @@ function Contract({employee}) {
                     </div>
                   )}
 
-                  {/* Form Progress */}
                   <div className="mb-4">
                     <div className="d-flex justify-content-between mb-2">
                       <span className="fw-medium text-muted">Form Completion</span>
@@ -489,7 +559,6 @@ function Contract({employee}) {
                     </div>
                   </div>
 
-                  {/* Submit Button */}
                   <div className="text-center pt-3 border-top">
                     <button
                       type="button"

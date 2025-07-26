@@ -22,6 +22,10 @@ use App\Http\Controllers\EmployeeDetailsController;
 use App\Http\Controllers\CommonController;
 use App\Http\Controllers\CompanyCordinateController;
 use App\Http\Controllers\DocumentTypeController;
+use App\Http\Controllers\OnboardingPartnerController;
+use App\Http\Controllers\OnboardingPartnerTypeController;
+use App\Http\Controllers\TipicAdminDashboardController;
+
 
 
 // use App\Http\Controllers\PaymentTrackerController;   // include when you add routes
@@ -60,6 +64,9 @@ Route::middleware('auth:sanctum')->post('/monthlyPresenty', [EmployeeTrackerCont
 Route::middleware('auth:sanctum')->get('/companyHours', [CompanyInfoController::class, 'companyHours']);
 Route::middleware('auth:sanctum')->get('/tolaranceLimit/{id}', [EmployeeController::class, 'checkTolerance']);
 Route::middleware('auth:sanctum')->post('/bulkPresenty', [EmployeeTrackerController::class, 'bulkPresenty']);
+Route::middleware('auth:sanctum')->get('/productShow', [CompanyInfoController::class, 'getProducts']);
+
+
 
 
 
@@ -103,6 +110,31 @@ Route::middleware(['auth:sanctum'])->group(function () {
     /* ---------- CompanyReceiptController ---------- */
     Route::post('/company-receipt', [CompanyReceiptController::class, 'store']);
     Route::get('/company-receipts', [CompanyReceiptController::class, 'index']);
+
+     Route::get('/detailsForCompany', [CompanyInfoController::class,'plansAndPartners']);
+     Route::get('/partnersCompany', [OnboardingPartnerController::class, 'indexCompany']);
+     Route::apiResource('partner-types', OnboardingPartnerTypeController::class);
+Route::get('/partners', [OnboardingPartnerController::class, 'index']);
+Route::get('/partnersCompany', [OnboardingPartnerController::class, 'indexCompany']);
+Route::post('/partners/register', [OnboardingPartnerController::class, 'register']);
+
+Route::get('/partners/{id}', [OnboardingPartnerController::class, 'show']);
+Route::put('/partners/{id}', [OnboardingPartnerController::class, 'update']);
+Route::delete('/partners/{id}', [OnboardingPartnerController::class, 'destroy']);
+
+
+  Route::prefix('admin/dashboard')->group(function () {
+        Route::get('/overview', [TipicAdminDashboardController::class, 'getDashboardOverview']);
+        Route::get('/sales-summary', [TipicAdminDashboardController::class, 'getAllCompaniesSales']);
+        Route::get('/partners-summary', [TipicAdminDashboardController::class, 'getSalesPartnersSummary']);
+        Route::get('/payment-overview', [TipicAdminDashboardController::class, 'getPaymentOverview']);
+        Route::get('/commission-summary', [TipicAdminDashboardController::class, 'getAllPartnersCommissionSummary']);
+        Route::get('/renewal-alerts', [TipicAdminDashboardController::class, 'getRenewalAlerts']);
+        Route::get('/monthly-trends', [TipicAdminDashboardController::class, 'getMonthlyTrends']);
+
+       
+    });
+
 });
 
 /*
