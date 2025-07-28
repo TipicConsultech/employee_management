@@ -9,7 +9,6 @@ import {
   CForm,
   CFormInput,
   CFormLabel,
-  CFormSelect,
   CFormCheck,
   CRow,
   CCol,
@@ -18,25 +17,25 @@ import {
 } from '@coreui/react';
 import { getAPICall, put } from '../../../util/api';
 
-const TrackerEditModal = ({ fetchEmployees,visible, onClose, trackerId, onSuccess }) => {
+const TrackerEditModal = ({ fetchEmployees, visible, onClose, trackerId, onSuccess }) => {
   const [formData, setFormData] = useState({
     half_day: false,
     check_in_time: '',
     check_out_time: '',
     status: ''
   });
-  const [originalData, setOriginalData] = useState({}); // Store original data
+  const [originalData, setOriginalData] = useState({});
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [tracker, setTracker] = useState({});
-    const inputRef = useRef(null);
+  const inputRef = useRef(null);
 
-   const handleFocus = () => {
+  const handleFocus = () => {
     if (inputRef.current?.showPicker) {
-      inputRef.current.showPicker(); // Only works in Chrome
+      inputRef.current.showPicker();
     }
   };
-  // Status options for dropdown
+
   const statusOptions = [
     { value: 'NA', label: 'Present' },
     { value: 'H', label: 'Holiday' },
@@ -45,7 +44,6 @@ const TrackerEditModal = ({ fetchEmployees,visible, onClose, trackerId, onSucces
     { value: 'CL', label: 'Casual Leave' },
   ];
 
-  // Reset form when modal opens/closes
   useEffect(() => {
     if (visible && trackerId) {
       getTracker();
@@ -54,11 +52,10 @@ const TrackerEditModal = ({ fetchEmployees,visible, onClose, trackerId, onSucces
     }
   }, [visible, trackerId]);
 
-  async function getTracker(){
+  async function getTracker() {
     const response = await getAPICall(`/api/employee-tracker/${trackerId}`);
-    if(response.id){
+    if (response.id) {
       setTracker(response);
-      // Map the API response to form fields
       loadTrackerData(response);
     }
   }
@@ -74,42 +71,36 @@ const TrackerEditModal = ({ fetchEmployees,visible, onClose, trackerId, onSucces
     setErrors({});
   };
 
-  const formatDateTimeForInput = (dateTimeString) => {
+  const formatTimeForInput = (dateTimeString) => {
     if (!dateTimeString) return '';
     
-    // Handle both formats: "2025-07-18T14:09:56.000000Z" and "2025-07-18 17:10:00"
     let date;
     if (dateTimeString.includes('T')) {
-      // ISO format with T
       date = new Date(dateTimeString);
     } else {
-      // Format: "2025-07-18 17:10:00"
       date = new Date(dateTimeString.replace(' ', 'T'));
     }
     
     if (isNaN(date.getTime())) return '';
     
-    // Format to YYYY-MM-DDTHH:MM for datetime-local input
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
     
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
+    return `${hours}:${minutes}`;
   };
 
   const loadTrackerData = (trackerData) => {
-    // Map API response data to form fields correctly
     const mappedData = {
       half_day: trackerData.half_day || false,
-      check_in_time: trackerData.created_at ? formatDateTimeForInput(trackerData.created_at) : '',
-      check_out_time: trackerData.check_out_time ? formatDateTimeForInput(trackerData.check_out_time) : '',
-      status: trackerData.status || ''
+      check_in_time: trackerData.created_at ? formatTimeForInput(trackerData.created_at) : '',
+      check_out_time: trackerData.check_out_time ? formatTimeForInput(trackerData.check_out_time) : '',
+      status: trackerData.status || '',
+      original_check_in_date: trackerData.created_at ? trackerData.created_at.split('T')[0] : '',
+      original_check_out_date: trackerData.check_out_time ? trackerData.check_out_time.split('T')[0] : ''
     };
     
     setFormData(mappedData);
-    setOriginalData(mappedData); // Store original data for comparison
+    setOriginalData(mappedData);
     setErrors({});
   };
 
@@ -119,7 +110,6 @@ const TrackerEditModal = ({ fetchEmployees,visible, onClose, trackerId, onSucces
       [field]: value
     }));
     
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({
         ...prev,
@@ -128,29 +118,37 @@ const TrackerEditModal = ({ fetchEmployees,visible, onClose, trackerId, onSucces
     }
   };
 
-  const formatDateTime = (dateTimeString) => {
-    if (!dateTimeString) return null;
-    // Convert to the format expected by API: YYYY-MM-DD HH:MM:SS
-    const date = new Date(dateTimeString);
+  const formatDateTime = (timeString, originalDateTime) => {
+    if (!timeString) return null;
     
-    // Format as local time, not UTC
+    // Use current date if no original datetime is provided
+    const date = originalDateTime ? new Date(originalDateTime) : new Date();
+    
+    // If no original datetime, use current date
+    const dateString = originalDateTime ? originalDateTime.split('T')[0] : 
+      `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    
+    // Combine with new time
+    const [hours, minutes] = timeString.split(':');
+    date.setHours(parseInt(hours), parseInt(minutes), 0);
+    
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const formattedHours = String(date.getHours()).padStart(2, '0');
+    const formattedMinutes = String(date.getMinutes()).padStart(2, '0');
     const seconds = String(date.getSeconds()).padStart(2, '0');
     
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    return `${year}-${month}-${day} ${formattedHours}:${formattedMinutes}:${seconds}`;
   };
 
   const validateForm = () => {
     const newErrors = {};
     
-    // Add validation rules as needed
-    if (formData.check_in_time && formData.check_out_time) {
-      const checkIn = new Date(formData.check_in_time);
-      const checkOut = new Date(formData.check_out_time);
+    if (formData.check_in_time && formData.check_out_time && formData.original_check_in_date) {
+      const checkIn = new Date(`${formData.original_check_in_date}T${formData.check_in_time}:00`);
+      const checkOutDate = formData.original_check_out_date || formData.original_check_in_date;
+      const checkOut = new Date(`${checkOutDate}T${formData.check_out_time}:00`);
       
       if (checkOut <= checkIn) {
         newErrors.check_out_time = 'Check-out time must be after check-in time';
@@ -161,7 +159,6 @@ const TrackerEditModal = ({ fetchEmployees,visible, onClose, trackerId, onSucces
     return Object.keys(newErrors).length === 0;
   };
 
-  // Check if form has been modified
   const hasFormChanged = () => {
     return (
       formData.half_day !== originalData.half_day ||
@@ -171,7 +168,6 @@ const TrackerEditModal = ({ fetchEmployees,visible, onClose, trackerId, onSucces
     );
   };
 
-  // Build payload with only changed fields
   const buildPayload = () => {
     const payload = {};
     
@@ -180,11 +176,13 @@ const TrackerEditModal = ({ fetchEmployees,visible, onClose, trackerId, onSucces
     }
     
     if (formData.check_in_time !== originalData.check_in_time) {
-      payload.check_in_time = formData.check_in_time ? formatDateTime(formData.check_in_time) : null;
+      payload.check_in_time = formData.check_in_time ? 
+        formatDateTime(formData.check_in_time, tracker.created_at) : null;
     }
     
     if (formData.check_out_time !== originalData.check_out_time) {
-      payload.check_out_time = formData.check_out_time ? formatDateTime(formData.check_out_time) : null;
+      payload.check_out_time = formData.check_out_time ? 
+        formatDateTime(formData.check_out_time, tracker.check_out_time || tracker.created_at) : null;
     }
     
     if (formData.status !== originalData.status) {
@@ -206,7 +204,6 @@ const TrackerEditModal = ({ fetchEmployees,visible, onClose, trackerId, onSucces
     try {
       const payload = buildPayload();
       
-      // Only submit if there are changes
       if (Object.keys(payload).length === 0) {
         onClose();
         return;
@@ -214,7 +211,6 @@ const TrackerEditModal = ({ fetchEmployees,visible, onClose, trackerId, onSucces
 
       const result = await put(`/api/employeetracker/${trackerId}`, payload);
 
-      // Check if response has data with id (successful update)
       if (result.data && result.data.id) {
         onSuccess?.(result.message);
         onClose();
@@ -241,12 +237,11 @@ const TrackerEditModal = ({ fetchEmployees,visible, onClose, trackerId, onSucces
     <CModal visible={visible} onClose={handleClose} backdrop="static">
       <CModalHeader>
         <CModalTitle>Edit Tracker</CModalTitle>
-        
       </CModalHeader>
       
       <CForm onSubmit={handleSubmit}>
         <CModalBody>
-          <CRow className="mb-3 ">
+          <CRow className="mb-3">
             <CCol>
               <CFormCheck
                 id="half_day"
@@ -254,50 +249,44 @@ const TrackerEditModal = ({ fetchEmployees,visible, onClose, trackerId, onSucces
                 checked={formData.half_day}
                 onChange={(e) => handleInputChange('half_day', e.target.checked)}
               />
-               </CCol>
+            </CCol>
 
-          <CCol>
-  <div className="d-flex gap-2 justify-content-end">
-    
-      <CButton color="secondary" onClick={handleClose} disabled={loading}>
-        Cancel
-      </CButton>
-
-      <CButton 
-        color="primary" 
-        type="submit" 
-        disabled={loading || !hasFormChanged()}
-      >
-        {loading ? (
-          <>
-            <CSpinner size="sm" className="me-2" />
-            Updating...
-          </>
-        ) : (
-          'Update'
-        )}
-      </CButton>
-
-  </div>
-</CCol>
-
-
+            <CCol>
+              <div className="d-flex gap-2 justify-content-end">
+                <CButton color="secondary" onClick={handleClose} disabled={loading}>
+                  Cancel
+                </CButton>
+                <CButton 
+                  color="primary" 
+                  type="submit" 
+                  disabled={loading || !hasFormChanged()}
+                >
+                  {loading ? (
+                    <>
+                      <CSpinner size="sm" className="me-2" />
+                      Updating...
+                    </>
+                  ) : (
+                    'Update'
+                  )}
+                </CButton>
+              </div>
+            </CCol>
           </CRow>
-
 
           <CRow className="mb-3">
             <CCol md={6}>
               <CFormLabel htmlFor="check_in_time">Check In Time</CFormLabel>
-          <CFormInput
-      type="datetime-local"
-      id="check_in_time"
-      value={formData.check_in_time}
-      onChange={(e) => handleInputChange('check_in_time', e.target.value)}
-      onFocus={handleFocus}
-      invalid={!!errors.check_in_time}
-      innerRef={inputRef} // required for CFormInput
-    />
-              {errors.check_in_time && (  
+              <CFormInput
+                type="time"
+                id="check_in_time"
+                value={formData.check_in_time}
+                onChange={(e) => handleInputChange('check_in_time', e.target.value)}
+                onFocus={handleFocus}
+                invalid={!!errors.check_in_time}
+                innerRef={inputRef}
+              />
+              {errors.check_in_time && (
                 <div className="invalid-feedback d-block">{errors.check_in_time}</div>
               )}
             </CCol>
@@ -305,7 +294,7 @@ const TrackerEditModal = ({ fetchEmployees,visible, onClose, trackerId, onSucces
             <CCol md={6}>
               <CFormLabel htmlFor="check_out_time">Check Out Time</CFormLabel>
               <CFormInput
-                type="datetime-local"
+                type="time"
                 id="check_out_time"
                 value={formData.check_out_time}
                 onChange={(e) => handleInputChange('check_out_time', e.target.value)}
@@ -317,28 +306,6 @@ const TrackerEditModal = ({ fetchEmployees,visible, onClose, trackerId, onSucces
             </CCol>
           </CRow>
 
-          {/* <CRow className="mb-3">
-            <CCol md={6}>
-              <CFormLabel htmlFor="status">Status</CFormLabel>
-              <CFormSelect
-                id="status"
-                value={formData.status}
-                onChange={(e) => handleInputChange('status', e.target.value)}
-                invalid={!!errors.status}
-              >
-                <option value="">Select Status</option>
-                {statusOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </CFormSelect>
-              {errors.status && (
-                <div className="invalid-feedback d-block">{errors.status}</div>
-              )}
-            </CCol>
-          </CRow> */}
-
           {errors.submit && (
             <div className="alert alert-danger">
               {errors.submit}
@@ -347,7 +314,6 @@ const TrackerEditModal = ({ fetchEmployees,visible, onClose, trackerId, onSucces
         </CModalBody>
 
         <CModalFooter>
-          
         </CModalFooter>
       </CForm>
     </CModal>
