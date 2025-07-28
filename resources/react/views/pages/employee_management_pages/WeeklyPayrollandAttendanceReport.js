@@ -783,7 +783,7 @@ const WeeklyMonthlyPresentyPayroll = () => {
       employeeData.forEach((employee, index) => {
         const mainRow = [
           index + 1,
-          `${employee.employee_name || 'Unknown'} (${employee.overtime_type ? employee.overtime_type : 'N/A'})`,
+          `${employee.employee_name || 'Unknown'} `,
           ...weekDates.map(date => {
             const attendance = employee.attendance && employee.attendance[date];
             return attendance?.status || '-';
