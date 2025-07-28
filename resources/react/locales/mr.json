@@ -780,7 +780,7 @@
     "halfDayRate": "अर्धा दिवसाचा दर",
     "paidAmount": "भरलेली रक्कम",
     "overTime": "ओव्हर टाइम",
-    "payrollAndAttendanceReport": "पगार अहवाल",
+    "payrollAndAttendanceReport": "पगार अहवाल आणि उपस्थिति",
     "saveUpdatedDetails":"अपडेट केलेली माहिती जतन करा",
 
     "uploadDocumentsDescription": "आपल्या कर्मचार्‍यांसाठी महत्त्वपूर्ण दस्तऐवज सुरक्षितपणे अपलोड करा",
@@ -913,7 +913,8 @@
     "taluka": "तालुका",
     "district": "जिल्हा",
     "pincode": "पिनकोड",
-    "company_id": "कंपनी आयडी"
+    "company_id": "कंपनी आयडी",
+    "payment": "पेमेंट"
 
   },
 

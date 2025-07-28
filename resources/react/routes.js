@@ -73,6 +73,7 @@ const BulkEmployeeTracker = React.lazy(() => import('./views/pages/employee_mana
 const checkInWithSelfie = React.lazy(() => import('./views/pages/employee_management_pages/CheckInWithSelfie'))
 const PayrollAndAttendanceReport = React.lazy(() => import('./views/pages/employee_management_pages/WeeklyPayrollandAttendanceReport'))
 const Edit_Employee_Details = React.lazy(() => import('./views/pages/employee_management_pages/Edit_Employee_Details'))
+const Work_History_Reports = React.lazy(() => import('./views/pages/employee_management_pages/WorkHistory&Reports'))
 /* ====================================================================== */
 
 export default function fetchRoutes () {
@@ -179,7 +180,8 @@ export default function fetchRoutes () {
       { path: '/bulk_employee_tracker',              name: 'Employee Details',           element: BulkEmployeeTracker },
       { path: '/checkInWithSelfie',              name: 'Employee Attendance',           element: checkInWithSelfie },
       { path: '/payrollAndAttendanceReport',              name: 'Payment Report',           element: PayrollAndAttendanceReport},
-      { path: '/editEmployeeDetails/:id',              name: 'Edit Employee Details',           element: Edit_Employee_Details}
+      { path: '/editEmployeeDetails/:id',              name: 'Edit Employee Details',           element: Edit_Employee_Details},
+      { path: '/employees/workhistory/:id',              name: 'Employee Details',           element: Work_History_Reports }
     ]
   }
 

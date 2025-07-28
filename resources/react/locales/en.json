@@ -786,7 +786,7 @@
     "halfDayRate": "Half Day Rate",
     "paidAmount": "Paid Amount",
     "overTime": "O.T :",
-    "payrollAndAttendanceReport":"Payment Report",
+    "payrollAndAttendanceReport":"Presenty & Payment Report",
     "uploadDocumentsDescription": "Upload important documents for your employees securely",
     "uploadDocumentsInstruction": "Upload at least one document to proceed",
     "documentType": "Document Type",
@@ -952,7 +952,8 @@
     "district": "District",
     "pincode": "Pincode",
     "company_id": "Company ID",
-    "updating": "Updating"
+    "updating": "Updating",
+    "payment": "Payment"
 
     },
 
