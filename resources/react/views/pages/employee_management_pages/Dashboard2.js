@@ -47,13 +47,13 @@ const presentEmployees = employees.filter(e =>
             {/* <h5 className="fw-bold text-dark mb-0 fs-4 fs-md-3">
               {t('LABELS.employeeAttendance')}
             </h5> */}
-            <h5 className="text-muted mt-4">{t('LABELS.dashboardOverview')} </h5>
+            <h5 className="text-muted mt-2">{t('LABELS.dashboardOverview')} </h5>
           </CCol>
         </CRow>
 
 
         {/* Stats Cards */}
-        <CRow className="g-2 g-md-3 mb-4">
+        <CRow className="g-2 g-md-3 mb-2">
           <CCol xs={6} lg={3}>
             <StatCard 
               title={t('LABELS.totalEmployees')} 
