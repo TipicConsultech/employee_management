@@ -407,7 +407,7 @@ function EmployeeCheckInOut() {
 
     return (
         <div className="min-vh-100 d-flex flex-column" style={{ backgroundColor: '#f8f9fa' }}>
-            <CContainer fluid className="flex-grow-1 d-flex align-items-center justify-content-center py-2 py-sm-3 py-md-4">
+            <CContainer fluid className="flex-grow-1 d-flex  justify-content-center py-2 py-sm-3 py-md-4">
                 <CRow className="w-100 h-100">
                     <CCol xs={12} sm={11} md={10} lg={8} xl={6} xxl={5} className="mx-auto d-flex align-items-center">
                         <div className="w-100">

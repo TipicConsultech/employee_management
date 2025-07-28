@@ -34,8 +34,8 @@ const MobileEmployeeRow = ({ handleEditClick, handleMapClick, employee, empId, e
                         onChange={(e) => handleEmployeeSelection(empId, e.target.checked)}
                         id={`employee-mobile-${empId}`}
                         style={{
-                            width: '18px',
-                            height: '18px',
+                            width: '20px',
+                            height: '20px',
                             border: '2px solid #007bff',
                             backgroundColor: isSelected ? '#007bff' : 'white',
                             borderRadius: '3px',
@@ -80,9 +80,9 @@ const MobileEmployeeRow = ({ handleEditClick, handleMapClick, employee, empId, e
                                             textOverflow: 'ellipsis',
                                             maxWidth: '100px'
                                         }}>
-                                            <CTooltip content={empName} placement="top">
+                                            {/* <CTooltip content={empName} placement="top">
                                                 <span>{truncateName(empName)}</span>
-                                            </CTooltip>
+                                            </CTooltip> */}
                                         </span>
                                        
                                     </div>
@@ -102,7 +102,7 @@ const MobileEmployeeRow = ({ handleEditClick, handleMapClick, employee, empId, e
                                >
                                   <span className="d-flex align-items-center gap-1">
                                     <CIcon icon={cilPencil} />
-                                    {t('LABELS.smallEditButton') || 'Edit'}
+                                    {/* {t('LABELS.smallEditButton') || 'Edit'} */}
                                   </span>
                                 </CButton>
 
@@ -125,9 +125,9 @@ const MobileEmployeeRow = ({ handleEditClick, handleMapClick, employee, empId, e
                         {/* Right side: Check in/out actions with vertical separator */}
                         <div style={{ 
                             minWidth: '120px', 
-                            paddingLeft: '12px',
+                            paddingLeft: '3px',
                             borderLeft: '1px solid #dee2e6',
-                            marginLeft: '12px'
+                            marginLeft: '0px'
                         }}>
                             {/* Check In Row */}
                             <div className="d-flex align-items-center justify-content-between mb-2">
@@ -149,13 +149,6 @@ const MobileEmployeeRow = ({ handleEditClick, handleMapClick, employee, empId, e
                                 
                                 <div className="d-flex gap-1">
                                     {faceAttendanceEnabled && (
-                                        <CTooltip
-                                            content={hasValidImageUrl(employee.trackers, 'checkin')
-                                                ? (t('LABELS.clickToViewCheckInImage') || 'Click to view check-in image')
-                                                : (t('LABELS.noCheckInImageUploaded') || 'User did not upload the image for check-in')
-                                            }
-                                            placement="top"
-                                        >
                                             <span>
                                                 <CButton
                                                     size="sm"
@@ -163,7 +156,7 @@ const MobileEmployeeRow = ({ handleEditClick, handleMapClick, employee, empId, e
                                                     variant="outline"
                                                     style={{
                                                         fontSize: '0.65rem',
-                                                        padding: '2px 6px',
+                                                        padding: '2px 4px',
                                                         opacity: hasValidImageUrl(employee.trackers, 'checkin') ? 1 : 0.6,
                                                         cursor: hasValidImageUrl(employee.trackers, 'checkin') ? 'pointer' : 'not-allowed'
                                                     }}
@@ -177,15 +170,9 @@ const MobileEmployeeRow = ({ handleEditClick, handleMapClick, employee, empId, e
                                                     {t('LABELS.view') || 'view'}
                                                 </CButton>
                                             </span>
-                                        </CTooltip>
+                                        
                                     )}
-                                    <CTooltip
-                                        content={employee.trackers?.[0]?.check_in_gps
-                                            ? (t('LABELS.viewCheckInLocation') || 'View check-in location')
-                                            : (t('LABELS.noCheckInLocation') || 'No check-in location available')
-                                        }
-                                        placement="top"
-                                    >
+                                 
                                         <span>
                                             <CButton
                                                 size="sm"
@@ -193,7 +180,7 @@ const MobileEmployeeRow = ({ handleEditClick, handleMapClick, employee, empId, e
                                                 variant="outline"
                                                 style={{
                                                     fontSize: '0.65rem',
-                                                    padding: '2px 6px',
+                                                    padding: '2px 4px',
                                                     opacity: employee.trackers?.[0]?.check_in_gps ? 1 : 0.6,
                                                     cursor: employee.trackers?.[0]?.check_in_gps ? 'pointer' : 'not-allowed'
                                                 }}
@@ -203,7 +190,7 @@ const MobileEmployeeRow = ({ handleEditClick, handleMapClick, employee, empId, e
                                                 <CIcon icon={cilLocationPin} size="sm" />
                                             </CButton>
                                         </span>
-                                    </CTooltip>
+                           
                                 </div>
                             </div>
 
@@ -211,7 +198,7 @@ const MobileEmployeeRow = ({ handleEditClick, handleMapClick, employee, empId, e
                             <div style={{ 
                                 height: '1px', 
                                 backgroundColor: '#dee2e6', 
-                                margin: '8px 0' 
+                                margin: '4px 0' 
                             }}></div>
 
                             {/* Check Out Row */}
@@ -234,13 +221,7 @@ const MobileEmployeeRow = ({ handleEditClick, handleMapClick, employee, empId, e
                                 
                                 <div className="d-flex gap-1">
                                     {faceAttendanceEnabled && (
-                                        <CTooltip
-                                            content={hasValidImageUrl(employee.trackers, 'checkout')
-                                                ? (t('LABELS.clickToViewCheckOutImage') || 'Click to view check-out image')
-                                                : (t('LABELS.noCheckOutImageUploaded') || 'User did not upload the image for check-out')
-                                            }
-                                            placement="top"
-                                        >
+                                      
                                             <span>
                                                 <CButton
                                                     size="sm"
@@ -248,7 +229,7 @@ const MobileEmployeeRow = ({ handleEditClick, handleMapClick, employee, empId, e
                                                     variant="outline"
                                                     style={{
                                                         fontSize: '0.65rem',
-                                                        padding: '2px 6px',
+                                                        padding: '2px 4px',
                                                         opacity: hasValidImageUrl(employee.trackers, 'checkout') ? 1 : 0.6,
                                                         cursor: hasValidImageUrl(employee.trackers, 'checkout') ? 'pointer' : 'not-allowed'
                                                     }}
@@ -262,15 +243,9 @@ const MobileEmployeeRow = ({ handleEditClick, handleMapClick, employee, empId, e
                                                     {t('LABELS.view') || 'view'}
                                                 </CButton>
                                             </span>
-                                        </CTooltip>
+                               
                                     )}
-                                    <CTooltip
-                                        content={employee.trackers?.[0]?.check_out_gps
-                                            ? (t('LABELS.viewCheckOutLocation') || 'View check-out location')
-                                            : (t('LABELS.noCheckOutLocation') || 'No check-out location available')
-                                        }
-                                        placement="top"
-                                    >
+                              
                                         <span>
                                             <CButton
                                                 size="sm"
@@ -278,7 +253,7 @@ const MobileEmployeeRow = ({ handleEditClick, handleMapClick, employee, empId, e
                                                 variant="outline"
                                                 style={{
                                                     fontSize: '0.65rem',
-                                                    padding: '2px 6px',
+                                                    padding: '2px 4px',
                                                     opacity: employee.trackers?.[0]?.check_out_gps ? 1 : 0.6,
                                                     cursor: employee.trackers?.[0]?.check_out_gps ? 'pointer' : 'not-allowed'
                                                 }}
@@ -288,7 +263,7 @@ const MobileEmployeeRow = ({ handleEditClick, handleMapClick, employee, empId, e
                                                 <CIcon icon={cilLocationPin} size="sm" />
                                             </CButton>
                                         </span>
-                                    </CTooltip>
+                                 
                                 </div>
                             </div>
                         </div>
