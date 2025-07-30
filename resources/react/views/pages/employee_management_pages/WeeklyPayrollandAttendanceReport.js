@@ -412,17 +412,18 @@ const WeeklyMonthlyPresentyPayroll = () => {
     };
   };
 
-  const getMonthDates = (monthStart, monthEnd) => {
-    if (!monthStart || !monthEnd) return [];
-    const dates = [];
-    const start = new Date(monthStart);
-    const end = new Date(monthEnd);
+const getMonthDates = (monthStart, monthEnd) => {
+  if (!monthStart || !monthEnd) return [];
+  const dates = [];
+  const start = new Date(monthStart);
+  const end = new Date(monthEnd);
 
-    for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
-      dates.push(date.toISOString().split('T')[0]);
-    }
-    return dates;
-  };
+  // Use getTime() for more reliable comparison
+  for (let date = new Date(start); date.getTime() <= end.getTime(); date.setDate(date.getDate() + 1)) {
+    dates.push(date.toISOString().split('T')[0]);
+  }
+  return dates;
+};
 
   const getMonthlyWeeks = (monthStart, monthEnd, weekStartDay) => {
     if (!monthStart || !monthEnd || !weekStartDay) return [];
@@ -583,10 +584,12 @@ const WeeklyMonthlyPresentyPayroll = () => {
           monthStart = response.data.month_start;
           monthEnd = response.data.month_end;
         } else {
-          const monthIndex = months.findIndex(m => m.value.toLowerCase() === selectedMonth.toLowerCase()) + 1;
-          monthStart = `${selectedYear}-${monthIndex.toString().padStart(2, '0')}-01`;
-          const lastDay = new Date(selectedYear, monthIndex, 0);
-          monthEnd = lastDay.toISOString().split('T')[0];
+          const monthIndex = months.findIndex(m => m.value.toLowerCase() === selectedMonth.toLowerCase());
+          const year = parseInt(selectedYear);
+          monthStart = `${selectedYear}-${(monthIndex + 1).toString().padStart(2, '0')}-01`;
+          // Get last day of the month properly
+          const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+          monthEnd = `${selectedYear}-${(monthIndex + 1).toString().padStart(2, '0')}-${lastDay.toString().padStart(2, '0')}`;
         }
 
         const monthDates = getMonthDates(monthStart, monthEnd);
