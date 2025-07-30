@@ -939,7 +939,7 @@ public function bulkPresenty(Request $request)
         ]);
     }
 
-  public function weeklyPresenty(Request $request)
+public function weeklyPresenty(Request $request)
     {
         // Validate input
         $validated = $request->validate([
@@ -1012,7 +1012,43 @@ public function bulkPresenty(Request $request)
                     return Carbon::parse($t->created_at)->format('Y-m-d') === $dayKey;
                 });
 
-                // HALF DAY
+                // WEEK-OFF OR HOLIDAY
+                if ($isWeekOff || ($tracker && strtolower($tracker->status) === 'h')) {
+                    $workedMinutes = 0;
+                    $overtimeHours = 0;
+                    if ($tracker && $tracker->check_in && $tracker->check_out_time) {
+                        $checkIn = Carbon::parse($tracker->created_at);
+                        $checkOut = Carbon::parse($tracker->check_out_time);
+                        $workedMinutes = $checkIn->diffInMinutes($checkOut);
+
+                        if ($workedMinutes >= 30) {
+                            $overTime = (float) ($tracker->over_time ?? 0);
+                            if ($employee->overtime_type === 'hourly') {
+                                $overtimeHours = $overTime ? $overTime : 0;
+                            } elseif ($employee->overtime_type === 'fixed') {
+                                $overtimeHours = $overTime ? ($overTime > 0 ? 1 : -1) : 0;
+                            } else {
+                                $overtimeHours = 0; // null or not_available
+                            }
+                            $totalOvertimeHours += $overtimeHours;
+                            $attendance[$dayKey] = [
+                                'status' => 'HP',
+                                'overtime_hours' => $overtimeHours
+                            ];
+                            $holidayDays++;
+                            continue;
+                        }
+                    }
+
+                    $attendance[$dayKey] = [
+                        'status' => 'HA',
+                        'overtime_hours' => 0
+                    ];
+                    $holidayDays++;
+                    continue;
+                }
+
+                // HALF DAY (non-holiday days only)
                 if ($tracker && $tracker->half_day == 1) {
                     $workedMinutes = 0;
                     $overtimeHours = 0;
@@ -1039,36 +1075,6 @@ public function bulkPresenty(Request $request)
                         'overtime_hours' => $overtimeHours
                     ];
                     $halfDays++;
-                    continue;
-                }
-
-                // WEEK-OFF OR HOLIDAY
-                if ($isWeekOff || ($tracker && strtolower($tracker->status) === 'h')) {
-                    $workedMinutes = 0;
-                    $overtimeHours = 0;
-                    if ($tracker && $tracker->check_in && $tracker->check_out_time) {
-                        $checkIn = Carbon::parse($tracker->created_at);
-                        $checkOut = Carbon::parse($tracker->check_out_time);
-                        $workedMinutes = $checkIn->diffInMinutes($checkOut);
-
-                        if ($workedMinutes >= 30) {
-                            $overTime = (float) ($tracker->over_time ?? 0);
-                            if ($employee->overtime_type === 'hourly') {
-                                $overtimeHours = $overTime ? $overTime : 0;
-                            } elseif ($employee->overtime_type === 'fixed') {
-                                $overtimeHours = $overTime ? ($overTime > 0 ? 1 : -1) : 0;
-                            } else {
-                                $overtimeHours = 0; // null or not_available
-                            }
-                            $totalOvertimeHours += $overtimeHours;
-                        }
-                    }
-
-                    $attendance[$dayKey] = [
-                        'status' => 'H',
-                        'overtime_hours' => $overtimeHours
-                    ];
-                    $holidayDays++;
                     continue;
                 }
 
@@ -1149,171 +1155,205 @@ public function bulkPresenty(Request $request)
         ]);
     }
 
-    public function monthlyPresenty(Request $request)
-{
-    $validated = $request->validate([
-        'month' => 'required|string|in:January,February,March,April,May,June,July,August,September,October,November,December',
-        'year' => 'required|integer|min:1900|max:2100',
-    ]);
+   public function monthlyPresenty(Request $request)
+    {
+        // Validate input
+        $validated = $request->validate([
+            'month' => 'required|string|in:January,February,March,April,May,June,July,August,September,October,November,December',
+            'year' => 'required|integer|min:1900|max:9999',
+        ]);
 
-    $monthName = strtolower($validated['month']);
-    $year = $validated['year'];
-    $monthIndex = date('m', strtotime($monthName));
+        // Parse month and year
+        $month = $validated['month'];
+        $year = $validated['year'];
+        $date = Carbon::createFromFormat('Y F', "$year $month")->startOfMonth();
+        $monthStart = $date->copy()->startOfDay();
+        $monthEnd = $date->copy()->endOfMonth()->endOfDay();
 
-    $startOfMonth = Carbon::createFromDate($year, $monthIndex, 1)->startOfDay();
-    $endOfMonth = Carbon::createFromDate($year, $monthIndex, 1)->endOfMonth()->endOfDay();
+        // Fetch company info
+        $companyInfo = CompanyInfo::where('product_id', auth()->user()->product_id)
+                                 ->where('company_id', auth()->user()->company_id)
+                                 ->first();
+        $weekOffDays = $companyInfo && !empty($companyInfo->week_off) 
+            ? json_decode($companyInfo->week_off, true) ?? ['SATURDAY', 'SUNDAY']
+            : ['SATURDAY', 'SUNDAY'];
 
-    $employees = Employee::where('company_id', auth()->user()->company_id)
-        ->where('product_id', auth()->user()->product_id)
-        ->with([
-            'trackers' => function ($query) use ($startOfMonth, $endOfMonth) {
-                $query->whereBetween('created_at', [$startOfMonth, $endOfMonth]);
-            }
-        ])->get();
+        // Ensure $weekOffDays is an array
+        if (!is_array($weekOffDays)) {
+            $weekOffDays = ['SATURDAY', 'SUNDAY'];
+        }
 
-    $result = [];
-
-    foreach ($employees as $employee) {
-        $attendance = [];
-        $standardMinutes = ($employee->working_hours ?? 8) * 60;
-
-        $regularDays = 0;
-        $halfDays = 0;
-        $holidayDays = 0;
-        $totalOvertimeHours = 0;
-        $absentDays = 0; // Track absent days
-
-        for ($day = $startOfMonth->copy(); $day <= $endOfMonth; $day->addDay()) {
-            $dayKey = $day->format('Y-m-d');
-            $tracker = $employee->trackers->first(function ($t) use ($dayKey) {
-                return Carbon::parse($t->created_at)->format('Y-m-d') === $dayKey;
-            });
-
-            // Check for half day first
-            if ($tracker && $tracker->half_day == 1) {
-                $attendance[$dayKey] = ['status' => 'HF'];
-                $halfDays++;
-                continue;
-            }
-
-            if ($tracker) {
-                $status = strtolower($tracker->status);
-
-                // Handle leave types (SL, PL, CL)
-                if (in_array($status, ['sl', 'pl', 'cl'])) {
-                    $attendance[$dayKey] = ['status' => strtoupper($status)];
-                    $regularDays++; // These are paid leaves
-                    continue;
+        // Fetch employees with trackers
+        $employees = Employee::where('company_id', auth()->user()->company_id)
+            ->where('product_id', auth()->user()->product_id)
+            ->with([
+                'trackers' => function ($query) use ($monthStart, $monthEnd) {
+                    $query->whereBetween('created_at', [$monthStart, $monthEnd]);
                 }
+            ])->get();
 
-                // Handle holiday work
-                if ($status === 'h') {
-                    // Use the over_time field directly from tracker
-                    $overtimeHours = $tracker->over_time ?? 0;
-                    
-                    $attendance[$dayKey] = [
-                        'status' => 'H',
-                        'holiday_overtime_hour' => round($overtimeHours, 2)
-                    ];
-                    $holidayDays++;
-                    $totalOvertimeHours += round($overtimeHours, 2);
-                    continue;
-                }
+        $result = [];
 
-                // Handle regular attendance or no attendance (na)
-                if ($status === 'na' || $status === 'present' || $status === 'absent') {
-                    if ($tracker->check_in && $tracker->check_out_time) {
-                        // Use created_at as check-in time since check_in is boolean
+        foreach ($employees as $employee) {
+            $attendance = [];
+            $standardMinutes = ($employee->working_hours ?? 8) * 60;
+
+            // Initialize counters
+            $regularDays = 0;
+            $halfDays = 0;
+            $holidayDays = 0;
+            $totalOvertimeHours = 0;
+
+            // Process each day in the month
+            for ($day = $monthStart->copy(); $day <= $monthEnd; $day->addDay()) {
+                $dayKey = $day->format('Y-m-d');
+                $weekday = strtoupper($day->format('l'));
+                $isWeekOff = in_array($weekday, $weekOffDays);
+
+                $tracker = $employee->trackers->first(function ($t) use ($dayKey) {
+                    return Carbon::parse($t->created_at)->format('Y-m-d') === $dayKey;
+                });
+
+                // WEEK-OFF OR HOLIDAY
+                if ($isWeekOff || ($tracker && strtolower($tracker->status) === 'h')) {
+                    $workedMinutes = 0;
+                    $overtimeHours = 0;
+                    if ($tracker && $tracker->check_in && $tracker->check_out_time) {
                         $checkIn = Carbon::parse($tracker->created_at);
                         $checkOut = Carbon::parse($tracker->check_out_time);
                         $workedMinutes = $checkIn->diffInMinutes($checkOut);
 
-                        // Mark as absent if worked less than 30 minutes
-                        if ($workedMinutes < 30) {
+                        if ($workedMinutes >= 30) {
+                            $overTime = (float) ($tracker->over_time ?? 0);
+                            if ($employee->overtime_type === 'hourly') {
+                                $overtimeHours = $overTime ? $overTime : 0;
+                            } elseif ($employee->overtime_type === 'fixed') {
+                                $overtimeHours = $overTime ? ($overTime > 0 ? 1 : -1) : 0;
+                            } else {
+                                $overtimeHours = 0; // null or not_available
+                            }
+                            $totalOvertimeHours += $overtimeHours;
                             $attendance[$dayKey] = [
-                                'status' => 'A',
-                                'overtime_hours' => 0
+                                'status' => 'HP',
+                                'overtime_hours' => $overtimeHours
                             ];
-                            $absentDays++;
+                            $holidayDays++;
                             continue;
                         }
+                    }
 
-                        // Use the over_time field directly from tracker
-                        $overtimeHours = $tracker->over_time ?? 0;
-                        
-                        // Check if overtime is allowed for this employee
-                        $overtimeAllowed = !in_array(strtolower($employee->overtime_type ?? ''), ['na', 'not_available', 'null', '']);
-                        $otHours = $overtimeAllowed ? round($overtimeHours, 2) : 0;
+                    $attendance[$dayKey] = [
+                        'status' => 'HA',
+                        'overtime_hours' => 0
+                    ];
+                    $holidayDays++;
+                    continue;
+                }
 
-                        $attendance[$dayKey] = [
-                            'status' => 'P',
-                            'overtime_hours' => $otHours
-                        ];
-                        $regularDays++;
-                        if ($otHours > 0) {
-                            $totalOvertimeHours += $otHours;
+                // HALF DAY (non-holiday days only)
+                if ($tracker && $tracker->half_day == 1) {
+                    $workedMinutes = 0;
+                    $overtimeHours = 0;
+                    if ($tracker->check_in && $tracker->check_out_time) {
+                        $checkIn = Carbon::parse($tracker->created_at);
+                        $checkOut = Carbon::parse($tracker->check_out_time);
+                        $workedMinutes = $checkIn->diffInMinutes($checkOut);
+
+                        if ($workedMinutes >= 30) {
+                            $overTime = (float) ($tracker->over_time ?? 0);
+                            if ($employee->overtime_type === 'hourly') {
+                                $overtimeHours = $overTime ? $overTime : 0;
+                            } elseif ($employee->overtime_type === 'fixed') {
+                                $overtimeHours = $overTime ? ($overTime > 0 ? 1 : -1) : 0;
+                            } else {
+                                $overtimeHours = 0; // null or not_available
+                            }
+                            $totalOvertimeHours += $overtimeHours;
                         }
-                    } else {
-                        // No check-in or check-out
+                    }
+
+                    $attendance[$dayKey] = [
+                        'status' => 'HF',
+                        'overtime_hours' => $overtimeHours
+                    ];
+                    $halfDays++;
+                    continue;
+                }
+
+                // LEAVE
+                if ($tracker && in_array(strtolower($tracker->status), ['sl', 'pl', 'cl'])) {
+                    $attendance[$dayKey] = ['status' => strtoupper($tracker->status)];
+                    continue;
+                }
+
+                // PRESENT OR ABSENT
+                if ($tracker && $tracker->check_in && $tracker->check_out_time) {
+                    $checkIn = Carbon::parse($tracker->created_at);
+                    $checkOut = Carbon::parse($tracker->check_out_time);
+                    $workedMinutes = $checkIn->diffInMinutes($checkOut);
+
+                    if ($workedMinutes < 30) {
                         $attendance[$dayKey] = [
                             'status' => 'A',
                             'overtime_hours' => 0
                         ];
-                        $absentDays++;
+                        continue;
                     }
-                    continue;
+
+                    $overTime = (float) ($tracker->over_time ?? 0);
+                    $overtimeHours = 0;
+                    if ($employee->overtime_type === 'hourly') {
+                        $overtimeHours = $overTime ? $overTime : 0;
+                    } elseif ($employee->overtime_type === 'fixed') {
+                        $overtimeHours = $overTime ? ($overTime > 0 ? 1 : -1) : 0;
+                    } else {
+                        $overtimeHours = 0; // null or not_available
+                    }
+
+                    $attendance[$dayKey] = [
+                        'status' => 'P',
+                        'overtime_hours' => $overtimeHours
+                    ];
+                    $regularDays++;
+                    $totalOvertimeHours += $overtimeHours;
+                } else {
+                    $attendance[$dayKey] = [
+                        'status' => 'A',
+                        'overtime_hours' => 0
+                    ];
                 }
             }
 
-            // DEFAULT CASE: No tracker found for this date
-            $attendance[$dayKey] = [
-                'status' => 'A',
-                'overtime_hours' => 0
+            // Payment calculation
+            $regularPayment = $regularDays * ($employee->wage_hour ?? 0) * ($employee->working_hours ?? 8);
+            $overtimePayment = $totalOvertimeHours * ($employee->wage_overtime ?? 0);
+            $halfDayPayment = $halfDays * ($employee->half_day_rate ?? 0);
+            $holidayPayment = $holidayDays * ($employee->holiday_day_rate ?? 0);
+
+            $result[] = [
+                'employee_id' => $employee->id,
+                'employee_name' => $employee->name,
+                'wage_hour' => $employee->wage_hour ?? 0,
+                'wage_overtime' => $employee->wage_overtime ?? 0,
+                'half_day_rate' => $employee->half_day_rate ?? 0,
+                'holiday_day_rate' => $employee->holiday_day_rate ?? 0,
+                'working_hours' => $employee->working_hours ?? 0,
+                'overtime_type' => $employee->overtime_type ?? "null",
+                'attendance' => $attendance,
+                'payment_details' => [
+                    'regular_day_payment' => $regularPayment,
+                    'overtime_hr_payment' => $overtimePayment,
+                    'half_day_payment' => $halfDayPayment,
+                    'holiday_payment' => $holidayPayment
+                ]
             ];
-            $absentDays++;
         }
 
-        // Calculate payments with proper null handling
-        $wageHour = $employee->wage_hour ?? 0;
-        $wageOvertime = $employee->wage_overtime ?? 0;
-        $halfDayRate = $employee->half_day_rate ?? 0;
-        $holidayRate = $employee->holiday_rate ?? 0;
-
-        $regularPayment = $regularDays * $wageHour;
-        
-        // Fix: Only calculate overtime payment if overtime is allowed
-        $overtimeAllowed = !in_array(strtolower($employee->overtime_type ?? ''), ['na', 'not_available', 'null', '']);
-        $overtimePayment = $overtimeAllowed ? ($totalOvertimeHours * $wageOvertime) : 0;
-        
-        $halfDayPayment = $halfDays * $halfDayRate;
-        $holidayPayment = $holidayDays * $holidayRate;
-
-        $result[] = [
-            'employee_id' => $employee->id,
-            'employee_name' => $employee->name,
-            'wage_hour' => $wageHour,
-            'wage_overtime' => $wageOvertime,
-            'half_day_rate' => $halfDayRate,
-            'holiday_day_rate' => $holidayRate,
-            'working_hours' => $employee->working_hours ?? 8,
-            'overtime_type' => $employee->overtime_type ?? "null",
-            'attendance' => $attendance,
-            'payment_details' => [
-                'regular_day_payment' => round($regularPayment, 2),
-                'overtime_hr_payment' => round($overtimePayment, 2),
-                'half_day_payment' => round($halfDayPayment, 2),
-                'holiday_payment' => round($holidayPayment, 2)
-            ]
-        ];
+        return response()->json([
+            'month_start' => $monthStart->format('Y-m-d'),
+            'month_end' => $monthEnd->format('Y-m-d'),
+            'fixed_holiday' => array_map('ucfirst', array_map('strtolower', $weekOffDays)),
+            'data' => $result
+        ]);
     }
-
-    return response()->json([
-        'month' => ucfirst($monthName),
-        'year' => $year,
-        'month_start' => $startOfMonth->format('Y-m-d'),
-        'month_end' => $endOfMonth->format('Y-m-d'),
-        'data' => $result
-    ]);
-}
-
 }
