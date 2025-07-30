@@ -340,6 +340,16 @@ function NewCompany() {
         return;
       }
 
+      try {
+      await post('/api/company/check-duplicate', {
+        email_id: preparedFormData.email_id,
+        phone_no: preparedFormData.phone_no,
+      });
+    } catch (error) {
+      showToast('danger', 'Email id or Mobile number is already taken');
+      return;
+    }
+
       const companyResponse = await post('/api/company', preparedFormData);
       if (companyResponse?.details?.company_id) {
         showToast('success', 'Company Registration Successful!');
@@ -374,7 +384,7 @@ function NewCompany() {
         const amountPerMonth = durationMonths > 0 ? (totalPlanAmount / durationMonths) : 0;
 
         const receiptData = {
-          company_id: companyResponse.details.company_id,
+          company_id: companyResponse.details.id,
           plan_id: preparedFormData.subscribed_plan,
           user_id: logedInUserId,
           total_amount: totalAmount(),
@@ -436,6 +446,16 @@ function NewCompany() {
         return;
       }
 
+      try {
+      await post('/api/company/check-duplicate', {
+        email_id: preparedFormData.email_id,
+        phone_no: preparedFormData.phone_no,
+      });
+    } catch (error) {
+      showToast('danger', 'Email id or Mobile number is already taken');
+      return;
+    }
+
       setPreparedData(preparedFormData);
       const currentPlan = refData.plans.find(p => p.id == preparedFormData.subscribed_plan);
       const paymentAmount = totalAmount();
@@ -457,7 +477,7 @@ function NewCompany() {
         amount: data.order.amount,
         currency: data.order.currency,
         order_id: data.order.id,
-        name: "Nursery Seva",
+        name: "Emppulse",
         handler: async (response) => {
           const verifyResponse = await post("/api/verify-payment", {
             razorpay_order_id: response.razorpay_order_id,
@@ -495,7 +515,7 @@ function NewCompany() {
                 }
 
                 const receiptData = {
-                  company_id: companyResponse.details.company_id,
+                  company_id: companyResponse.details.id,
                   plan_id: preparedFormData.subscribed_plan,
                   user_id: logedInUserId,
                   total_amount: paymentAmount,

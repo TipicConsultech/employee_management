@@ -29,6 +29,34 @@ class CompanyInfoController extends Controller
         }
     }
 
+
+    public function checkDuplicate(Request $request)
+{
+    $request->validate([
+        'email_id' => 'required|email',
+        'phone_no' => 'required|digits:10',
+    ]);
+ 
+    $emailExists = CompanyInfo::where('email_id', $request->email_id)->exists();
+    $mobileExists = CompanyInfo::where('phone_no', $request->phone_no)->exists();
+ 
+    $userMobileExists = User::where('mobile', $request->phone_no)->exists();
+ 
+    $errors = [];
+    if ($emailExists) {
+        $errors['email_id'] = 'This email is already taken.';
+    }
+    if ($mobileExists || $userMobileExists) {
+        $errors['phone_no'] = 'This mobile number is already taken.';
+    }
+ 
+    if (!empty($errors)) {
+        return response()->json(['errors' => $errors], 422);
+    }
+ 
+    return response()->json(['message' => 'Unique'], 200);
+}
+
      public function getProducts()
     {   
        return Products::all();
