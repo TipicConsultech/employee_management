@@ -20,13 +20,12 @@ import {
   CSpinner,
   CAlert,
 } from '@coreui/react';
-import { cilCloudDownload, cilCalendar, cilSpreadsheet, cilInput, cilCash } from '@coreui/icons';
+import { cilCloudDownload, cilCalendar, cilSpreadsheet, cilInput, cilCash, cilPlus } from '@coreui/icons';
 import CIcon from '@coreui/icons-react';
 import { getAPICall, post } from '../../../util/api';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import html2pdf from 'html2pdf.js';
 
 const styles = `
   .table-container {
@@ -110,8 +109,21 @@ const styles = `
   }
   .payment-column {
     width: 100px !important;
-    max-width: 100px !important;
     min-width: 100px !important;
+    max-width: 100px !important;
+  }
+  .payment-column .btn {
+    padding: 4px 8px;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .status-ha-hp {
+    background-color: #ffe6e6 !important;
+  }
+  .header-ha-hp {
+    color: #dc3545 !important;
   }
   @media (max-width: 767.98px) {
     .table-responsive {
@@ -130,6 +142,10 @@ const styles = `
       width: 80px !important;
       max-width: 80px !important;
       min-width: 80px !important;
+    }
+    .payment-column .btn {
+      padding: 3px 6px;
+      font-size: 0.75rem;
     }
     .sticky-table th.employee-name-column {
       left: 40px;
@@ -160,12 +176,74 @@ const styles = `
       max-width: 70px !important;
       min-width: 70px !important;
     }
+    .payment-column .btn {
+      padding: 2px 4px;
+      font-size: 0.7rem;
+      line-height: 1.2;
+    }
     .sticky-table th.employee-name-column {
       left: 30px;
     }
     .sticky-table td.employee-name-column {
       left: 30px;
     }
+  }
+  .pdf-content {
+    font-family: 'Noto Sans Devanagari', 'Arial', sans-serif;
+    font-size: 12px;
+    width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  .pdf-content h1 {
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+  .pdf-content h2 {
+    font-size: 14px;
+    margin: 10px 0;
+  }
+  .pdf-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+  .pdf-content th, .pdf-content td {
+    border: 1px solid #dee2e6;
+    padding: 8px;
+    text-align: center;
+  }
+  .pdf-content th {
+    background-color: #343a40;
+    color: white;
+  }
+  .pdf-content th.header-ha-hp {
+    color: #dc3545 !important;
+  }
+  .pdf-content tr:nth-child(even) {
+    background-color: #f8f9fa;
+  }
+  .pdf-content .badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+  }
+  .pdf-content .bg-success {
+    background-color: #28a745;
+    color: white;
+  }
+  .pdf-content .bg-danger {
+    background-color: #dc3545;
+    color: white;
+  }
+  .pdf-content .bg-warning {
+    background-color: #ffc107;
+    color: black;
+  }
+  .pdf-content .bg-secondary {
+    background-color: #6c757d;
+    color: white;
   }
 `;
 
@@ -190,7 +268,10 @@ const WeeklyMonthlyPresentyPayroll = () => {
   const [weekDates, setWeekDates] = useState([]);
   const [monthlyWeeks, setMonthlyWeeks] = useState([]);
   const [hasFetchedData, setHasFetchedData] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstallButton, setShowInstallButton] = useState(false);
   const tableRef = useRef(null);
+  const pdfContentRef = useRef(null);
 
   const showNotification = useCallback((type, message) => {
     setNotification({ show: true, type, message });
@@ -200,6 +281,40 @@ const WeeklyMonthlyPresentyPayroll = () => {
       }, 3000);
     }
   }, []);
+
+  // Handle beforeinstallprompt event
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (event) => {
+      event.preventDefault();
+      setDeferredPrompt(event);
+      setShowInstallButton(true);
+      console.log('beforeinstallprompt event captured');
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  // Handle app installation
+  const handleInstallClick = () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('User accepted the install prompt');
+        } else {
+          console.log('User dismissed the install prompt');
+        }
+        setDeferredPrompt(null);
+        setShowInstallButton(false);
+      });
+    } else {
+      showNotification('warning', t('MSG.installPromptNotAvailable'));
+    }
+  };
 
   const reportTypes = [
     { value: 'weekly', label: t('LABELS.weeklyReport') },
@@ -259,23 +374,21 @@ const WeeklyMonthlyPresentyPayroll = () => {
     return dates;
   };
 
-  async function getWeekDay(){
-    const result =await getAPICall('/api/weekStartDay')
-     setSelectedWeekDay(result.start_of_week);
+  async function getWeekDay() {
+    const result = await getAPICall('/api/weekStartDay');
+    setSelectedWeekDay(result.start_of_week);
   }
 
-  useEffect(()=>{
+  useEffect(() => {
     getWeekDay();
-  },[])
-
- 
+  }, []);
 
   const getWeekFromDate = (dateString, weekStartDay) => {
     if (!dateString || !weekStartDay) return { start: '', end: '' };
     const selectedDate = new Date(dateString);
     const dayOfWeek = selectedDate.getDay();
 
-      const weekDayMap = {
+    const weekDayMap = {
       'SUNDAY': 0,
       'MONDAY': 1,
       'TUESDAY': 2,
@@ -520,7 +633,7 @@ const WeeklyMonthlyPresentyPayroll = () => {
 
   const calculateTotalDays = (attendance) => {
     if (!attendance) return 0;
-    return Object.values(attendance).filter(day => day?.status === 'P').length;
+    return Object.values(attendance).filter(day => day?.status === 'P' || day?.status === 'HP').length;
   };
 
   const calculateOvertimeHours = (attendance, overtimeType) => {
@@ -530,10 +643,10 @@ const WeeklyMonthlyPresentyPayroll = () => {
 
     if (type === 'fixed') {
       totalOvertime = Object.values(attendance).reduce((total, day) => {
-        if (day?.status === 'H' && day?.holiday_overtime_hour > 0) {
-          return total + 1;
+        if (day?.status === 'H' && day?.holiday_overtime_hour != null && day?.holiday_overtime_hour !== 0) {
+          return total + (day.holiday_overtime_hour > 0 ? 1 : -1);
         }
-        return total + (day?.overtime_hours > 0 ? 1 : 0);
+        return total + (day?.overtime_hours != null && day?.overtime_hours !== 0 ? (day.overtime_hours > 0 ? 1 : -1) : 0);
       }, 0);
     } else {
       totalOvertime = Object.values(attendance).reduce((total, day) => {
@@ -577,18 +690,18 @@ const WeeklyMonthlyPresentyPayroll = () => {
     const overtimeType = employee.overtime_type ? String(employee.overtime_type).trim().toLowerCase() : 'not available';
 
     if (attendance?.status === 'H') {
-      const holidayOvertimeHours = attendance?.holiday_overtime_hour || 0;
+      const holidayOvertimeHours = attendance?.holiday_overtime_hour != null ? attendance.holiday_overtime_hour : 0;
       if (overtimeType === 'hourly') {
-        return holidayOvertimeHours > 0 ? `${holidayOvertimeHours}h` : '-';
+        return holidayOvertimeHours !== 0 ? `${holidayOvertimeHours}h` : '-';
       } else if (overtimeType === 'fixed') {
-        return holidayOvertimeHours > 0 ? '1 D' : '-';
+        return holidayOvertimeHours !== 0 ? `${holidayOvertimeHours > 0 ? '1' : '-1'} D` : '-';
       }
     } else {
-      const overtimeHours = attendance?.overtime_hours || 0;
+      const overtimeHours = attendance?.overtime_hours != null ? attendance.overtime_hours : 0;
       if (overtimeType === 'hourly') {
-        return overtimeHours > 0 ? `${overtimeHours}h` : '-';
+        return overtimeHours !== 0 ? `${overtimeHours}h` : '-';
       } else if (overtimeType === 'fixed') {
-        return overtimeHours > 0 ? '1 D' : '-';
+        return overtimeHours !== 0 ? `${overtimeHours > 0 ? '1' : '-1'} D` : '-';
       }
     }
     return '-';
@@ -609,167 +722,29 @@ const WeeklyMonthlyPresentyPayroll = () => {
   };
 
   const exportToPDF = () => {
-    const doc = new jsPDF('landscape');
-    doc.setFontSize(16);
-    const title = reportType === 'weekly'
-      ? t('LABELS.weeklyPresentyPayrollChart')
-      : t('LABELS.monthlyPresentyPayrollChart');
-    doc.text(title, 14, 20);
-
-    doc.setFontSize(12);
-    const dateRange = reportType === 'weekly'
-      ? `${t('LABELS.week')}: ${formatDate(startDate)} ${t('LABELS.to')} ${formatDate(endDate)}`
-      : `${t('LABELS.month')}: ${selectedMonth} ${selectedYear}`;
-    doc.text(dateRange, 14, 30);
-
-    if (reportType === 'weekly') {
-      const tableHeaders = [
-        t('LABELS.serialNo'),
-        t('LABELS.employeeName'),
-        ...weekDates.map(date => new Date(date).toLocaleDateString('en-GB', { day: '2-digit' })),
-        t('LABELS.totalDays'),
-        t('LABELS.oTRate'),
-        t('LABELS.overtimeHours'),
-        t('LABELS.dayRate'),
-        t('LABELS.holidayRate'),
-        t('LABELS.halfDayRate'),
-        t('LABELS.totalAmount')
-      ];
-
-      const tableData = employeeData.map((employee, index) => [
-        index + 1,
-        `${employee.employee_name || 'Unknown'} (${employee.overtime_type ? employee.overtime_type : 'N/A'})`,
-        ...weekDates.map(date => {
-          const attendance = employee.attendance && employee.attendance[date];
-          return attendance ? attendance.status : '-';
-        }),
-        calculateTotalDays(employee.attendance),
-        employee.wage_overtime || 0,
-        calculateOvertimeHours(employee.attendance, employee.overtime_type),
-        employee.wage_hour || 0,
-        employee.holiday_day_rate || 0,
-        employee.half_day_rate || 0,
-        calculateTotalAmount(employee),
-        '',
-      ]);
-
-      doc.autoTable({
-        head: [tableHeaders],
-        body: tableData,
-        startY: 40,
-        styles: {
-          fontSize: 8,
-          cellPadding: 2
-        },
-        headStyles: {
-          fillColor: [71, 85, 105],
-          textColor: 255
-        },
-        alternateRowStyles: {
-          fillColor: [245, 245, 245]
-        }
-      });
-    } else {
-      let currentY = 40;
-
-      monthlyWeeks.forEach((week, weekIndex) => {
-        const weekDates = week.dates;
-        const weekHeader = `${t('LABELS.week')} ${weekIndex + 1}: ${formatDate(week.start)} ${t('LABELS.to')} ${formatDate(week.end)}`;
-        doc.setFontSize(12);
-        doc.text(weekHeader, 14, currentY);
-        currentY += 10;
-
-        const tableHeaders = [
-          t('LABELS.serialNo'),
-          t('LABELS.employeeName'),
-          ...weekDates.map(date => new Date(date).toLocaleDateString('en-GB', { day: '2-digit' })),
-          t('LABELS.totalDays'),
-          t('LABELS.oTRate'),
-          t('LABELS.overtimeHours'),
-          t('LABELS.dayRate'),
-          t('LABELS.holidayRate'),
-          t('LABELS.halfDayRate'),
-          t('LABELS.totalAmount'),
-          t('LABELS.payment'),
-        ];
-
-        const tableData = employeeData.map((employee, index) => [
-          index + 1,
-          `${employee.employee_name || 'Unknown'} (${employee.overtime_type ? employee.overtime_type : 'N/A'})`,
-          ...weekDates.map(date => {
-            const attendance = employee.attendance && employee.attendance[date];
-            return attendance ? attendance.status : '-';
-          }),
-          calculateTotalDays(employee.attendance),
-          employee.wage_overtime || 0,
-          calculateOvertimeHours(employee.attendance, employee.overtime_type),
-          employee.wage_hour || 0,
-          employee.holiday_day_rate || 0,
-          employee.half_day_rate || 0,
-          calculateTotalAmount(employee),
-          '',
-        ]);
-
-        doc.autoTable({
-          head: [tableHeaders],
-          body: tableData,
-          startY: currentY,
-          styles: {
-            fontSize: 8,
-            cellPadding: 2
-          },
-          headStyles: {
-            fillColor: [71, 85, 105],
-            textColor: 255
-          },
-          alternateRowStyles: {
-            fillColor: [245, 245, 245]
-          }
-        });
-
-        currentY = doc.lastAutoTable.finalY + 10;
-
-        const overtimeHeaders = [
-          '',
-          `${t('LABELS.overTime')} (${t('LABELS.type')})`,
-          ...weekDates.map(date => new Date(date).toLocaleDateString('en-GB', { day: '2-digit' })),
-          '', '', '', '', '', '', '',
-        ];
-
-        const overtimeData = employeeData.map(employee => [
-          '',
-          `${employee.employee_name || 'Unknown'} (${employee.overtime_type ? employee.overtime_type : 'N/A'})`,
-          ...weekDates.map(date => getOvertimeDisplay(employee, date)),
-          '', '', '', '', '', '', '',
-        ]);
-
-        doc.autoTable({
-          head: [overtimeHeaders],
-          body: overtimeData,
-          startY: currentY,
-          styles: {
-            fontSize: 8,
-            cellPadding: 2
-          },
-          headStyles: {
-            fillColor: [200, 200, 200],
-            textColor: 0
-          },
-          alternateRowStyles: {
-            fillColor: [245, 245, 245]
-          }
-        });
-
-        currentY = doc.lastAutoTable.finalY + 15;
-      });
-    }
-
+    const element = pdfContentRef.current;
     const fileName = reportType === 'weekly'
       ? `weekly-presenty-${startDate}-to-${endDate}.pdf`
       : `monthly-presenty-${selectedMonth}-${selectedYear}.pdf`;
 
-    doc.save(fileName);
-    showNotification('success', t('MSG.pdfExportedSuccess'));
+    const fontUrl = 'https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;700&display=swap';
+    const link = document.createElement('link');
+    link.href = fontUrl;
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+
+    const opt = {
+      margin: [10, 10, 10, 10],
+      filename: fileName,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+    };
+
+    html2pdf().set(opt).from(element).save().then(() => {
+      document.head.removeChild(link);
+      showNotification('success', t('MSG.pdfExportedSuccess'));
+    });
   };
 
   const exportToCSV = () => {
@@ -810,7 +785,10 @@ const WeeklyMonthlyPresentyPayroll = () => {
         `${employee.employee_name || 'Unknown'} `,
         ...weekDates.map(date => {
           const attendance = employee.attendance && employee.attendance[date];
-          return attendance?.status || '-';
+          if (!attendance) return '-';
+          if (attendance.status === 'HA') return 'A';
+          if (attendance.status === 'HP') return 'P';
+          return attendance.status || '-';
         }),
         calculateTotalDays(employee.attendance),
         employee.wage_overtime || 0,
@@ -872,6 +850,13 @@ const WeeklyMonthlyPresentyPayroll = () => {
       return `${selectedMonth} ${selectedYear}`;
     }
     return '';
+  };
+
+  const hasHaOrHpStatus = (date) => {
+    return employeeData.some(employee => {
+      const attendance = employee.attendance && employee.attendance[date];
+      return attendance && (attendance.status === 'HA' || attendance.status === 'HP');
+    });
   };
 
   if (loading && employeeData.length === 0) {
@@ -1026,6 +1011,16 @@ const WeeklyMonthlyPresentyPayroll = () => {
                         </CButton>
                       </>
                     )}
+                    {/* {showInstallButton && (
+                      <CButton
+                        color="warning"
+                        onClick={handleInstallClick}
+                        disabled={loading}
+                      >
+                        <CIcon icon={cilPlus} className="me-2" />
+                        {t('LABELS.installApp')}
+                      </CButton>
+                    )} */}
                   </CCol>
                 </CRow>
               </CForm>
@@ -1035,83 +1030,277 @@ const WeeklyMonthlyPresentyPayroll = () => {
       </CRow>
 
       {employeeData.length > 0 && weekDates.length > 0 && (
-        <CRow>
-          <CCol>
-            <CCard className="shadow-sm">
-              <CCardHeader style={{ backgroundColor: "#E6E6FA" }} className="d-flex justify-content-between align-items-center flex-wrap">
-                <strong>{t('LABELS.employeeAttendancePayrollReport')}</strong>
-                <small className="text-muted">
-                  {reportType === 'weekly' && `${t('LABELS.week')}: `}
-                  {reportType === 'monthly' && `${t('LABELS.month')}: `}
-                  {getDateRangeDisplay()}
-                </small>
-              </CCardHeader>
-              <CCardBody>
-                <div className="table-responsive">
-                  <div className="table-container" ref={tableRef}>
-                    <CTable className="sticky-table" striped bordered hover>
-                      <CTableHead color="dark">
-                        <CTableRow>
-                          <CTableHeaderCell rowSpan="2" className="text-center align-middle serial-no-column">
-                            {t('LABELS.serialNo')}
-                          </CTableHeaderCell>
-                          <CTableHeaderCell rowSpan="2" className="text-center align-middle employee-name-column">
-                            {t('LABELS.employeeName')}
-                          </CTableHeaderCell>
-                          <CTableHeaderCell colSpan={weekDates.length} className="text-center">
-                            {(reportType === 'weekly' ? t('LABELS.weekDays') : t('LABELS.monthDays'))}
-                          </CTableHeaderCell>
-                          <CTableHeaderCell rowSpan="2" className="text-center align-middle">
-                            {t('LABELS.totalDays')}
-                          </CTableHeaderCell>
-                          <CTableHeaderCell rowSpan="2" className="text-center align-middle">
-                            {t('LABELS.oTRate')}
-                          </CTableHeaderCell>
-                          <CTableHeaderCell rowSpan="2" className="text-center align-middle">
-                            {t('LABELS.overtimeHours')}
-                          </CTableHeaderCell>
-                          <CTableHeaderCell rowSpan="2" className="text-center align-middle">
-                            {t('LABELS.dayRate')}
-                          </CTableHeaderCell>
-                          <CTableHeaderCell rowSpan="2" className="text-center align-middle">
-                            {t('LABELS.holidayRate')}
-                          </CTableHeaderCell>
-                          <CTableHeaderCell rowSpan="2" className="text-center align-middle">
-                            {t('LABELS.halfDayRate')}
-                          </CTableHeaderCell>
-                          <CTableHeaderCell rowSpan="2" className="text-center align-middle">
-                            {t('LABELS.totalAmount')}
-                          </CTableHeaderCell>
-                          <CTableHeaderCell rowSpan="2" className="text-center align-middle payment-column">
-                            {t('LABELS.payment')}
-                          </CTableHeaderCell>
-                        </CTableRow>
-                        <CTableRow>
-                          {weekDates.map((date, index) => (
-                            <CTableHeaderCell key={index} className="text-center">
-                              {new Date(date).toLocaleDateString('en-GB', {
-                                day: '2-digit',
-                              })}
+        <>
+          <CRow>
+            <CCol>
+              <CCard className="shadow-sm">
+                <CCardHeader style={{ backgroundColor: "#E6E6FA" }} className="d-flex justify-content-between align-items-center flex-wrap">
+                  <strong>{t('LABELS.employeeAttendancePayrollReport')}</strong>
+                  <small className="text-muted">
+                    {reportType === 'weekly' && `${t('LABELS.week')}: `}
+                    {reportType === 'monthly' && `${t('LABELS.month')}: `}
+                    {getDateRangeDisplay()}
+                  </small>
+                </CCardHeader>
+                <CCardBody>
+                  <div className="table-responsive">
+                    <div className="table-container" ref={tableRef}>
+                      <CTable className="sticky-table" striped bordered hover>
+                        <CTableHead color="dark">
+                          <CTableRow>
+                            <CTableHeaderCell rowSpan="2" className="text-center align-middle serial-no-column">
+                              {t('LABELS.serialNo')}
                             </CTableHeaderCell>
+                            <CTableHeaderCell rowSpan="2" className="text-center align-middle employee-name-column">
+                              {t('LABELS.employeeName')}
+                            </CTableHeaderCell>
+                            <CTableHeaderCell colSpan={weekDates.length} className="text-center">
+                              {(reportType === 'weekly' ? t('LABELS.weekDays') : t('LABELS.monthDays'))}
+                            </CTableHeaderCell>
+                            <CTableHeaderCell rowSpan="2" className="text-center align-middle">
+                              {t('LABELS.totalDays')}
+                            </CTableHeaderCell>
+                            <CTableHeaderCell rowSpan="2" className="text-center align-middle">
+                              {t('LABELS.oTRate')}
+                            </CTableHeaderCell>
+                            <CTableHeaderCell rowSpan="2" className="text-center align-middle">
+                              {t('LABELS.overtimeHours')}
+                            </CTableHeaderCell>
+                            <CTableHeaderCell rowSpan="2" className="text-center align-middle">
+                              {t('LABELS.dayRate')}
+                            </CTableHeaderCell>
+                            <CTableHeaderCell rowSpan="2" className="text-center align-middle">
+                              {t('LABELS.holidayRate')}
+                            </CTableHeaderCell>
+                            <CTableHeaderCell rowSpan="2" className="text-center align-middle">
+                              {t('LABELS.halfDayRate')}
+                            </CTableHeaderCell>
+                            <CTableHeaderCell rowSpan="2" className="text-center align-middle">
+                              {t('LABELS.totalAmount')}
+                            </CTableHeaderCell>
+                            <CTableHeaderCell rowSpan="2" className="text-center align-middle payment-column">
+                              {t('LABELS.payment')}
+                            </CTableHeaderCell>
+                          </CTableRow>
+                          <CTableRow>
+                            {weekDates.map((date, index) => (
+                              <CTableHeaderCell
+                                key={index}
+                                className={`text-center ${hasHaOrHpStatus(date) ? 'header-ha-hp' : ''}`}
+                              >
+                                {new Date(date).toLocaleDateString('en-GB', {
+                                  day: '2-digit',
+                                })}
+                              </CTableHeaderCell>
+                            ))}
+                          </CTableRow>
+                        </CTableHead>
+                        <CTableBody>
+                          {employeeData.map((employee, index) => (
+                            <React.Fragment key={employee.employee_id || index}>
+                              <CTableRow>
+                                <CTableDataCell className="text-center serial-no-column" rowSpan="2">{index + 1}</CTableDataCell>
+                                <CTableDataCell className="employee-name-column">
+                                  <div>{employee.employee_name || 'Unknown'}</div>
+                                </CTableDataCell>
+                                {weekDates.map((date, dateIndex) => {
+                                  const attendance = employee.attendance && employee.attendance[date];
+                                  const currentDate = new Date();
+                                  const cellDate = new Date(date);
+                                  const isFutureDate = cellDate > currentDate;
+                                  let status = isFutureDate ? '-' : (attendance?.status || '-');
+                                  if (status === 'HA') status = 'A';
+                                  if (status === 'HP') status = 'P';
+                                  const isHaOrHp = attendance?.status === 'HA' || attendance?.status === 'HP';
+                                  return (
+                                    <CTableDataCell
+                                      key={dateIndex}
+                                      className={`text-center ${isHaOrHp ? 'status-ha-hp' : ''}`}
+                                    >
+                                      <span className={`badge ${
+                                        status === 'P' ? 'bg-success' :
+                                        status === 'A' ? 'bg-danger' :
+                                        status === 'HF' ? 'bg-warning' :
+                                        status === 'H' ? 'bg-secondary' : 'bg-secondary'
+                                      }`}>
+                                        {status}
+                                      </span>
+                                    </CTableDataCell>
+                                  );
+                                })}
+                                <CTableDataCell className="text-center" rowSpan="2">
+                                  {calculateTotalDays(employee.attendance)}
+                                </CTableDataCell>
+                                <CTableDataCell className="text-center" rowSpan="2">
+                                  ₹{employee.wage_overtime || 0}
+                                </CTableDataCell>
+                                <CTableDataCell className="text-center" rowSpan="2">
+                                  {calculateOvertimeHours(employee.attendance, employee.overtime_type)}
+                                </CTableDataCell>
+                                <CTableDataCell className="text-center" rowSpan="2">
+                                  ₹{employee.wage_hour || 0}
+                                </CTableDataCell>
+                                <CTableDataCell className="text-center" rowSpan="2">
+                                  ₹{employee.holiday_day_rate || 0}
+                                </CTableDataCell>
+                                <CTableDataCell className="text-center" rowSpan="2">
+                                  ₹{employee.half_day_rate || 0}
+                                </CTableDataCell>
+                                <CTableDataCell className="text-center font-weight-bold" rowSpan="2">
+                                  ₹{calculateTotalAmount(employee)}
+                                </CTableDataCell>
+                                <CTableDataCell className="text-center payment-column" rowSpan="2">
+                                  <CButton
+                                    size="sm"
+                                    color="primary"
+                                    variant="outline"
+                                    onClick={() => navigate(`/employees/workhistory/${employee.employee_id}`)}
+                                  >
+                                    <span className="d-flex align-items-center gap-1">
+                                      <CIcon icon={cilCash} />
+                                      {t('LABELS.payment')}
+                                    </span>
+                                  </CButton>
+                                </CTableDataCell>
+                              </CTableRow>
+                              <CTableRow className="bg-light">
+                                <CTableDataCell className="small text-muted employee-name-column">
+                                  <span className="d-inline">
+                                    {t('LABELS.overTime')}
+                                  </span>
+                                  <span className="ms-1 d-inline">
+                                    {getOvertimeTypeLabel(employee.overtime_type)}
+                                  </span>
+                                </CTableDataCell>
+                                {weekDates.map((date, dateIndex) => (
+                                  <CTableDataCell key={dateIndex} className="text-center small text-muted">
+                                    {getOvertimeDisplay(employee, date)}
+                                  </CTableDataCell>
+                                ))}
+                              </CTableRow>
+                            </React.Fragment>
                           ))}
-                        </CTableRow>
-                      </CTableHead>
-                      <CTableBody>
+                        </CTableBody>
+                      </CTable>
+                    </div>
+                  </div>
+                </CCardBody>
+              </CCard>
+            </CCol>
+          </CRow>
+
+          <div style={{ display: 'none' }}>
+            <div className="pdf-content" ref={pdfContentRef}>
+              <h1>
+                {reportType === 'weekly'
+                  ? t('LABELS.weeklyPresentyPayrollChart')
+                  : t('LABELS.monthlyPresentyPayrollChart')}
+              </h1>
+              <p>
+                {reportType === 'weekly'
+                  ? `${t('LABELS.week')}: ${formatDate(startDate)} ${t('LABELS.to')} ${formatDate(endDate)}`
+                  : `${t('LABELS.month')}: ${selectedMonth} ${selectedYear}`}
+              </p>
+              {reportType === 'weekly' ? (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>{t('LABELS.serialNo')}</th>
+                      <th>{t('LABELS.employeeName')}</th>
+                      {weekDates.map((date, index) => (
+                        <th key={index} className={hasHaOrHpStatus(date) ? 'header-ha-hp' : ''}>
+                          {new Date(date).toLocaleDateString('en-GB', { day: '2-digit' })}
+                        </th>
+                      ))}
+                      <th>{t('LABELS.totalDays')}</th>
+                      <th>{t('LABELS.oTRate')}</th>
+                      <th>{t('LABELS.overtimeHours')}</th>
+                      <th>{t('LABELS.dayRate')}</th>
+                      <th>{t('LABELS.holidayRate')}</th>
+                      <th>{t('LABELS.halfDayRate')}</th>
+                      <th>{t('LABELS.totalAmount')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {employeeData.map((employee, index) => (
+                      <React.Fragment key={employee.employee_id || index}>
+                        <tr>
+                          <td>{index + 1}</td>
+                          <td>{employee.employee_name || 'Unknown'} ({employee.overtime_type || 'N/A'})</td>
+                          {weekDates.map((date, dateIndex) => {
+                            const attendance = employee.attendance && employee.attendance[date];
+                            let status = attendance?.status || '-';
+                            if (status === 'HA') status = 'A';
+                            if (status === 'HP') status = 'P';
+                            return (
+                              <td key={dateIndex}>
+                                <span className={`badge ${
+                                  status === 'P' ? 'bg-success' :
+                                  status === 'A' ? 'bg-danger' :
+                                  status === 'HF' ? 'bg-warning' :
+                                  status === 'H' ? 'bg-secondary' : 'bg-secondary'
+                                }`}>
+                                  {status}
+                                </span>
+                              </td>
+                            );
+                          })}
+                          <td>{calculateTotalDays(employee.attendance)}</td>
+                          <td>₹{employee.wage_overtime || 0}</td>
+                          <td>{calculateOvertimeHours(employee.attendance, employee.overtime_type)}</td>
+                          <td>₹{employee.wage_hour || 0}</td>
+                          <td>₹{employee.holiday_day_rate || 0}</td>
+                          <td>₹{employee.half_day_rate || 0}</td>
+                          <td>₹{calculateTotalAmount(employee)}</td>
+                        </tr>
+                        <tr>
+                          <td></td>
+                          <td>{t('LABELS.overTime')} ({employee.overtime_type || 'N/A'})</td>
+                          {weekDates.map((date, dateIndex) => (
+                            <td key={dateIndex}>{getOvertimeDisplay(employee, date)}</td>
+                          ))}
+                          <td colSpan="6"></td>
+                        </tr>
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                monthlyWeeks.map((week, weekIndex) => (
+                  <React.Fragment key={weekIndex}>
+                    <h2>{t('LABELS.week')} {weekIndex + 1}: {formatDate(week.start)} {t('LABELS.to')} {formatDate(week.end)}</h2>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>{t('LABELS.serialNo')}</th>
+                          <th>{t('LABELS.employeeName')}</th>
+                          {week.dates.map((date, index) => (
+                            <th key={index} className={hasHaOrHpStatus(date) ? 'header-ha-hp' : ''}>
+                              {new Date(date).toLocaleDateString('en-GB', { day: '2-digit' })}
+                            </th>
+                          ))}
+                          <th>{t('LABELS.totalDays')}</th>
+                          <th>{t('LABELS.oTRate')}</th>
+                          <th>{t('LABELS.overtimeHours')}</th>
+                          <th>{t('LABELS.dayRate')}</th>
+                          <th>{t('LABELS.holidayRate')}</th>
+                          <th>{t('LABELS.halfDayRate')}</th>
+                          <th>{t('LABELS.totalAmount')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
                         {employeeData.map((employee, index) => (
                           <React.Fragment key={employee.employee_id || index}>
-                            <CTableRow>
-                              <CTableDataCell className="text-center serial-no-column" rowSpan="2">{index + 1}</CTableDataCell>
-                              <CTableDataCell className="employee-name-column">
-                                <div>{employee.employee_name || 'Unknown'}</div>
-                              </CTableDataCell>
-                              {weekDates.map((date, dateIndex) => {
+                            <tr>
+                              <td>{index + 1}</td>
+                              <td>{employee.employee_name || 'Unknown'} ({employee.overtime_type || 'N/A'})</td>
+                              {week.dates.map((date, dateIndex) => {
                                 const attendance = employee.attendance && employee.attendance[date];
-                                const currentDate = new Date();
-                                const cellDate = new Date(date);
-                                const isFutureDate = cellDate > currentDate;
-                                const status = isFutureDate ? '-' : (attendance?.status || '-');
+                                let status = attendance?.status || '-';
+                                if (status === 'HA') status = 'A';
+                                if (status === 'HP') status = 'P';
                                 return (
-                                  <CTableDataCell key={dateIndex} className="text-center">
+                                  <td key={dateIndex}>
                                     <span className={`badge ${
                                       status === 'P' ? 'bg-success' :
                                       status === 'A' ? 'bg-danger' :
@@ -1120,69 +1309,35 @@ const WeeklyMonthlyPresentyPayroll = () => {
                                     }`}>
                                       {status}
                                     </span>
-                                  </CTableDataCell>
+                                  </td>
                                 );
                               })}
-                              <CTableDataCell className="text-center" rowSpan="2">
-                                {calculateTotalDays(employee.attendance)}
-                              </CTableDataCell>
-                              <CTableDataCell className="text-center" rowSpan="2">
-                                ₹{employee.wage_overtime || 0}
-                              </CTableDataCell>
-                              <CTableDataCell className="text-center" rowSpan="2">
-                                {calculateOvertimeHours(employee.attendance, employee.overtime_type)}
-                              </CTableDataCell>
-                              <CTableDataCell className="text-center" rowSpan="2">
-                                ₹{employee.wage_hour || 0}
-                              </CTableDataCell>
-                              <CTableDataCell className="text-center" rowSpan="2">
-                                ₹{employee.holiday_day_rate || 0}
-                              </CTableDataCell>
-                              <CTableDataCell className="text-center" rowSpan="2">
-                                ₹{employee.half_day_rate || 0}
-                              </CTableDataCell>
-                              <CTableDataCell className="text-center font-weight-bold" rowSpan="2">
-                                ₹{calculateTotalAmount(employee)}
-                              </CTableDataCell>
-                              <CTableDataCell className="text-center payment-column" rowSpan="2">
-                                <CButton
-                                  size="sm"
-                                  color="primary"
-                                  variant="outline"
-                                  onClick={() => navigate(`/employees/workhistory/${employee.employee_id}`)}
-                                >
-                                  <span className="d-flex align-items-center gap-1">
-                                    <CIcon icon={cilCash} />
-                                    {t('LABELS.payment')}
-                                  </span>
-                                </CButton>
-                              </CTableDataCell>
-                            </CTableRow>
-                            <CTableRow className="bg-light">
-                              <CTableDataCell className="small text-muted employee-name-column">
-                                <span className="d-inline">
-                                  {t('LABELS.overTime')}
-                                </span>
-                                <span className="ms-1 d-inline">
-                                  {getOvertimeTypeLabel(employee.overtime_type)}
-                                </span>
-                              </CTableDataCell>
-                              {weekDates.map((date, dateIndex) => (
-                                <CTableDataCell key={dateIndex} className="text-center small text-muted">
-                                  {getOvertimeDisplay(employee, date)}
-                                </CTableDataCell>
+                              <td>{calculateTotalDays(employee.attendance)}</td>
+                              <td>₹{employee.wage_overtime || 0}</td>
+                              <td>{calculateOvertimeHours(employee.attendance, employee.overtime_type)}</td>
+                              <td>₹{employee.wage_hour || 0}</td>
+                              <td>₹{employee.holiday_day_rate || 0}</td>
+                              <td>₹{employee.half_day_rate || 0}</td>
+                              <td>₹{calculateTotalAmount(employee)}</td>
+                            </tr>
+                            <tr>
+                              <td></td>
+                              <td>{t('LABELS.overTime')} ({employee.overtime_type || 'N/A'})</td>
+                              {week.dates.map((date, dateIndex) => (
+                                <td key={dateIndex}>{getOvertimeDisplay(employee, date)}</td>
                               ))}
-                            </CTableRow>
+                              <td colSpan="6"></td>
+                            </tr>
                           </React.Fragment>
                         ))}
-                      </CTableBody>
-                    </CTable>
-                  </div>
-                </div>
-              </CCardBody>
-            </CCard>
-          </CCol>
-        </CRow>
+                      </tbody>
+                    </table>
+                  </React.Fragment>
+                ))
+              )}
+            </div>
+          </div>
+        </>
       )}
     </CContainer>
   );

@@ -37,6 +37,7 @@
     "date-fns": "^3.6.0",
     "dayjs": "^1.11.13",
     "font-awesome": "^4.7.0",
+    "html2pdf.js": "^0.10.3",
     "i18next": "^24.2.3",
     "i18next-browser-languagedetector": "^8.1.0",
     "jspdf": "^2.5.1",
