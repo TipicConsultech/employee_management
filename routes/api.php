@@ -66,7 +66,7 @@ Route::middleware('auth:sanctum')->get('/tolaranceLimit/{id}', [EmployeeControll
 Route::middleware('auth:sanctum')->post('/bulkPresenty', [EmployeeTrackerController::class, 'bulkPresenty']);
 Route::middleware('auth:sanctum')->get('/productShow', [CompanyInfoController::class, 'getProducts']);
 Route::middleware('auth:sanctum')->get('/weekStartDay', [CompanyInfoController::class, 'weekStartDay']);
-
+Route::middleware('auth:sanctum')->post('/company/check-duplicate', [CompanyInfoController::class, 'checkDuplicate']);
 
 
 Route::middleware(['auth:sanctum'])->group(function () {
