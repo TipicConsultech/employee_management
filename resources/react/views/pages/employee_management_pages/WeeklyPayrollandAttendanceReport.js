@@ -1226,7 +1226,7 @@ const WeeklyMonthlyPresentyPayroll = () => {
                       <React.Fragment key={employee.employee_id || index}>
                         <tr>
                           <td>{index + 1}</td>
-                          <td>{employee.employee_name || 'Unknown'} ({employee.overtime_type || 'N/A'})</td>
+                          <td>{employee.employee_name || 'Unknown'}</td>
                           {weekDates.map((date, dateIndex) => {
                             const attendance = employee.attendance && employee.attendance[date];
                             let status = attendance?.status || '-';
@@ -1255,7 +1255,14 @@ const WeeklyMonthlyPresentyPayroll = () => {
                         </tr>
                         <tr>
                           <td></td>
-                          <td>{t('LABELS.overTime')} ({employee.overtime_type || 'N/A'})</td>
+                          <td>
+                          {t('LABELS.overTime')}&nbsp;
+                          {employee.overtime_type === 'not_available'
+                            ? t('LABELS.na')
+                            : `(${t(employee.overtime_type === 'hourly' ? 'LABELS.hourly' : 'LABELS.fixed')})`}
+                        </td>
+
+
                           {weekDates.map((date, dateIndex) => (
                             <td key={dateIndex}>{getOvertimeDisplay(employee, date)}</td>
                           ))}

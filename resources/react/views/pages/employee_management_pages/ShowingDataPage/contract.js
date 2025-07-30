@@ -148,7 +148,7 @@ function Contract({employee}) {
 
   const isFormValid = () => {
     const hasNoErrors = Object.keys(errors).every(key => !errors[key]);
-    const hasRequiredFields = startDate && endDate && workSummary.working_type && 
+    const hasRequiredFields = startDate && endDate && workSummary.working_type &&
       workSummary.price && workSummary.quantity && workSummary.payed_amount;
 
     return hasNoErrors && hasRequiredFields;
@@ -156,17 +156,16 @@ function Contract({employee}) {
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    
+
     const isDateValid = validateDates();
     const isWorkingTypeValid = validateField('working_type', workSummary.working_type);
     const isPriceValid = validateField('price', workSummary.price);
     const isQuantityValid = validateField('quantity', workSummary.quantity);
     const isPaymentTypeValid = validateField('payment_type', workSummary.payment_type);
     const isPayedAmountValid = validateField('payed_amount', workSummary.payed_amount);
-    const isTransactionIdValid = validateField('transactionId', workSummary.transactionId);
 
-    if (!isDateValid || !isWorkingTypeValid || !isPriceValid || !isQuantityValid || 
-        !isPaymentTypeValid || !isPayedAmountValid || !isTransactionIdValid) {
+    if (!isDateValid || !isWorkingTypeValid || !isPriceValid || !isQuantityValid ||
+        !isPaymentTypeValid || !isPayedAmountValid) {
       setIsSubmitting(false);
       return;
     }
@@ -186,13 +185,15 @@ function Contract({employee}) {
 
     if (['upi', 'bank_transfer'].includes(workSummary.payment_type) && workSummary.transactionId !== "") {
       payload.transaction_id = workSummary.transactionId.trim();
+    } else {
+      payload.transaction_id = null;
     }
 
     try {
       await post('/api/payment', payload);
       showNotification('success', t('MSG.paymentSubmittedSuccess'));
       showToast('success', t('MSG.paymentSubmittedSuccess'));
-      
+
       setStartDate('');
       setEndDate('');
       setWorkSummary({
@@ -215,7 +216,7 @@ function Contract({employee}) {
       showNotification('danger', t('MSG.paymentSubmissionError'));
       showToast('warning', t('MSG.paymentSubmissionError'));
     }
-    
+
     setIsSubmitting(false);
   };
 
@@ -231,9 +232,9 @@ function Contract({employee}) {
                     <div className="mb-4">
                       <div className={`alert alert-${notification.type === 'success' ? 'success' : notification.type === 'danger' ? 'danger' : 'warning'} alert-dismissible fade show`} role="alert">
                         {notification.message}
-                        <button 
-                          type="button" 
-                          className="btn-close" 
+                        <button
+                          type="button"
+                          className="btn-close"
                           onClick={() => setNotification({ show: false, type: '', message: '' })}
                         ></button>
                       </div>
@@ -400,8 +401,8 @@ function Contract({employee}) {
                           <input
                             type="text"
                             className={`form-control fw-bold ${
-                              workSummary.pending_payment > 0 
-                                ? 'bg-danger bg-opacity-10 text-danger' 
+                              workSummary.pending_payment > 0
+                                ? 'bg-danger bg-opacity-10 text-danger'
                                 : 'bg-success bg-opacity-10 text-success'
                             }`}
                             value={`₹${workSummary.pending_payment.toFixed(2)}`}
@@ -488,7 +489,7 @@ function Contract({employee}) {
                       {['upi', 'bank_transfer'].includes(workSummary.payment_type) && (
                         <div className="col-md-6 mb-3">
                           <label className="form-label fw-medium">
-                            {t('LABELS.transactionId')} <span className="text-danger">*</span>
+                            {t('LABELS.transactionId')}
                           </label>
                           <input
                             type="text"
@@ -536,12 +537,12 @@ function Contract({employee}) {
                           (workSummary.price ? 1 : 0) +
                           (workSummary.quantity ? 1 : 0) +
                           (workSummary.payed_amount ? 1 : 0) +
-                          (workSummary.payment_type ? 1 : 0)    
+                          (workSummary.payment_type ? 1 : 0)
                         ) / 7 * 100)}%
                       </span>
                     </div>
                     <div className="progress" style={{height: '8px'}}>
-                      <div 
+                      <div
                         className="progress-bar bg-primary transition-all"
                         role="progressbar"
                         style={{
@@ -552,7 +553,7 @@ function Contract({employee}) {
                             (workSummary.price ? 1 : 0) +
                             (workSummary.quantity ? 1 : 0) +
                             (workSummary.payed_amount ? 1 : 0) +
-                            (workSummary.payment_type ? 1 : 0)    
+                            (workSummary.payment_type ? 1 : 0)
                           ) / 7 * 100)}%`
                         }}
                       ></div>
@@ -571,11 +572,11 @@ function Contract({employee}) {
                           <div className="spinner-border spinner-border-sm me-2" role="status">
                             <span className="visually-hidden">Loading...</span>
                           </div>
-                          {t('MSG.processing')}
+                          {t('LABELS.processing')}
                         </>
                       ) : (
                         <>
-                          <i className="fas fa-paper-plane me-2"></i>
+                          {/* <i className="fas fa-paper-plane me-2"></i> */}
                           {t('LABELS.submitAndSave')}
                         </>
                       )}
