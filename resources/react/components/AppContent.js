@@ -4,9 +4,29 @@ import { CContainer, CSpinner } from '@coreui/react'
 
 // routes config
 import fetchRoutes from '../routes'
+import { getUserData } from '../util/session'
 
 const AppContent = () => {
   const [routes, setRoutes] = useState([])
+
+    const userData = getUserData()
+    const user = userData?.type
+    const attendance_type = userData?.attendance_type
+
+  const getEmployeePath = (type) => {
+  switch (type) {
+    case 'face_attendance':
+       case 'both':
+      return '/checkInWithSelfie';
+
+   
+    case 'location':
+      return '/employee_tracker';
+
+    default:
+      return '/employee_tracker'; // fallback if type is unknown or undefined
+  }
+};
 
   useEffect(() => {
     const allRoutes = fetchRoutes();
@@ -53,7 +73,7 @@ const AppContent = () => {
                 )
               )
             })}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+           <Route path="/" element={user==1 ? (<Navigate to="/dashboard" replace />):(<Navigate to={getEmployeePath(attendance_type)} replace />)} />
           </Routes>
         </Suspense>
       </CContainer>

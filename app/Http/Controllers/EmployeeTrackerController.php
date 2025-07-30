@@ -20,7 +20,54 @@ use App\Models\Products;
 
 
 class EmployeeTrackerController extends Controller
-{
+{  
+     public function checkTodayStatus(Request $request): JsonResponse
+    {
+        // Step 1: Get employee ID from logged-in user’s mobile
+        $employee = Employee::where('mobile', auth()->user()->mobile)->first();
+
+        if (!$employee?->id) {
+            return response()->json([
+                'message' => 'Employee not found for this user.',
+            ], 404);
+        }
+
+        // Step 2: Check for today's tracker entry
+        $today = Carbon::today()->toDateString();
+
+        $tracker = EmployeeTracker::where('employee_id', $employee->id)
+            ->whereDate('created_at', $today)
+            ->first();
+
+        $companyCordinate = CompanyCordinate::where('company_id', auth()->user()->company_id)
+            ->where('product_id', auth()->user()->product_id)
+            ->first();
+
+        if (!$tracker) {
+            return response()->json([
+                'company_gps' => $companyCordinate['required_lat'] . "," . $companyCordinate['required_lng'],
+                'checkIn' => false,
+                'checkOut' => false,
+                'tolerance' => $employee->tolerance,
+                'under_30min' => false,
+            ]);
+        }
+
+        // Step 3: Check if created_at is within 30 minutes of now
+        $under30Min = false;
+        if ($tracker->created_at) {
+            $under30Min = Carbon::parse($tracker->created_at)->diffInMinutes(now()) <= 30;
+        }
+
+        return response()->json([
+            'company_gps' => $companyCordinate['required_lat'] . "," . $companyCordinate['required_lng'],
+            'tracker_id' => $tracker->id,
+            'tolerance' => $employee->tolerance,
+            'checkIn' => $tracker->check_in ?? false,
+            'checkOut' => $tracker->check_out ?? false,
+            'under_30min' => $under30Min,
+        ]);
+    }
     /* GET /api/employee-tracker */
     public function index(): JsonResponse
     {

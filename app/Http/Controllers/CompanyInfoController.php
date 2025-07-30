@@ -138,9 +138,11 @@ class CompanyInfoController extends Controller
 
      public function weekStartDay()
     {
-        return CompanyInfo::where('company_id',auth()->user()->company_id)
+       $weekday=CompanyInfo::where('company_id',auth()->user()->company_id)
                            ->where('company_id',auth()->user()->company_id)
                            ->value('start_of_week');
+        return  response()->json(['start_of_week' => $weekday],
+        200);
     }
 
     /**
