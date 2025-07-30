@@ -24,7 +24,8 @@ class EmployeeTracker extends Model
         'check_out_gps',
         'check_out_time',
         'half_day',
-        'status'
+        'status',
+        'over_time'
 
     ];
 

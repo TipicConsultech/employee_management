@@ -20,6 +20,8 @@ import { getAPICall, put } from '../../../util/api';
 const TrackerEditModal = ({ fetchEmployees, visible, onClose, trackerId, onSuccess }) => {
   const [formData, setFormData] = useState({
     half_day: false,
+    overtime: false,
+    over_time: '',
     check_in_time: '',
     check_out_time: '',
     status: ''
@@ -63,6 +65,8 @@ const TrackerEditModal = ({ fetchEmployees, visible, onClose, trackerId, onSucce
   const resetForm = () => {
     setFormData({
       half_day: false,
+      overtime: false,
+      over_time: '',
       check_in_time: '',
       check_out_time: '',
       status: ''
@@ -92,6 +96,8 @@ const TrackerEditModal = ({ fetchEmployees, visible, onClose, trackerId, onSucce
   const loadTrackerData = (trackerData) => {
     const mappedData = {
       half_day: trackerData.half_day || false,
+      overtime: trackerData.over_time ? trackerData.over_time !== 0 : false,
+      over_time: trackerData.over_time || '',
       check_in_time: trackerData.created_at ? formatTimeForInput(trackerData.created_at) : '',
       check_out_time: trackerData.check_out_time ? formatTimeForInput(trackerData.check_out_time) : '',
       status: trackerData.status || '',
@@ -121,14 +127,11 @@ const TrackerEditModal = ({ fetchEmployees, visible, onClose, trackerId, onSucce
   const formatDateTime = (timeString, originalDateTime) => {
     if (!timeString) return null;
     
-    // Use current date if no original datetime is provided
     const date = originalDateTime ? new Date(originalDateTime) : new Date();
     
-    // If no original datetime, use current date
     const dateString = originalDateTime ? originalDateTime.split('T')[0] : 
       `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     
-    // Combine with new time
     const [hours, minutes] = timeString.split(':');
     date.setHours(parseInt(hours), parseInt(minutes), 0);
     
@@ -155,6 +158,10 @@ const TrackerEditModal = ({ fetchEmployees, visible, onClose, trackerId, onSucce
       }
     }
 
+    if (formData.overtime && !formData.over_time) {
+      newErrors.over_time = 'Overtime hours are required when overtime is checked';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -162,6 +169,8 @@ const TrackerEditModal = ({ fetchEmployees, visible, onClose, trackerId, onSucce
   const hasFormChanged = () => {
     return (
       formData.half_day !== originalData.half_day ||
+      formData.overtime !== originalData.overtime ||
+      formData.over_time !== originalData.over_time ||
       formData.check_in_time !== originalData.check_in_time ||
       formData.check_out_time !== originalData.check_out_time ||
       formData.status !== originalData.status
@@ -173,6 +182,10 @@ const TrackerEditModal = ({ fetchEmployees, visible, onClose, trackerId, onSucce
     
     if (formData.half_day !== originalData.half_day) {
       payload.half_day = formData.half_day ? '1' : '0';
+    }
+    
+    if (formData.overtime !== originalData.overtime || formData.over_time !== originalData.over_time) {
+      payload.over_time = formData.overtime ? formData.over_time : 0;
     }
     
     if (formData.check_in_time !== originalData.check_in_time) {
@@ -249,6 +262,30 @@ const TrackerEditModal = ({ fetchEmployees, visible, onClose, trackerId, onSucce
                 checked={formData.half_day}
                 onChange={(e) => handleInputChange('half_day', e.target.checked)}
               />
+              <CFormCheck
+                id="overtime"
+                label="Overtime"
+                checked={formData.overtime}
+                onChange={(e) => handleInputChange('overtime', e.target.checked)}
+                className="mt-2"
+              />
+              {formData.overtime && (
+                <div className="mt-2">
+                  <CFormLabel htmlFor="over_time">Overtime Hours</CFormLabel>
+                  <CFormInput
+                    type="number"
+                    id="over_time"
+                    value={formData.over_time}
+                    onChange={(e) => handleInputChange('over_time', e.target.value)}
+                    invalid={!!errors.over_time}
+                    step="0.5"
+                    placeholder="Enter overtime hours"
+                  />
+                  {errors.over_time && (
+                    <div className="invalid-feedback d-block">{errors.over_time}</div>
+                  )}
+                </div>
+              )}
             </CCol>
 
             <CCol>

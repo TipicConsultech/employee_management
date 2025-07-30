@@ -80,9 +80,9 @@ const MobileEmployeeRow = ({ handleEditClick, handleMapClick, employee, empId, e
                                             textOverflow: 'ellipsis',
                                             maxWidth: '100px'
                                         }}>
-                                            {/* <CTooltip content={empName} placement="top">
+                                            {/* <CTooltip content={empName} placement="top"> */}
                                                 <span>{truncateName(empName)}</span>
-                                            </CTooltip> */}
+                                            {/* </CTooltip> */}
                                         </span>
                                        
                                     </div>

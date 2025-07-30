@@ -10,7 +10,8 @@ import {
   CRow,
   CButton,
   CFormSelect,
-  CAlert
+  CAlert,
+  CFormCheck
 } from '@coreui/react';
 import {
   CModal,
@@ -30,6 +31,7 @@ function NewCompany() {
   const today = new Date();
   const { showToast } = useToast();
   const user = getUserData();
+  const { t } = useTranslation("global");
 
   const defaultDuration = 1; // Monthly by default
   const validTill = new Date(today);
@@ -41,28 +43,10 @@ function NewCompany() {
   const [receiptPdfData, setReceiptPdfData] = useState(null);
   const [partners, setPartners] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
-
-  // Detect device type
-  useEffect(() => {
-    const checkDevice = () => {
-      const userAgent = navigator.userAgent;
-      const isMobileDevice = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
-      const isSmallScreen = window.innerWidth <= 768;
-      setIsMobile(isMobileDevice || isSmallScreen);
-    };
-
-    checkDevice();
-
-    window.addEventListener('resize', checkDevice);
-
-    return () => {
-      window.removeEventListener('resize', checkDevice);
-    };
-  }, []);
-
+  const [productList, setProductList] = useState([]);
   const [formData, setFormData] = useState({
     companyName: '',
-    company_id: '', // Changed from companyId to company_id to match payload
+    company_id: '',
     working_hours: '',
     start_time: '',
     land_mark: '',
@@ -87,12 +71,8 @@ function NewCompany() {
     password: '',
     confirm_password: '',
     product_id: '',
-  });
-
-  const { t } = useTranslation("global");
-  const [refData, setRefData] = useState({
-    plans: [],
-    users: []
+    start_of_week: 'MONDAY',
+    week_off: []
   });
   const [formErrors, setFormErrors] = useState({
     phone_no: '',
@@ -104,6 +84,103 @@ function NewCompany() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [validated, setValidated] = useState(false);
+  const logoInputRef = useRef(null);
+  const signInputRef = useRef(null);
+  const paymentQRCodeInputRef = useRef(null);
+
+  const weekDays = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
+  const appModes = [
+    { label: 'Basic', value: 'basic' },
+    { label: 'Advance', value: 'advance' },
+  ];
+  const [refData, setRefData] = useState({
+    plans: [],
+    users: []
+  });
+
+  // Detect device type
+  useEffect(() => {
+    const checkDevice = () => {
+      const userAgent = navigator.userAgent;
+      const isMobileDevice = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+      const isSmallScreen = window.innerWidth <= 768;
+      setIsMobile(isMobileDevice || isSmallScreen);
+    };
+
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+    return () => window.removeEventListener('resize', checkDevice);
+  }, []);
+
+  // Fetch reference data
+  useEffect(() => {
+    const fetchRefData = async () => {
+      try {
+        const response = await getAPICall('/api/detailsForCompany');
+        const partnerResponse = await getAPICall('/api/partnersCompany');
+        setRefData(response || { plans: [], users: [] });
+        setPartners(partnerResponse || []);
+      } catch (error) {
+        console.error('Error fetching reference data:', error);
+        showToast('danger', 'Failed to load reference data');
+      }
+    };
+    fetchRefData();
+  }, []);
+
+  // Fetch product list
+  useEffect(() => {
+    getAPICall('/api/productShow')
+      .then(response => setProductList(response || []))
+      .catch(error => {
+        console.error('Error fetching products:', error);
+        showToast('danger', 'Failed to load products');
+      });
+  }, []);
+
+  // Load Razorpay script
+  useEffect(() => {
+    if (!window.Razorpay) {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => console.log("Razorpay script loaded");
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  // Update subscription validity based on duration
+  useEffect(() => {
+    if (!formData.duration) return;
+    const currentDate = new Date();
+    const validTill = new Date(currentDate);
+    validTill.setMonth(validTill.getMonth() + parseInt(formData.duration));
+    setFormData(prev => ({
+      ...prev,
+      subscription_validity: validTill.toISOString().split('T')[0],
+    }));
+  }, [formData.duration]);
+
+  // Update duration based on selected plan
+  useEffect(() => {
+    const selectedPlan = refData.plans.find(p => p.id == formData.subscribed_plan);
+    const planName = selectedPlan?.name?.toLowerCase() || '';
+    let monthsToAdd = 1;
+
+    if (planName.includes('annually')) {
+      monthsToAdd = 12;
+    } else if (planName.includes('monthly') || planName.includes('free trial')) {
+      monthsToAdd = 1;
+    }
+
+    const newDate = new Date();
+    newDate.setMonth(newDate.getMonth() + monthsToAdd);
+    setFormData(prev => ({
+      ...prev,
+      duration: monthsToAdd,
+      subscription_validity: newDate.toISOString().split('T')[0]
+    }));
+  }, [formData.subscribed_plan, refData.plans]);
 
   const getAmount = (subscribed_plan) => {
     return refData.plans.find(p => p.id == subscribed_plan)?.price || 0;
@@ -129,45 +206,60 @@ function NewCompany() {
     return Math.max(totalMonths, 1);
   };
 
+  const getDurationOptions = () => {
+    const selectedPlan = refData.plans.find(p => p.id == formData.subscribed_plan);
+    const name = selectedPlan?.name?.toLowerCase() || '';
+
+    if (name.includes('free trial') || name.includes('monthly')) {
+      return [{ label: '1 Month', value: 1 }];
+    } else if (name.includes('annually')) {
+      return [{ label: '12 Months', value: 12 }];
+    }
+    return [
+      { label: '1 Month', value: 1 },
+      { label: '12 Months', value: 12 }
+    ];
+  };
+
+  const handleChange = (event) => {
+    const { name, value, files } = event.target;
+    if (files && files.length > 0) {
+      setFormData({ ...formData, [name]: files[0] });
+    } else if (name === 'week_off') {
+      const updatedWeekOff = formData.week_off.includes(value)
+        ? formData.week_off.filter(day => day !== value)
+        : [...formData.week_off, value];
+      setFormData({ ...formData, week_off: updatedWeekOff });
+    } else {
+      setFormData({ ...formData, [name]: value });
+      if (['product_id', 'company_id', 'working_hours', 'start_time'].includes(name)) {
+        setFormErrors(prev => ({ ...prev, [name]: '' }));
+      }
+    }
+  };
+
   const handleDurationChange = (event) => {
     const { value } = event.target;
     event.preventDefault();
     event.stopPropagation();
-
     const newDate = new Date();
     const months = parseInt(value);
     newDate.setMonth(newDate.getMonth() + months);
-    const formattedDate = newDate.toISOString().split('T')[0];
     setFormData({
       ...formData,
-      duration: parseInt(value),
-      subscription_validity: formattedDate
+      duration: months,
+      subscription_validity: newDate.toISOString().split('T')[0]
     });
   };
 
-  useEffect(() => {
-    const fetchRefData = async () => {
-      try {
-        const response = await getAPICall('/api/detailsForCompany');
-        const partnerResponse = await getAPICall('/api/partnersCompany');
-        setRefData(response || { plans: [], users: [] });
-        setPartners(partnerResponse || []);
-      } catch (error) {
-        console.error('Error fetching reference data:', error);
-        showToast('danger', 'Failed to load reference data');
-      }
-    };
-    fetchRefData();
-  }, []);
-
-  useEffect(() => {
-    if (!window.Razorpay) {
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () => console.log("Razorpay script loaded");
-      document.body.appendChild(script);
-    }
-  }, []);
+  const handleProductChange = (e) => {
+    const selectedProductId = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      product_id: selectedProductId
+    }));
+    setFormErrors(prev => ({ ...prev, product_id: '' }));
+  };
 
   const prepareFormData = async () => {
     try {
@@ -183,9 +275,8 @@ function NewCompany() {
         logoData.append("file", formData.logo);
         logoData.append("dest", "invoice");
         const responseLogo = await postFormData('/api/fileUpload', logoData);
-        const logoPath = responseLogo?.fileName;
-        if (logoPath) {
-          finalData.logo = logoPath;
+        if (responseLogo?.fileName) {
+          finalData.logo = responseLogo.fileName;
         }
       }
 
@@ -194,9 +285,8 @@ function NewCompany() {
         signData.append("file", formData.sign);
         signData.append("dest", "invoice");
         const responseSign = await postFormData('/api/fileUpload', signData);
-        const signPath = responseSign?.fileName;
-        if (signPath) {
-          finalData.sign = signPath;
+        if (responseSign?.fileName) {
+          finalData.sign = responseSign.fileName;
         }
       }
 
@@ -205,13 +295,11 @@ function NewCompany() {
         paymentQRCodeData.append("file", formData.paymentQRCode);
         paymentQRCodeData.append("dest", "invoice");
         const responsePaymentQRCode = await postFormData('/api/fileUpload', paymentQRCodeData);
-        const paymentQRCodePath = responsePaymentQRCode?.fileName;
-        if (paymentQRCodePath) {
-          finalData.paymentQRCode = paymentQRCodePath;
+        if (responsePaymentQRCode?.fileName) {
+          finalData.paymentQRCode = responsePaymentQRCode.fileName;
         }
       }
 
-      console.log('Prepared Form Data:', finalData); // Debug payload
       return finalData;
     } catch (error) {
       showToast('danger', 'Error uploading files: ' + error.message);
@@ -219,28 +307,6 @@ function NewCompany() {
       return null;
     }
   };
-
-  useEffect(() => {
-    const selectedPlan = refData.plans.find(p => p.id == formData.subscribed_plan);
-    const planName = selectedPlan?.name?.toLowerCase() || '';
-    let monthsToAdd = 1;
-
-    if (planName.includes('annually')) {
-      monthsToAdd = 12;
-    } else if (planName.includes('monthly') || planName.includes('free trial')) {
-      monthsToAdd = 1;
-    }
-
-    const newDate = new Date();
-    newDate.setMonth(newDate.getMonth() + monthsToAdd);
-    const formattedDate = newDate.toISOString().split('T')[0];
-
-    setFormData(prev => ({
-      ...prev,
-      duration: monthsToAdd,
-      subscription_validity: formattedDate
-    }));
-  }, [formData.subscribed_plan, refData.plans]);
 
   const registerCompanyDirectly = async () => {
     try {
@@ -274,11 +340,7 @@ function NewCompany() {
         return;
       }
 
-      setPreparedData(preparedFormData);
-
-      console.log('Sending to /api/company:', preparedFormData); // Debug API payload
       const companyResponse = await post('/api/company', preparedFormData);
-
       if (companyResponse?.details?.company_id) {
         showToast('success', 'Company Registration Successful!');
 
@@ -327,12 +389,12 @@ function NewCompany() {
 
         try {
           await post('/api/company-receipt', receiptData);
+          setReceiptPdfData(receiptData);
+          setShowWhatsAppModal(true);
+          resetForm();
         } catch (e) {
           console.error('Receipt API error:', e);
         }
-
-        setShowWhatsAppModal(true);
-        resetForm();
       } else {
         showToast('danger', 'Company registration failed.');
       }
@@ -375,25 +437,6 @@ function NewCompany() {
       }
 
       setPreparedData(preparedFormData);
-
-      // try {
-      //   await post('/api/company/check-duplicate', {
-      //     email_id: preparedFormData.email_id,
-      //     phone_no: preparedFormData.phone_no,
-      //   });
-      // } catch (error) {
-      //   if (error.response && error.response.status === 422 && error.response.data.errors) {
-      //     const errors = error.response.data.errors;
-      //     const messages = Object.values(errors).join(' ');
-      //     showToast('danger', messages);
-      //   } else if (error.response && error.response.data && error.response.data.message) {
-      //     showToast('danger', error.response.data.message);
-      //   } else {
-      //     showToast('danger', 'Email id or Mobile number is already taken');
-      //   }
-      //   return;
-      // }
-
       const currentPlan = refData.plans.find(p => p.id == preparedFormData.subscribed_plan);
       const paymentAmount = totalAmount();
       const startDate = new Date().toISOString().split('T')[0];
@@ -401,10 +444,7 @@ function NewCompany() {
       const totalPlanAmount = currentPlan?.price || 0;
       const amountPerMonth = durationMonths > 0 ? (totalPlanAmount / durationMonths) : 0;
 
-      const paymentData = {
-        amount: paymentAmount,
-      };
-
+      const paymentData = { amount: paymentAmount };
       const data = await post("/api/create-order", paymentData);
 
       if (!data) {
@@ -427,9 +467,7 @@ function NewCompany() {
 
           if (verifyResponse?.success) {
             try {
-              console.log('Sending to /api/company:', preparedFormData); // Debug API payload
               const companyResponse = await post('/api/company', preparedFormData);
-
               if (companyResponse?.details?.company_id) {
                 showToast('success', 'Company Registration Successful!');
 
@@ -440,7 +478,8 @@ function NewCompany() {
                   password: formData.password,
                   password_confirmation: formData.confirm_password,
                   type: '1',
-                  company_id: companyResponse.details.company_id
+                  company_id: companyResponse.details.company_id,
+                  product_id: preparedFormData.product_id
                 };
 
                 try {
@@ -472,12 +511,12 @@ function NewCompany() {
 
                 try {
                   await post('/api/company-receipt', receiptData);
+                  setReceiptPdfData(receiptData);
+                  setShowWhatsAppModal(true);
+                  resetForm();
                 } catch (e) {
                   console.error('Receipt save error:', e);
                 }
-
-                setShowWhatsAppModal(true);
-                resetForm();
               } else {
                 showToast('danger', 'Payment succeeded but company registration failed.');
               }
@@ -512,46 +551,20 @@ function NewCompany() {
     }
   };
 
-  useEffect(() => {
-    if (!formData.duration) return;
-
-    const currentDate = new Date();
-    const validTill = new Date(currentDate);
-    validTill.setMonth(validTill.getMonth() + parseInt(formData.duration));
-
-    const formattedDate = validTill.toISOString().split("T")[0];
-    setFormData(prev => ({
-      ...prev,
-      subscription_validity: formattedDate,
-    }));
-  }, [formData.duration]);
-
-  const logoInputRef = useRef(null);
-  const signInputRef = useRef(null);
-  const paymentQRCodeInputRef = useRef(null);
-  const [validated, setValidated] = useState(false);
-
-  const appModes = [
-    { label: 'Basic', value: 'basic' },
-    { label: 'Advance', value: 'advance' },
-  ];
-
-  const getDurationOptions = () => {
-    const selectedPlan = refData.plans.find(p => p.id == formData.subscribed_plan);
-    const name = selectedPlan?.name?.toLowerCase() || '';
-
-    if (name.includes('free trial')) {
-      return [{ label: '1 Month', value: 1 }];
-    } else if (name.includes('monthly')) {
-      return [{ label: '1 Month', value: 1 }];
-    } else if (name.includes('annually')) {
-      return [{ label: '12 Months', value: 12 }];
-    }
-
-    return [
-      { label: '1 Month', value: 1 },
-      { label: '12 Months', value: 12 }
-    ];
+  const generateCompanyReceiptPDFBlob = async (pdfData) => {
+    return new Promise((resolve, reject) => {
+      try {
+        generateCompanyReceiptPDF(pdfData, 'blob', (blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error('Failed to generate PDF blob'));
+          }
+        });
+      } catch (error) {
+        reject(error);
+      }
+    });
   };
 
   const handleShareWhatsApp = async () => {
@@ -562,7 +575,6 @@ function NewCompany() {
       }
 
       const pdfBlob = await generateCompanyReceiptPDFBlob(receiptPdfData);
-
       if (!pdfBlob) {
         throw new Error('Failed to generate PDF blob');
       }
@@ -679,44 +691,9 @@ function NewCompany() {
     }
   };
 
-  const generateCompanyReceiptPDFBlob = async (pdfData) => {
-    return new Promise((resolve, reject) => {
-      try {
-        generateCompanyReceiptPDF(pdfData, 'blob', (blob) => {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new Error('Failed to generate PDF blob'));
-          }
-        });
-      } catch (error) {
-        reject(error);
-      }
-    });
-  };
-
-  const handleChange = (event) => {
-    const { name, value, files } = event.target;
-    if (files && files.length > 0) {
-      setFormData({ ...formData, [name]: files[0] });
-    } else {
-      setFormData({ ...formData, [name]: value });
-      if (name === 'product_id') {
-        setFormErrors(prev => ({ ...prev, product_id: '' }));
-      } else if (name === 'company_id') {
-        setFormErrors(prev => ({ ...prev, company_id: '' }));
-      } else if (name === 'working_hours') {
-        setFormErrors(prev => ({ ...prev, working_hours: '' }));
-      } else if (name === 'start_time') {
-        setFormErrors(prev => ({ ...prev, start_time: '' }));
-      }
-    }
-  };
-
   const resetForm = () => {
     const newValidTill = new Date(today);
     newValidTill.setMonth(newValidTill.getMonth() + defaultDuration);
-
     setFormData({
       companyName: '',
       company_id: '',
@@ -735,6 +712,7 @@ function NewCompany() {
       sign: '',
       paymentQRCode: '',
       appMode: 'advance',
+      payment_mode: 'online',
       subscribed_plan: 1,
       duration: defaultDuration,
       subscription_validity: newValidTill.toISOString().split('T')[0],
@@ -743,8 +721,9 @@ function NewCompany() {
       password: '',
       confirm_password: '',
       product_id: '',
+      start_of_week: 'MONDAY',
+      week_off: []
     });
-
     setFormErrors({
       phone_no: '',
       email_id: '',
@@ -753,17 +732,9 @@ function NewCompany() {
       working_hours: '',
       start_time: '',
     });
-
-    if (logoInputRef.current) {
-      logoInputRef.current.value = '';
-    }
-    if (signInputRef.current) {
-      signInputRef.current.value = '';
-    }
-    if (paymentQRCodeInputRef.current) {
-      paymentQRCodeInputRef.current.value = '';
-    }
-
+    if (logoInputRef.current) logoInputRef.current.value = '';
+    if (signInputRef.current) signInputRef.current.value = '';
+    if (paymentQRCodeInputRef.current) paymentQRCodeInputRef.current.value = '';
     setPreparedData(null);
     setValidated(false);
   };
@@ -818,28 +789,6 @@ function NewCompany() {
     } else {
       handlePayment();
     }
-  };
-
-  const [productList, setProductList] = useState([]);
-
-  useEffect(() => {
-    getAPICall('/api/productShow')
-      .then(response => {
-        setProductList(response);
-      })
-      .catch(error => {
-        console.error('Error fetching products:', error);
-        showToast('danger', 'Failed to load products');
-      });
-  }, []);
-
-  const handleProductChange = (e) => {
-    const selectedProductId = e.target.value;
-    setFormData(prev => ({
-      ...prev,
-      product_id: selectedProductId
-    }));
-    setFormErrors(prev => ({ ...prev, product_id: '' }));
   };
 
   return (
@@ -932,6 +881,40 @@ function NewCompany() {
                       required
                       step="1"
                     />
+                  </div>
+                </div>
+                <div className='col-sm-4'>
+                  <div className='mb-3'>
+                    <CFormLabel htmlFor="week_start">{t("LABELS.week_start") || "Week Start"}</CFormLabel>
+                    <CFormSelect
+                      id="week_start"
+                      name="start_of_week"
+                      value={formData.start_of_week}
+                      onChange={handleChange}
+                      required
+                    >
+                      {weekDays.map(day => (
+                        <option key={day} value={day}>{day}</option>
+                      ))}
+                    </CFormSelect>
+                  </div>
+                </div>
+                <div className='col-sm-4'>
+                  <div className='mb-3'>
+                    <CFormLabel htmlFor="week_off">{t("LABELS.week_off") || "Week Off Days"}</CFormLabel>
+                    <div className="border p-2">
+                      {weekDays.map(day => (
+                        <CFormCheck
+                          key={day}
+                          id={`week_off_${day}`}
+                          label={day}
+                          value={day}
+                          checked={formData.week_off.includes(day)}
+                          onChange={handleChange}
+                          name="week_off"
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
                 <div className='col-sm-8'>
@@ -1137,11 +1120,15 @@ function NewCompany() {
                       value={formData.subscribed_plan}
                       id="subscribed_plan"
                       name="subscribed_plan"
-                      options={refData.plans.map(u => ({ value: u.id, label: u.name }))}
                       onChange={handleChange}
                       required
                       feedbackInvalid="Select a plan."
-                    />
+                    >
+                      <option value="">-- Select Plan --</option>
+                      {refData.plans.map(u => (
+                        <option key={u.id} value={u.id}>{u.name}</option>
+                      ))}
+                    </CFormSelect>
                   </div>
                 </div>
                 {(userType == 0 || userType == 3) && (
@@ -1173,11 +1160,14 @@ function NewCompany() {
                       id="duration"
                       name="duration"
                       value={formData.duration}
-                      options={getDurationOptions()}
                       onChange={handleDurationChange}
                       required
                       feedbackInvalid="Select duration."
-                    />
+                    >
+                      {getDurationOptions().map(option => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </CFormSelect>
                   </div>
                 </div>
                 <div className='col-sm-3'>

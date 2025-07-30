@@ -31,7 +31,9 @@ class CompanyInfo extends Model
     'refer_by_id',
     'face_attendance',
     'working_hours',
-    'start_time'
+    'start_time',
+    'start_of_week',
+    'week_off'
     ];
 
     protected $hidden = [

@@ -953,7 +953,9 @@
     "pincode": "Pincode",
     "company_id": "Company ID",
     "updating": "Updating",
-    "payment": "Payment"
+    "payment": "Payment",
+     "week_start": "Week Start",
+      "week_off": "Week Off"
 
     },
 

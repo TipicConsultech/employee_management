@@ -47,68 +47,74 @@ class CompanyInfoController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'land_mark' => 'required|string|max:255',
             'companyName' => 'required|string|max:255',
-            // 'Tal' => 'required|string|max:255',
-            // 'Dist' => 'required|string|max:255',
-            // 'Pincode' => 'required|integer',
-            
-            'phone_no' => ['required', 'digits:10',
-                    Rule::unique('users', 'mobile'),
-                    Rule::unique('company_info', 'phone_no')],
-            //add validation for email id with unique across table 
-            'email_id' => 'required|string|unique:company_info',
-            // 'bank_name' => 'required|string|max:255',
-            // 'account_no' => 'required|string|max:255',
-            // 'IFSC' => 'required|string|max:255',
+            'company_id' => 'required|integer|unique:company_info,company_id',
+            'working_hours' => 'required|integer|min:1|max:24',
+            'start_time' => 'required|date_format:H:i:s',
+            'land_mark' => 'required|string|max:255',
+            'Tal' => 'nullable|string|max:255',
+            'Dist' => 'nullable|string|max:255',
+            'Pincode' => 'nullable|digits:6',
+            'phone_no' => [
+                'required',
+                'digits:10',
+                Rule::unique('users', 'mobile'),
+                Rule::unique('company_info', 'phone_no'),
+            ],
+            'email_id' => 'required|string|email|max:255|unique:company_info,email_id',
+            'bank_name' => 'nullable|string|max:255',
+            'account_no' => 'nullable|string|max:255',
+            'IFSC' => 'nullable|string|max:255',
             'logo' => 'required|string',
-            'sign' => 'required|string', // Assuming sign is also an image file
-            'paymentQRCode' => 'required|string', 
-            'appMode' => 'required|string',
-            'subscribed_plan' => 'required|integer',
-            'refer_by_id' => 'required',
-            'subscription_validity' => 'required',
-            'product_id'=> 'required|integer',
-            'start_time'=>'required',
-            'working_hours'=>'required|integer',
-            'company_id'=>'required|integer'
-
-
+            'sign' => 'required|string',
+            'paymentQRCode' => 'required|string',
+            'appMode' => 'required|string|in:basic,advance',
+            'payment_mode' => 'required|string|in:online,cash',
+            'subscribed_plan' => 'required|integer|exists:plans,id',
+            'duration' => 'required|integer|in:1,12',
+            'subscription_validity' => 'required|date',
+            'refer_by_id' => 'nullable|integer|',
+            'user_name' => 'required|string|max:255',
+            'password' => 'required|string|min:6',
+            'confirm_password' => 'required|string|same:password',
+            'product_id' => 'required|integer|exists:products,id',
+            'start_of_week' => 'required|string|in:SUNDAY,MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY',
+            'week_off' => 'required|array|min:1',
+            'week_off.*' => 'string|in:SUNDAY,MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY',
         ]);
 
         // Save the company info to the database
         $CompanyInfo = new CompanyInfo;
         $CompanyInfo->company_name = $request->input('companyName');
+        $CompanyInfo->company_id = $request->input('company_id');
+        $CompanyInfo->working_hours = $request->input('working_hours');
+        $CompanyInfo->start_time = $request->input('start_time');
         $CompanyInfo->land_mark = $request->input('land_mark');
-        $CompanyInfo->tal = $request->input('Tal') ? $request->input('Tal') : '';
-        $CompanyInfo->dist = $request->input('Dist') ? $request->input('Dist') : '';
-        $CompanyInfo->pincode = $request->input('Pincode') ? $request->input('Pincode') : -1;
+        $CompanyInfo->tal = $request->input('Tal', '');
+        $CompanyInfo->dist = $request->input('Dist', '');
+        $CompanyInfo->pincode = $request->input('Pincode', -1);
         $CompanyInfo->phone_no = $request->input('phone_no');
         $CompanyInfo->email_id = $request->input('email_id');
-        $CompanyInfo->bank_name = $request->input('bank_name') ? $request->input('bank_name') : '';;
-        $CompanyInfo->account_no = $request->input('account_no') ? $request->input('account_no') : '';
-        $CompanyInfo->ifsc_code = $request->input('IFSC') ? $request->input('IFSC') : '';
-        $CompanyInfo->logo = $request->input('logo'); 
-        $CompanyInfo->sign = $request->input('sign');  
-        $CompanyInfo->paymentQRCode = $request->input('paymentQRCode');  
-        $CompanyInfo->appMode = $request->input('appMode');  
-        $CompanyInfo->subscribed_plan = $request->input('subscribed_plan');  
-        $CompanyInfo->subscription_validity = $request->input('subscription_validity');  
-        $CompanyInfo->refer_by_id = $request->input('refer_by_id');  
+        $CompanyInfo->bank_name = $request->input('bank_name', '');
+        $CompanyInfo->logo = $request->input('logo');
+        $CompanyInfo->sign = $request->input('sign');
+        $CompanyInfo->paymentQRCode = $request->input('paymentQRCode');
+        $CompanyInfo->appMode = $request->input('appMode');
+        $CompanyInfo->subscribed_plan = $request->input('subscribed_plan');
+        $CompanyInfo->subscription_validity = $request->input('subscription_validity');
+        $CompanyInfo->refer_by_id = $request->input('refer_by_id',null);
         $CompanyInfo->block_status = 0;
-        $CompanyInfo->product_id =$request->input('product_id');
-        $CompanyInfo->start_time =$request->input('start_time');
-        $CompanyInfo->working_hours =$request->input('working_hours');
-        $CompanyInfo->company_id =$request->input('company_id');
-
-
-        
-
+        $CompanyInfo->product_id = $request->input('product_id');
+        $CompanyInfo->start_of_week = $request->input('start_of_week');
+        $CompanyInfo->week_off = json_encode($request->input('week_off')); // Store array as JSON string
         $CompanyInfo->save();
-        //$companyDetails = CompanyInfo::create($CompanyInfo);
+
         $companyDetails = CompanyInfo::where('email_id', $request->input('email_id'))->firstOrFail();
 
-        return response()->json(['message' => 'New company is registered successfully', 'details' => $companyDetails], 200);
+        return response()->json([
+            'message' => 'New company is registered successfully',
+            'details' => $companyDetails
+        ], 200);
     }
 
     /**
@@ -128,6 +134,13 @@ class CompanyInfoController extends Controller
         //Return plans and users in single json object
         return response()->json(['plans' => $plans, 'users' => $users],
         200);
+    }
+
+     public function weekStartDay()
+    {
+        return CompanyInfo::where('company_id',auth()->user()->company_id)
+                           ->where('company_id',auth()->user()->company_id)
+                           ->value('start_of_week');
     }
 
     /**

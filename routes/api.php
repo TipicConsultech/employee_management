@@ -65,10 +65,7 @@ Route::middleware('auth:sanctum')->get('/companyHours', [CompanyInfoController::
 Route::middleware('auth:sanctum')->get('/tolaranceLimit/{id}', [EmployeeController::class, 'checkTolerance']);
 Route::middleware('auth:sanctum')->post('/bulkPresenty', [EmployeeTrackerController::class, 'bulkPresenty']);
 Route::middleware('auth:sanctum')->get('/productShow', [CompanyInfoController::class, 'getProducts']);
-
-
-
-
+Route::middleware('auth:sanctum')->get('/weekStartDay', [CompanyInfoController::class, 'weekStartDay']);
 
 
 
