@@ -173,7 +173,7 @@ const WeeklyMonthlyPresentyPayroll = () => {
   const { t } = useTranslation("global");
   const navigate = useNavigate();
   const [reportType, setReportType] = useState('');
-  const [selectedWeekDay, setSelectedWeekDay] = useState('monday');
+  const [selectedWeekDay, setSelectedWeekDay] = useState('MONDAY');
   const [selectedWeek, setSelectedWeek] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -207,13 +207,13 @@ const WeeklyMonthlyPresentyPayroll = () => {
   ];
 
   const weekDays = [
-    { value: 'monday', label: t('LABELS.monday') },
-    { value: 'tuesday', label: t('LABELS.tuesday') },
-    { value: 'wednesday', label: t('LABELS.wednesday') },
-    { value: 'thursday', label: t('LABELS.thursday') },
-    { value: 'friday', label: t('LABELS.friday') },
-    { value: 'saturday', label: t('LABELS.saturday') },
-    { value: 'sunday', label: t('LABELS.sunday') }
+    { value: 'MONDAY', label: t('LABELS.monday') },
+    { value: 'TUESDAY', label: t('LABELS.tuesday') },
+    { value: 'WEDNESDAY', label: t('LABELS.wednesday') },
+    { value: 'THURSDAY', label: t('LABELS.thursday') },
+    { value: 'FRIDAY', label: t('LABELS.friday') },
+    { value: 'SATURDAY', label: t('LABELS.saturday') },
+    { value: 'SUNDAY', label: t('LABELS.sunday') }
   ];
 
   const months = [
@@ -259,21 +259,31 @@ const WeeklyMonthlyPresentyPayroll = () => {
     return dates;
   };
 
+  async function getWeekDay(){
+    const result =await getAPICall('/api/weekStartDay')
+     setSelectedWeekDay(result.start_of_week);
+  }
+
+  useEffect(()=>{
+    getWeekDay();
+  },[])
+
+ 
+
   const getWeekFromDate = (dateString, weekStartDay) => {
     if (!dateString || !weekStartDay) return { start: '', end: '' };
     const selectedDate = new Date(dateString);
     const dayOfWeek = selectedDate.getDay();
 
-    const weekDayMap = {
-      'sunday': 0,
-      'monday': 1,
-      'tuesday': 2,
-      'wednesday': 3,
-      'thursday': 4,
-      'friday': 5,
-      'saturday': 6
+      const weekDayMap = {
+      'SUNDAY': 0,
+      'MONDAY': 1,
+      'TUESDAY': 2,
+      'WEDNESDAY': 3,
+      'THURSDAY': 4,
+      'FRIDAY': 5,
+      'SATURDAY': 6
     };
-
     const targetDay = weekDayMap[weekStartDay];
     let daysToSubtract = (dayOfWeek - targetDay + 7) % 7;
 
@@ -308,13 +318,13 @@ const WeeklyMonthlyPresentyPayroll = () => {
     const endDate = new Date(monthEnd);
 
     const weekDayMap = {
-      'sunday': 0,
-      'monday': 1,
-      'tuesday': 2,
-      'wednesday': 3,
-      'thursday': 4,
-      'friday': 5,
-      'saturday': 6
+      'SUNDAY': 0,
+      'MONDAY': 1,
+      'TUESDAY': 2,
+      'WEDNESDAY': 3,
+      'THURSDAY': 4,
+      'FRIDAY': 5,
+      'SATURDAY': 6
     };
 
     const targetDay = weekDayMap[weekStartDay];
@@ -920,6 +930,7 @@ const WeeklyMonthlyPresentyPayroll = () => {
                         id="weekDay"
                         value={selectedWeekDay}
                         onChange={handleWeekDayChange}
+                        disabled
                       >
                         {weekDays.map(day => (
                           <option key={day.value} value={day.value}>

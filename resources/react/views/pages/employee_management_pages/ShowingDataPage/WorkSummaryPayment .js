@@ -643,7 +643,7 @@ useEffect(() => {
               </div>
             </CCardHeader>
             <CCardBody className="card-body-custom">
-              {isSalaryZero ? (
+              {/* {isSalaryZero ? (
                 <div className="section">
                   <h3 className="section-title">
                     <span>ℹ️</span> {t('LABELS.noPaymentData')}
@@ -651,7 +651,7 @@ useEffect(() => {
                   <p>No payment data available as the total salary amount is zero.</p>
                 </div>
               ) : (
-                <>
+                <> */}
                   {/* Work Hours Overview with Wage Configuration */}
                   <div className="hours-overview">
                     {(workSummary?.regular_day || 0) > 0 && (workSummary.regular_hours != 0) && (
@@ -882,8 +882,8 @@ useEffect(() => {
                       )}
                     </div>
                   </div>
-                </>
-              )}
+                {/* </>
+              )} */}
 
               <div className="submit-section">
                 <CButton
