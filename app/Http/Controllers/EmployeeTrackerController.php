@@ -1037,7 +1037,7 @@ class EmployeeTrackerController extends Controller
                         'status' => 'HA',
                         'overtime_hours' => 0
                     ];
-                    $holidayDays++;
+                    
                     continue;
                 }
 
@@ -1119,7 +1119,7 @@ class EmployeeTrackerController extends Controller
             $regularPayment = $regularDays * ($employee->wage_hour ?? 0) * ($employee->working_hours ?? 8);
             $overtimePayment = $totalOvertimeHours * ($employee->wage_overtime ?? 0);
             $halfDayPayment = $halfDays * ($employee->half_day_rate ?? 0);
-            $holidayPayment = $holidayDays * ($employee->holiday_day_rate ?? 0);
+            $holidayPayment = $holidayDays * ($employee->holiday_rate ?? 0);
 
             $result[] = [
                 'employee_id' => $employee->id,
@@ -1127,7 +1127,7 @@ class EmployeeTrackerController extends Controller
                 'wage_hour' => $employee->wage_hour ?? 0,
                 'wage_overtime' => $employee->wage_overtime ?? 0,
                 'half_day_rate' => $employee->half_day_rate ?? 0,
-                'holiday_day_rate' => $employee->holiday_day_rate ?? 0,
+                'holiday_day_rate' => $employee->holiday_rate ?? 0,
                 'working_hours' => $employee->working_hours ?? 0,
                 'overtime_type' => $employee->overtime_type ?? "not_available",
                 'attendance' => $attendance,
@@ -1239,7 +1239,7 @@ class EmployeeTrackerController extends Controller
                         'status' => 'HA',
                         'overtime_hours' => 0
                     ];
-                    $holidayDays++;
+                    
                     continue;
                 }
 
@@ -1321,7 +1321,7 @@ class EmployeeTrackerController extends Controller
             $regularPayment = $regularDays * ($employee->wage_hour ?? 0) * ($employee->working_hours ?? 8);
             $overtimePayment = $totalOvertimeHours * ($employee->wage_overtime ?? 0);
             $halfDayPayment = $halfDays * ($employee->half_day_rate ?? 0);
-            $holidayPayment = $holidayDays * ($employee->holiday_day_rate ?? 0);
+            $holidayPayment = $holidayDays * ($employee->holiday_rate ?? 0);
 
             $result[] = [
                 'employee_id' => $employee->id,
@@ -1329,7 +1329,7 @@ class EmployeeTrackerController extends Controller
                 'wage_hour' => $employee->wage_hour ?? 0,
                 'wage_overtime' => $employee->wage_overtime ?? 0,
                 'half_day_rate' => $employee->half_day_rate ?? 0,
-                'holiday_day_rate' => $employee->holiday_day_rate ?? 0,
+                'holiday_day_rate' => $employee->holiday_rate ?? 0,
                 'working_hours' => $employee->working_hours ?? 0,
                 'overtime_type' => $employee->overtime_type ?? "not_available",
                 'attendance' => $attendance,
